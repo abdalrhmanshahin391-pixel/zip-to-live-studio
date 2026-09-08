@@ -8,3 +8,6 @@
 - [x] Verify the updated header and pricing page on desktop and phone
 - [x] Add the Plans and Toolkit product boxes to the home page
 - [x] Verify both product boxes and pricing links on desktop and phone
+- [x] Add asymmetric Classrooms & groups and Flashcards feature boxes to the home page
+- [x] Make the existing Plans and Toolkit cards 30% taller
+- [x] Verify the four-box home section on desktop and phone
