@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { supabase } from "@/integrations/supabase/client";
 import { updateSiteSettings } from "@/lib/site-settings.functions";
 
 /**
@@ -10,16 +10,28 @@ import { updateSiteSettings } from "@/lib/site-settings.functions";
  * It is stored in site settings, so flipping it affects every visitor.
  */
 export function useClassicColors() {
-  const settings = useSiteSettings();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
-  const classic = settings.classic_colors;
+  const { data } = useQuery({
+    queryKey: ["classic-colors"],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from as any)("site_settings")
+        .select("classic_colors")
+        .eq("id", true)
+        .maybeSingle();
+      if (error) return false;
+      return !!data?.classic_colors;
+    },
+    staleTime: 60_000,
+  });
+  const classic = !!data;
 
   async function setClassic(next: boolean) {
     setSaving(true);
     try {
       await updateSiteSettings({ data: { classic_colors: next } });
       await queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+      await queryClient.invalidateQueries({ queryKey: ["classic-colors"] });
     } catch (err) {
       console.error(err);
       alert("Could not change the colours.");
