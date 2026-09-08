@@ -18,7 +18,7 @@ function ProductCard({ imageKey, label, title, note, price, image, imageAlt, sid
   const left = side === "left";
 
   return (
-    <article className="relative min-h-[470px] overflow-hidden rounded-[28px] border border-white/10 bg-[#121212] px-6 pt-11 text-center md:min-h-[520px] md:rounded-[34px] md:px-10 md:pt-12">
+    <article className="relative min-h-[540px] overflow-hidden rounded-[28px] border border-white/10 bg-[#121212] px-6 pt-11 text-center md:min-h-[580px] md:rounded-[34px] md:px-10 md:pt-12">
       <p className="text-[19px] font-bold text-white md:text-[21px]">
         RitaJet <span className="font-normal text-white/55">{label}</span>
       </p>
@@ -36,8 +36,8 @@ function ProductCard({ imageKey, label, title, note, price, image, imageAlt, sid
 
       {/* Cropped landscape iPad — pushed outward so more screen stays inside the card. */}
       <div
-        className={`absolute bottom-[-6%] w-[100%] md:w-[96%] ${
-          left ? "right-[-14%] md:right-[-16%]" : "left-[-14%] md:left-[-16%]"
+        className={`absolute bottom-[-16%] w-[96%] md:w-[92%] ${
+          left ? "right-[-16%] md:right-[-18%]" : "left-[-16%] md:left-[-18%]"
         }`}
       >
         <div
