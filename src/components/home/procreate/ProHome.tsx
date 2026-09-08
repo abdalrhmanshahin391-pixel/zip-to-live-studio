@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ProHeader } from "./ProHeader";
 import { IpadStage } from "./IpadStage";
 import { ShareBand } from "./ShareBand";
+import { ProductShowcase } from "./ProductShowcase";
 
 /** Black, single-screen home page. */
 export function ProHome() {
@@ -38,6 +39,7 @@ export function ProHome() {
       </div>
 
       <ShareBand />
+      <ProductShowcase />
     </main>
   );
 }
