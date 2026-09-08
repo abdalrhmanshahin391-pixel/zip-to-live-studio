@@ -24,23 +24,23 @@ import { avatarTone, useAvatarUrl } from "@/lib/avatars";
 import { setImageEditMode, useImageEditMode } from "@/lib/image-edit-mode";
 import { ProWordmark } from "./ProWordmark";
 
-import { NAV_GROUPS } from "@/components/SiteHeader";
+import { NAV_GROUPS } from "@/components/site-nav";
 
 const SIMPLE_LINKS: { to: string; label: string }[] = [
   { to: "/learn", label: "Rooms" },
   { to: "/tour", label: "How it works" },
 ];
 
-/** Transparent, white-only top bar that floats over the artwork. */
-export function ProHeader() {
+/** Transparent over artwork on the home page, solid cream everywhere else. */
+export function ProHeader({ variant = "transparent" }: { variant?: "transparent" | "solid" } = {}) {
   const { t } = useTranslation();
   const { user, profile, isAdmin, isRealAdmin, isGolden, adminMode, setAdminMode, loading: authLoading } = useAuth();
   const settings = useSiteSettings();
   const navigate = useNavigate();
-  const [open, setOpen] = useState<string | null>(null);
   const [accountOpen, setAccountOpen] = useState(false);
   const [sheet, setSheet] = useState(false);
   const imageEdit = useImageEditMode();
+  const solid = variant === "solid";
 
   const displayName = profile?.username ?? user?.email ?? "";
   const avatar = useAvatarUrl((profile as any)?.avatar_url ?? null);
@@ -74,87 +74,43 @@ export function ProHeader() {
     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white";
 
   return (
-    <header className="absolute inset-x-0 top-0 z-50">
+    <header
+      className={
+        solid
+          ? "rita-panel sticky top-0 z-50 border-b border-black/[0.06]"
+          : "absolute inset-x-0 top-0 z-50"
+      }
+    >
       {/* Soft scrim so white words stay readable over the artwork below. */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[130px]"
-        style={{
-          background:
-            "linear-gradient(180deg,rgba(0,0,0,.34) 0%,rgba(0,0,0,.14) 55%,rgba(0,0,0,0) 100%)",
-        }}
-      />
-      <div className="rita-onart relative mx-auto flex h-[72px] max-w-[1120px] items-center justify-between gap-4 px-6 md:px-10">
+      {!solid && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-[130px]"
+          style={{
+            background:
+              "linear-gradient(180deg,rgba(0,0,0,.34) 0%,rgba(0,0,0,.14) 55%,rgba(0,0,0,0) 100%)",
+          }}
+        />
+      )}
+      <div
+        className={`${
+          solid ? "" : "rita-onart"
+        } relative mx-auto flex h-[72px] max-w-[1120px] items-center justify-between gap-4 px-6 md:px-10`}
+      >
         <Link to="/" className="shrink-0 text-white [&_*]:!text-white">
           <ProWordmark size={30} />
         </Link>
 
         <nav className="hidden items-center gap-8 lg:flex">
-          <div
-            className="relative"
-            onMouseEnter={() => setOpen("learn")}
-            onMouseLeave={() => setOpen(null)}
+          <Link
+            to="/learn"
+            className="text-[16px] font-semibold !text-white transition-opacity hover:opacity-75"
+            style={{ fontFamily: "var(--font-grotesk)" }}
           >
-            <button
-              type="button"
-              className="flex items-center gap-1.5 text-[16px] font-semibold !text-white transition-opacity hover:opacity-75"
-              style={{ fontFamily: "var(--font-grotesk)" }}
-            >
-              Start learning
-              <ChevronDown size={16} strokeWidth={2.2} />
-            </button>
-            {open === "learn" && (
-              <div className="absolute left-1/2 top-full w-[46rem] max-w-[90vw] -translate-x-1/2 pt-3">
-                <div className="rita-panel space-y-4 rounded-[26px] border border-black/[0.07] p-4 shadow-[0_28px_70px_-30px_rgba(60,45,20,0.45)]">
-                  {NAV_GROUPS.map((group) => (
-                    <div key={group.id}>
-                      <div className="flex items-center gap-3 px-1">
-                        <span className="rita-accent text-[11px] font-black uppercase tracking-[0.18em]">
-                          {group.label}
-                        </span>
-                        <span className="h-px flex-1 bg-black/[0.08]" />
-                      </div>
-                      <div className="mt-2 grid gap-4 sm:grid-cols-2">
-                        {group.columns.map((col) => (
-                          <div key={col.label}>
-                            <div className="px-3 pb-1 text-[10.5px] font-black uppercase tracking-[0.14em] text-[#a29a8d]">
-                              {col.label}
-                            </div>
-                            <div className="grid gap-0.5">
-                              {col.items.map((item) => (
-                                <Link
-                                  key={item.to + item.label}
-                                  to={item.to as never}
-                                  params={item.params as never}
-                                  onClick={() => setOpen(null)}
-                                  className="group flex items-center gap-3 rounded-2xl px-3 py-2 transition-colors hover:bg-[#f4efe3]"
-                                >
-                                  <span
-                                    className="grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-transform group-hover:-translate-y-0.5"
-                                    style={{ background: item.soft, color: item.ink }}
-                                  >
-                                    <item.icon size={16} />
-                                  </span>
-                                  <span className="min-w-0">
-                                    <span className="block truncate text-[14px] font-extrabold !text-[#23201d]">
-                                      {item.label}
-                                    </span>
-                                    <span className="block truncate text-[11.5px] font-semibold !text-[#a29a8d]">
-                                      {item.hint}
-                                    </span>
-                                  </span>
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+            Start learning
+          </Link>
+
+
 
           {SIMPLE_LINKS.map((l) => (
             <Link
