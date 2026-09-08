@@ -85,7 +85,7 @@ export function ProHeader() {
 
   return (
     <header className="absolute inset-x-0 top-0 z-50">
-      <div className="mx-auto flex h-[72px] max-w-[1240px] items-center justify-between gap-4 px-5 md:px-8">
+      <div className="mx-auto flex h-[72px] max-w-[1120px] items-center justify-between gap-4 px-6 md:px-10">
         <Link to="/" className="shrink-0 text-white">
           <ProWordmark size={30} />
         </Link>
@@ -126,11 +126,11 @@ export function ProHeader() {
           ))}
         </nav>
 
-        {/* Right cluster — frosted pill with plans, credits and account */}
-        <div className="hidden items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] p-1.5 backdrop-blur-xl lg:flex">
+        {/* Each action stands alone so the header stays light and easy to scan. */}
+        <div className="hidden items-center gap-2.5 lg:flex">
           <Link
             to="/pricing"
-            className="rounded-full px-3.5 py-1.5 text-[13.5px] font-bold text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+            className="px-2 py-2 text-[14px] font-semibold text-white/80 transition-colors hover:text-white"
             style={{ fontFamily: "var(--font-grotesk)" }}
           >
             Pricing
@@ -138,7 +138,7 @@ export function ProHeader() {
           {settings.offers_page_enabled && (
             <Link
               to="/offers"
-              className="rounded-full bg-white px-3.5 py-1.5 text-[13.5px] font-extrabold text-black transition-transform hover:scale-[1.04]"
+              className="inline-flex h-10 items-center rounded-full bg-white px-5 text-[14px] font-bold text-black transition-opacity hover:opacity-90"
               style={{ fontFamily: "var(--font-grotesk)" }}
             >
               Special offers
@@ -152,7 +152,7 @@ export function ProHeader() {
             <button
               type="button"
               onClick={() => openAuth("signin")}
-              className="rounded-full px-3.5 py-1.5 text-[13.5px] font-bold text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+              className="inline-flex h-10 items-center rounded-full border border-white/15 bg-white/[0.06] px-5 text-[14px] font-semibold text-white/90 backdrop-blur-xl transition-colors hover:bg-white/[0.12] hover:text-white"
               style={{ fontFamily: "var(--font-grotesk)" }}
             >
               Sign in
@@ -164,7 +164,7 @@ export function ProHeader() {
                 onClick={() => setAccountOpen((v) => !v)}
                 aria-label="Account menu"
                 aria-expanded={accountOpen}
-                className="flex items-center gap-2 rounded-full py-1 pe-2 ps-1 transition-colors hover:bg-white/10"
+                className="flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] pe-3 ps-1 backdrop-blur-xl transition-colors hover:bg-white/[0.12]"
               >
                 <span
                   className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-sm font-black text-white"

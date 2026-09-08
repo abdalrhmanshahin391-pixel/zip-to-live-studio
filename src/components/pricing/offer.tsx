@@ -32,18 +32,18 @@ export function OfferRibbon({
   endsAt?: string | null;
 }) {
   if (!label || !offerLive(endsAt)) return null;
-  const c = color || "#8ec63f";
+  const c = color || "#0071e3";
   const until = offerCountdown(endsAt);
   return (
     <span className="pointer-events-none absolute right-0 top-0 z-10 flex flex-col items-end">
       <span
-        className="rounded-bl-2xl rounded-tr-[22px] px-3.5 py-1.5 text-[10.5px] font-black uppercase tracking-[0.16em] text-white"
+        className="rounded-bl-xl rounded-tr-[20px] px-3.5 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-white"
         style={{ background: c, boxShadow: `0 10px 24px -14px ${c}` }}
       >
         {label}
       </span>
       {until && (
-        <span className="mr-2 mt-1 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-black text-[#a4423a]">
+        <span className="mr-2 mt-1 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/65 backdrop-blur">
           {until}
         </span>
       )}
