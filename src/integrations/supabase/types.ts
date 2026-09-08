@@ -221,6 +221,7 @@ export type Database = {
           id: string
           lecture_id: string
           short_md: string
+          summary_id: string | null
           updated_at: string
           user_id: string
         }
@@ -230,6 +231,7 @@ export type Database = {
           id?: string
           lecture_id: string
           short_md?: string
+          summary_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -239,6 +241,7 @@ export type Database = {
           id?: string
           lecture_id?: string
           short_md?: string
+          summary_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -248,6 +251,13 @@ export type Database = {
             columns: ["lecture_id"]
             isOneToOne: true
             referencedRelation: "lq_lectures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aio_summaries_summary_id_fkey"
+            columns: ["summary_id"]
+            isOneToOne: false
+            referencedRelation: "summaries"
             referencedColumns: ["id"]
           },
         ]
