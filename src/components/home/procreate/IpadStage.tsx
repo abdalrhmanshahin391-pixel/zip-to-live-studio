@@ -9,11 +9,11 @@ import screenAsset from "@/assets/rita-girl-ipad.jpg.asset.json";
  */
 export function IpadStage() {
   return (
-    <div className="relative mx-auto w-full max-w-[1120px] px-4 md:px-8">
+    <div className="relative mx-auto w-full max-w-[880px] px-6 md:px-12">
       {/* Negative top margin pushes only a small sliver of the device top off-screen. */}
-      <div className="-mt-[8%] md:-mt-[10%]">
+      <div className="-mt-[7%] md:-mt-[8%]">
         <div
-          className="relative mx-auto rounded-[2.2rem] p-[10px] md:rounded-[2.8rem] md:p-[14px]"
+          className="relative mx-auto rounded-[2rem] p-[9px] md:rounded-[2.5rem] md:p-[11px]"
           style={{
             background:
               "linear-gradient(148deg,#8f959c 0%,#4b5157 12%,#22262a 34%,#1b1e21 62%,#3d4247 88%,#7e848b 100%)",
