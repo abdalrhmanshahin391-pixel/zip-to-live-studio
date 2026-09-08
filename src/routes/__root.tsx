@@ -209,8 +209,12 @@ function RootComponent() {
   // has to refetch global settings/copy after hydration.
   useState(() => {
     if (boot?.settings) queryClient.setQueryData(["site-settings"], normalizeSettings(boot.settings));
+    // Replaced artwork is already resolved on the server, so pictures paint
+    // correct on the first frame instead of flashing the built-in art.
+    if (boot?.siteImages) queryClient.setQueryData(["site-images"], boot.siteImages);
     return null;
   });
+
 
   useEffect(() => {
     // Sample content is only added after the account's own kit has loaded, so
