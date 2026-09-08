@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useLang } from "@/components/LanguageProvider";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { SUPPORT_EMAIL } from "@/lib/legal-content";
+import { RitaBrand } from "@/components/brand/RitaBrand";
 
 type Col = { heading: string; links: { label: string; to: string }[] };
 
@@ -67,10 +68,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-[1240px] px-6 py-16 md:px-10 md:py-20">
         <div className="grid gap-12 md:grid-cols-[minmax(0,1fr)_minmax(0,2.1fr)]">
           <div className="min-w-0">
-            <p className="text-[32px] font-bold tracking-[-0.03em] md:text-[36px]">
-              <span style={{ color: "var(--pro-ink)" }}>Rita</span>
-              <span className="rita-accent">Jet</span>
-            </p>
+            <RitaBrand size={52} />
             <p className="rita-ink-soft mt-2 max-w-[22rem] text-[16px] leading-relaxed">
               {ar
                 ? "بطاقات وملخّصات وأسئلة من مادّتك أنت — في مكان واحد هادئ."

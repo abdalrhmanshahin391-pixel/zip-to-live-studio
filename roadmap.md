@@ -16,3 +16,7 @@
 - [x] Add premium green artwork for monthly plans and credit packs
 - [x] Simplify the desktop and mobile account menus into clean lists
 - [x] Verify the home, pricing, mobile, and authenticated admin-menu states
+- [x] Open sign-in directly from Start learning for signed-out visitors
+- [x] Replace requested old Rita marks with the new green-background face
+- [x] Remove pricing introduction text and the decorative pricing-menu sparkle
+- [x] Verify the signed-out desktop and phone flows and pricing layout

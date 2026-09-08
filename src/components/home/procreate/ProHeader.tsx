@@ -8,9 +8,9 @@ import {
   LayoutGrid,
   LogOut,
   Menu,
+  ReceiptText,
   Settings,
   ShieldCheck,
-  Sparkles,
   X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -22,12 +22,12 @@ import { CreditsMeter } from "@/components/CreditsMeter";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { avatarTone, useAvatarUrl } from "@/lib/avatars";
 import { setImageEditMode, useImageEditMode } from "@/lib/image-edit-mode";
-import { ProWordmark } from "./ProWordmark";
+import { RitaBrand } from "@/components/brand/RitaBrand";
+import { StartLearningLink } from "@/components/StartLearningLink";
 
 import { NAV_GROUPS } from "@/components/site-nav";
 
 const SIMPLE_LINKS: { to: string; label: string }[] = [
-  { to: "/learn", label: "Rooms" },
   { to: "/tour", label: "How it works" },
 ];
 
@@ -97,18 +97,16 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
           solid ? "" : "rita-onart"
         } relative mx-auto flex h-[72px] max-w-[1120px] items-center justify-between gap-4 px-6 md:px-10`}
       >
-        <Link to="/" className={solid ? "shrink-0" : "shrink-0 text-white [&_*]:!text-white"}>
-          <ProWordmark size={30} />
+        <Link to="/" className="shrink-0">
+          <RitaBrand size={38} onArtwork={!solid} />
         </Link>
 
         <nav className="hidden items-center gap-8 lg:flex">
-          <Link
-            to="/learn"
+          <StartLearningLink
             className={`text-[16px] font-semibold transition-opacity hover:opacity-75 ${solid ? "" : "!text-white"}`}
-            style={{ fontFamily: "var(--font-grotesk)" }}
           >
             Start learning
-          </Link>
+          </StartLearningLink>
 
 
 
@@ -269,7 +267,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                       My plan
                     </Link>
                     <Link to="/pricing" onClick={() => setAccountOpen(false)} className={menuLink}>
-                      <Sparkles size={16} className="text-white/50" />
+                      <ReceiptText size={16} className="text-white/50" />
                       Plans & pricing
                     </Link>
                     <Link
@@ -320,6 +318,12 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
 
       {sheet && (
         <div className="rita-panel relative mx-4 max-h-[80vh] overflow-y-auto rounded-2xl border border-black/[0.07] p-3 shadow-[0_28px_70px_-30px_rgba(60,45,20,0.45)] lg:hidden">
+          <StartLearningLink
+            onOpen={() => setSheet(false)}
+            className="block w-full border-b border-black/[0.06] px-3 py-3 text-left text-[16px] font-semibold text-white/90"
+          >
+            Start learning
+          </StartLearningLink>
           {NAV_GROUPS.flatMap((g) => g.columns.flatMap((c) => c.items)).map((i) => (
             <Link
               key={i.to + i.label}

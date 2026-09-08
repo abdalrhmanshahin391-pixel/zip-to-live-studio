@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LearnDoors } from "@/components/learn/LearnDoors";
-import { RequireAuth } from "@/components/study/RequireAuth";
 
 export const Route = createFileRoute("/learn/")({
   head: () => ({
@@ -20,9 +19,5 @@ export const Route = createFileRoute("/learn/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: () => (
-    <RequireAuth what="your study modes">
-      <LearnDoors />
-    </RequireAuth>
-  ),
+  component: LearnDoors,
 });

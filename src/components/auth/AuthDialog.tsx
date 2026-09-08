@@ -9,7 +9,7 @@ import {
   clearRememberedLogin,
 } from "@/lib/remember-login";
 import { GoogleButton } from "@/components/auth/GoogleButton";
-import ritaAsset from "@/assets/rita-mark.png.asset.json";
+import { RitaFace } from "@/components/brand/RitaBrand";
 import {
   closeAuth,
   getAuthDialogState,
@@ -106,16 +106,7 @@ function AuthWindow({ mode, next }: { mode: AuthMode; next?: string }) {
         </button>
 
         <div className="mb-6 flex flex-col items-center text-center">
-          <span className="grid h-16 w-16 place-items-center rounded-[22px] bg-[color:var(--rita-green-soft,rgba(122,160,44,0.14))]">
-            <img
-              src={ritaAsset.url}
-              alt=""
-              aria-hidden="true"
-              width={512}
-              height={512}
-              className="h-11 w-11 select-none object-contain"
-            />
-          </span>
+          <RitaFace size={68} />
           <h2 className="mt-3 font-display text-[24px] font-black leading-tight tracking-tight text-foreground">
             {mode === "signup"
               ? "Create your RitaJet account"

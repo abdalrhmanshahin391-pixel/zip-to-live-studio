@@ -1,9 +1,9 @@
-import { Link } from "@tanstack/react-router";
 import { ProHeader } from "./ProHeader";
 import { IpadStage } from "./IpadStage";
 import { ShareBand } from "./ShareBand";
 import { ProductShowcase } from "./ProductShowcase";
 import { FeatureTriptych } from "./FeatureTriptych";
+import { StartLearningLink } from "@/components/StartLearningLink";
 
 /** Black, single-screen home page. */
 export function ProHome() {
@@ -31,9 +31,9 @@ export function ProHome() {
           into flashcards, summaries and practice questions.
         </p>
         <div className="mt-10 flex justify-center">
-          <Link to="/learn" className="rita-btn rita-btn-primary">
+          <StartLearningLink className="rita-btn rita-btn-primary">
             Start learning
-          </Link>
+          </StartLearningLink>
         </div>
         <p className="mt-5 text-[15px] text-white/45">Free to start. No card needed.</p>
       </div>
