@@ -178,7 +178,7 @@ export function ProductShowcase() {
         />
       </div>
 
-      <div className="grid gap-5 md:grid-cols-[minmax(280px,0.72fr)_minmax(0,1.78fr)]">
+      <div className="mt-10 grid gap-5 md:grid-cols-[minmax(280px,0.72fr)_minmax(0,1.78fr)]">
         <CommunityCard />
         <FlashcardsFeatureCard />
       </div>
