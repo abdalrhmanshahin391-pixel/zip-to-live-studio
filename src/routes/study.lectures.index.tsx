@@ -120,48 +120,54 @@ function LectureLabPage() {
     return m;
   }, [lectures]);
 
+  // One card per subject; its sub-subjects nest inside it, the way the
+  // flashcards board works.
   const groups: PickerGroup[] = useMemo(() => {
     const out: PickerGroup[] = [];
     for (const s of subjects) {
       const mine = subtopics.filter((t) => t.subject_id === s.id);
-      // A subject with no sub-subject yet still belongs on the shelf.
-      if (!mine.length) {
-        out.push({ id: `subject:${s.id}`, name: s.name, color: ACCENT, count: 0, items: [], sample: !!(s as any).is_example, locked: !!(s as any).is_example });
-        continue;
-      }
-      for (const t of mine) {
-        const list = byTopic[t.id] ?? [];
-        out.push({
-          id: t.id,
-          name: `${s.name} · ${t.name}`,
-          color: ACCENT,
-          sample: !!(s as any).is_example,
-          locked: !!(s as any).is_example,
-          count: list.reduce((n, l) => n + l.question_count, 0),
-          flags: list.reduce((n, l) => n + (stats[l.id]?.flagged ?? 0), 0),
-          items: list.map((l) => ({
-            id: l.id,
-            name: l.title,
-            count: l.question_count,
-            countLabel:
-              l.question_count === 0
-                ? "no questions yet"
-                : `${l.question_count} question${l.question_count === 1 ? "" : "s"}${
-                    l.best_score != null ? ` · best ${l.best_score}%` : ""
-                  }`,
-            flags: stats[l.id]?.flagged ?? 0,
-          })),
-        });
-      }
-    }
-    // Sub-subjects without a known parent (shouldn't happen, but never hide data).
-    for (const t of subtopics) {
-      if (subjects.some((s) => s.id === t.subject_id)) continue;
-      out.push({ id: t.id, name: t.name, color: ACCENT, count: 0, items: [] });
+      const sample = !!(s as any).is_example;
+      out.push({
+        id: s.id,
+        name: s.name,
+        color: ACCENT,
+        sample,
+        locked: sample,
+        count: mine.reduce(
+          (n, t) => n + (byTopic[t.id] ?? []).reduce((m, l) => m + l.question_count, 0),
+          0,
+        ),
+        flags: mine.reduce(
+          (n, t) => n + (byTopic[t.id] ?? []).reduce((m, l) => m + (stats[l.id]?.flagged ?? 0), 0),
+          0,
+        ),
+        items: mine.map((t) => {
+          const list = byTopic[t.id] ?? [];
+          const qs = list.reduce((n, l) => n + l.question_count, 0);
+          return {
+            id: t.id,
+            name: t.name,
+            sample,
+            count: qs,
+            countLabel: list.length
+              ? `${list.length} lecture${list.length === 1 ? "" : "s"} · ${qs} question${qs === 1 ? "" : "s"}`
+              : "no lectures yet",
+            note: list.length ? list.map((l) => l.title).join(" · ") : undefined,
+            flags: list.reduce((n, l) => n + (stats[l.id]?.flagged ?? 0), 0),
+          };
+        }),
+      });
     }
     return out;
   }, [subtopics, subjects, byTopic, stats]);
 
+  // A tick picks a whole sub-subject; the round runs every lecture inside it.
+  const [pickedTopics, setPickedTopics] = useState<Set<string>>(new Set());
+  const selected = useMemo(() => {
+    const ids = new Set<string>();
+    for (const l of lectures) if (pickedTopics.has(l.subtopic_id) && l.question_count > 0) ids.add(l.id);
+    return ids;
+  }, [lectures, pickedTopics]);
 
   const selectedCount = selected.size;
   const totalQuestions = useMemo(
@@ -170,12 +176,13 @@ function LectureLabPage() {
   );
 
   const toggle = (id: string) =>
-    setSelected((prev) => {
+    setPickedTopics((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
+
 
   async function createSubject(name: string) {
     try {
