@@ -37,14 +37,17 @@ export const lqBoard = createServerFn({ method: "POST" })
           .from("lq_subjects")
           .select("id, name, sort_order")
           .eq("user_id", userId)
+          .eq("is_example", false)
           .order("sort_order")
           .order("name"),
         supabase
           .from("lq_subtopics")
           .select("id, subject_id, name, sort_order")
           .eq("user_id", userId)
+          .eq("is_example", false)
           .order("sort_order")
           .order("name"),
+
         supabase
           .from("lq_lectures")
           .select("id, subtopic_id, title, source_name, difficulty, question_count, best_score, created_at")

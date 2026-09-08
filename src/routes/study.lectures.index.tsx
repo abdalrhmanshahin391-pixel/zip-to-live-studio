@@ -59,7 +59,8 @@ type Stats = Record<string, { wrong: number; flagged: number }>;
 
 const CREAM = "#fbf5e9";
 const INK = "#23201d";
-const ACCENT = "#3f2c73";
+const ACCENT = "#4b9b2e";
+
 
 function LectureLabPage() {
   const { user, loading } = useAuth();
@@ -76,7 +77,7 @@ function LectureLabPage() {
   const [stats, setStats] = useState<Stats>({});
   const [busy, setBusy] = useState(true);
   const [open, setOpen] = useState<Record<string, boolean>>({});
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [pickedTopics, setPickedTopics] = useState<Set<string>>(new Set());
   const [pool, setPool] = useState<"all" | "flagged" | "wrong">("all");
   const [mode, setMode] = useState<"study" | "session" | "exam">("study");
   const [minutes, setMinutes] = useState(20);
@@ -119,48 +120,54 @@ function LectureLabPage() {
     return m;
   }, [lectures]);
 
+  // One card per subject; its sub-subjects nest inside it, the way the
+  // flashcards board works.
   const groups: PickerGroup[] = useMemo(() => {
     const out: PickerGroup[] = [];
     for (const s of subjects) {
       const mine = subtopics.filter((t) => t.subject_id === s.id);
-      // A subject with no sub-subject yet still belongs on the shelf.
-      if (!mine.length) {
-        out.push({ id: `subject:${s.id}`, name: s.name, color: ACCENT, count: 0, items: [], sample: !!(s as any).is_example, locked: !!(s as any).is_example });
-        continue;
-      }
-      for (const t of mine) {
-        const list = byTopic[t.id] ?? [];
-        out.push({
-          id: t.id,
-          name: `${s.name} · ${t.name}`,
-          color: ACCENT,
-          sample: !!(s as any).is_example,
-          locked: !!(s as any).is_example,
-          count: list.reduce((n, l) => n + l.question_count, 0),
-          flags: list.reduce((n, l) => n + (stats[l.id]?.flagged ?? 0), 0),
-          items: list.map((l) => ({
-            id: l.id,
-            name: l.title,
-            count: l.question_count,
-            countLabel:
-              l.question_count === 0
-                ? "no questions yet"
-                : `${l.question_count} question${l.question_count === 1 ? "" : "s"}${
-                    l.best_score != null ? ` · best ${l.best_score}%` : ""
-                  }`,
-            flags: stats[l.id]?.flagged ?? 0,
-          })),
-        });
-      }
-    }
-    // Sub-subjects without a known parent (shouldn't happen, but never hide data).
-    for (const t of subtopics) {
-      if (subjects.some((s) => s.id === t.subject_id)) continue;
-      out.push({ id: t.id, name: t.name, color: ACCENT, count: 0, items: [] });
+      const sample = !!(s as any).is_example;
+      out.push({
+        id: s.id,
+        name: s.name,
+        color: ACCENT,
+        sample,
+        locked: sample,
+        count: mine.reduce(
+          (n, t) => n + (byTopic[t.id] ?? []).reduce((m, l) => m + l.question_count, 0),
+          0,
+        ),
+        flags: mine.reduce(
+          (n, t) => n + (byTopic[t.id] ?? []).reduce((m, l) => m + (stats[l.id]?.flagged ?? 0), 0),
+          0,
+        ),
+        items: mine.map((t) => {
+          const list = byTopic[t.id] ?? [];
+          const qs = list.reduce((n, l) => n + l.question_count, 0);
+          return {
+            id: t.id,
+            name: t.name,
+            sample,
+            count: qs,
+            countLabel: list.length
+              ? `${list.length} lecture${list.length === 1 ? "" : "s"} · ${qs} question${qs === 1 ? "" : "s"}`
+              : "no lectures yet",
+            note: list.length ? list.map((l) => l.title).join(" · ") : undefined,
+            flags: list.reduce((n, l) => n + (stats[l.id]?.flagged ?? 0), 0),
+          };
+        }),
+      });
     }
     return out;
   }, [subtopics, subjects, byTopic, stats]);
 
+  // A tick picks a whole sub-subject; the round runs every lecture inside it.
+  const selected = useMemo(() => {
+
+    const ids = new Set<string>();
+    for (const l of lectures) if (pickedTopics.has(l.subtopic_id) && l.question_count > 0) ids.add(l.id);
+    return ids;
+  }, [lectures, pickedTopics]);
 
   const selectedCount = selected.size;
   const totalQuestions = useMemo(
@@ -169,12 +176,13 @@ function LectureLabPage() {
   );
 
   const toggle = (id: string) =>
-    setSelected((prev) => {
+    setPickedTopics((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
+
 
   async function createSubject(name: string) {
     try {
@@ -201,11 +209,12 @@ function LectureLabPage() {
   async function doRemove(kind: "subject" | "subtopic" | "lecture", id: string) {
     try {
       await remove({ data: { kind, id } });
-      setSelected((p) => {
+      setPickedTopics((p) => {
         const n = new Set(p);
         n.delete(id);
         return n;
       });
+
       void refresh();
     } catch {
       toast.error("Could not delete that.");
@@ -316,36 +325,25 @@ function LectureLabPage() {
                 accent={ACCENT}
                 loading={busy}
                 groups={groups}
-                selected={[...selected]}
+                selected={[...pickedTopics]}
                 onToggle={toggle}
-                itemNoun="lecture"
+                itemNoun="sub-subject"
                 newItemLabel="Sub-subject"
 
                 unitNoun="questions"
-                searchPlaceholder="Search subjects and lectures…"
+                searchPlaceholder="Search subjects and sub-subjects…"
                 onNewGroup={() => setSubjectOpen(true)}
                 onNewItem={(g) => {
-                  if (g.id.startsWith("subject:")) {
-                    const s = subjects.find((x) => x.id === g.id.slice(8));
-                    if (s) setSubtopicFor(s);
-                    return;
-                  }
-                  const sub = subtopics.find((t) => t.id === g.id);
-                  const parent = subjects.find((s) => s.id === sub?.subject_id);
-                  if (parent) setSubtopicFor(parent);
+                  const s = subjects.find((x) => x.id === g.id);
+                  if (s) setSubtopicFor(s);
                 }}
                 onAddToGroup={() => void navigate({ to: "/study/lectures/new" })}
                 addLabel="Add a lecture"
                 emptyItemLabel="Add a sub-subject here"
-                onDeleteGroup={(g) =>
-                  setPendingDelete(
-                    g.id.startsWith("subject:")
-                      ? { kind: "subject", id: g.id.slice(8), label: g.name }
-                      : { kind: "subtopic", id: g.id, label: g.name },
-                  )
-                }
-                onDeleteItem={(t) => setPendingDelete({ kind: "lecture", id: t.id, label: t.name })}
+                onDeleteGroup={(g) => setPendingDelete({ kind: "subject", id: g.id, label: g.name })}
+                onDeleteItem={(t) => setPendingDelete({ kind: "subtopic", id: t.id, label: t.name })}
                 emptyHint="No lectures yet — upload one to get started."
+
               />
 
             )}

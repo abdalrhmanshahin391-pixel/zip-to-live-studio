@@ -4670,6 +4670,7 @@ export type Database = {
         Returns: Json
       }
       effective_plan: { Args: { _user_id: string }; Returns: Json }
+      ensure_lq_default_bucket: { Args: never; Returns: Json }
       get_course_real_counts: {
         Args: { _course_ids: string[] }
         Returns: {
