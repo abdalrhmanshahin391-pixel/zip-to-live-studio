@@ -209,11 +209,12 @@ function LectureLabPage() {
   async function doRemove(kind: "subject" | "subtopic" | "lecture", id: string) {
     try {
       await remove({ data: { kind, id } });
-      setSelected((p) => {
+      setPickedTopics((p) => {
         const n = new Set(p);
         n.delete(id);
         return n;
       });
+
       void refresh();
     } catch {
       toast.error("Could not delete that.");
