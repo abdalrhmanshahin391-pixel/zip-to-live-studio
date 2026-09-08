@@ -3,6 +3,6 @@
 - [x] Simplify subject and sub-subject creation in Lecture Lab
 - [x] Repair PDF validation, AI generation access, quotas, and safe saving
 - [x] Verify the data changes and public Lecture Lab, summary, and toolkit pages
-- [ ] Separate and center the home-page header controls
-- [ ] Redesign pricing in the saved dark RitaJet style with new artwork
-- [ ] Verify the updated header and pricing page on desktop and phone
+- [x] Separate and center the home-page header controls
+- [x] Redesign pricing in the saved dark RitaJet style with new artwork
+- [x] Verify the updated header and pricing page on desktop and phone
