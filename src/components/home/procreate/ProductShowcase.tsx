@@ -76,12 +76,12 @@ function CommunityCard() {
       <p className="mt-5 max-w-[17rem] text-[15px] leading-relaxed text-white/48 md:text-[17px]">
         Private classrooms, focused groups and shared decks.
       </p>
-      <div className="mt-7 flex flex-wrap gap-3">
+      <div className="relative z-10 mt-7 flex flex-wrap gap-3">
         <Link to="/spaces" className="rita-btn rita-btn-secondary">Learn more</Link>
         <Link to="/spaces" className="rita-btn rita-btn-primary">Open spaces</Link>
       </div>
 
-      <div className="absolute bottom-[-15%] left-1/2 w-[68%] min-w-[220px] max-w-[310px] -translate-x-1/2 md:w-[76%]">
+      <div className="absolute bottom-[-24%] left-1/2 w-[68%] min-w-[220px] max-w-[310px] -translate-x-1/2 md:w-[72%]">
         <div
           className="relative aspect-[9/19.5] rounded-[42px] p-[7px] md:rounded-[50px] md:p-[9px]"
           style={{
@@ -117,6 +117,7 @@ function FlashcardsFeatureCard() {
         alt="A student reviewing a RitaJet medical flashcard on an iPad"
         width={1536}
         height={1024}
+        loading="eager"
         className="absolute inset-0 h-full w-full object-cover object-[60%_center] md:object-center"
       />
       <span
