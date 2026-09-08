@@ -1,0 +1,5 @@
+- [x] Replace the toolkit code with YSMU and verify the active code
+- [x] Publish the AquaQBank summary as the read-only shared example
+- [x] Simplify subject and sub-subject creation in Lecture Lab
+- [x] Repair PDF validation, AI generation access, quotas, and safe saving
+- [x] Verify the data changes and public Lecture Lab, summary, and toolkit pages
