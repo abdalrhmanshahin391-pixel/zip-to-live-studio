@@ -137,8 +137,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Manrope:wght@400;500;600;700&family=Inter+Tight:wght@300;400;500;600;700&family=Tajawal:wght@400;500;700;800;900&family=Reem+Kufi:wght@500;600;700&family=Aref+Ruqaa:wght@400;700&family=Cinzel+Decorative:wght@700&display=swap",
       },
-      { rel: "icon", type: "image/png", href: "/favicon.png" },
-      { rel: "apple-touch-icon", href: "/favicon.png" },
+      { rel: "icon", type: "image/x-icon", href: "/favicon.ico?v=3" },
+      { rel: "icon", type: "image/png", sizes: "128x128", href: "/favicon.png?v=3" },
+      { rel: "icon", type: "image/png", sizes: "512x512", href: "/favicon-512.png?v=3" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png?v=3" },
       { rel: "manifest", href: "/manifest.webmanifest" },
     ],
     scripts: [

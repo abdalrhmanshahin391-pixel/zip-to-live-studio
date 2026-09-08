@@ -35,12 +35,21 @@ export function useAvatarUrl(path: string | null | undefined) {
 
 /** Compresses and uploads a picked image, returns the stored path. */
 export async function uploadAvatar(userId: string, file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Please pick a picture file (JPG, PNG or WebP).");
+  }
   const img = await compressImage(file, { maxEdge: 512, quality: 0.85 });
   const path = `${userId}/avatar-${Date.now()}.${img.ext}`;
   const { error } = await supabase.storage
     .from(AVATAR_BUCKET)
     .upload(path, img.file, { upsert: true, contentType: img.contentType });
-  if (error) throw error;
+  if (error) {
+    const msg = (error.message ?? "").toLowerCase();
+    if (msg.includes("exceeded") || msg.includes("size")) {
+      throw new Error("That picture is too large — please pick one under 5 MB.");
+    }
+    throw new Error("Could not save that photo. Please try again.");
+  }
   return path;
 }
 
