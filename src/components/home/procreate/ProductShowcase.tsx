@@ -80,8 +80,7 @@ function CommunityCard() {
         Open a private room for your class, invite your group with one code, and
         share decks, summaries and progress in one place.
       </p>
-      <div className="relative z-10 mt-6 flex flex-wrap gap-3">
-        <Link to="/spaces" className="rita-btn rita-btn-secondary">Learn more</Link>
+      <div className="relative z-10 mt-6">
         <Link to="/spaces" className="rita-btn rita-btn-primary">Open spaces</Link>
       </div>
 
