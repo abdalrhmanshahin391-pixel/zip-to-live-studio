@@ -151,7 +151,11 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
             <button
               type="button"
               onClick={() => openAuth("signin")}
-              className="inline-flex h-10 items-center rounded-full border border-white/15 bg-white/[0.06] px-5 text-[14px] font-semibold text-white/90 backdrop-blur-xl transition-colors hover:bg-white/[0.12] hover:text-white"
+              className={`inline-flex h-10 items-center rounded-full px-5 text-[14px] font-semibold transition-colors ${
+                solid
+                  ? "rita-ink border border-black/[0.08] bg-black/[0.03] hover:bg-black/[0.07]"
+                  : "border border-white/15 bg-white/[0.06] text-white/90 backdrop-blur-xl hover:bg-white/[0.12] hover:text-white"
+              }`}
               style={{ fontFamily: "var(--font-grotesk)" }}
             >
               Sign in
@@ -177,7 +181,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                   )}
                 </span>
                 {isRealAdmin && (
-                  <span className="rita-accent text-[11px] font-black uppercase tracking-[0.14em] !text-white/85">
+                  <span className={`rita-accent text-[11px] font-black uppercase tracking-[0.14em] ${solid ? "" : "!text-white/85"}`}>
                     Admin
                   </span>
                 )}
