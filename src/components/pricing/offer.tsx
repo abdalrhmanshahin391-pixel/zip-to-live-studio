@@ -32,7 +32,7 @@ export function OfferRibbon({
   endsAt?: string | null;
 }) {
   if (!label || !offerLive(endsAt)) return null;
-  const c = color || "#0071e3";
+  const c = color || "var(--rita-green)";
   const until = offerCountdown(endsAt);
   return (
     <span className="pointer-events-none absolute right-0 top-0 z-10 flex flex-col items-end">
