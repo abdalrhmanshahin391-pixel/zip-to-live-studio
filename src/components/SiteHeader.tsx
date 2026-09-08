@@ -34,7 +34,6 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { setImageEditMode, useImageEditMode } from "@/lib/image-edit-mode";
-import { useClassicColors } from "@/lib/classic-colors";
 import { useAuth } from "@/hooks/useAuth";
 import { GoldenBadge } from "@/components/GoldenBadge";
 import { CommitteeBadge } from "@/components/CommitteeBadge";
@@ -166,7 +165,6 @@ export function SiteHeader(_props: { variant?: "dark" | "light" } = {}) {
   const settings = useSiteSettings();
   const skin = resolveHeaderSkin(settings.header_style);
   const imageEdit = useImageEditMode();
-  const { classic, setClassic, saving: savingColors } = useClassicColors();
 
   
   const navigate = useNavigate();
@@ -333,7 +331,7 @@ export function SiteHeader(_props: { variant?: "dark" | "light" } = {}) {
                   </span>
                   <span
                     className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                      imageEdit ? "bg-[#0071e3]" : "bg-muted-foreground/40"
+                      imageEdit ? "rita-accent-bg" : "bg-muted-foreground/40"
                     }`}
                   >
                     <span
