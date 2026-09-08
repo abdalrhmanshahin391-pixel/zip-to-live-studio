@@ -1,4 +1,4 @@
-import screenAsset from "@/assets/rita-girl-ipad.jpg.asset.json";
+import screenAsset from "@/assets/rita-girl-ipad.webp.asset.json";
 import { EditableImage } from "@/components/site/EditableImage";
 
 /**
@@ -39,6 +39,7 @@ export function IpadStage() {
               width={1280}
               height={800}
               loading="eager"
+              fetchPriority="high"
             />
 
             {/* Glass sheen across the panel */}

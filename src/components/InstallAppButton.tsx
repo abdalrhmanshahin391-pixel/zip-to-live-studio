@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Download, Share, PlusSquare, X } from "lucide-react";
+import { RitaFace } from "@/components/brand/RitaBrand";
 
 type BIPEvent = Event & {
   prompt: () => Promise<void>;
@@ -74,52 +75,47 @@ export function useInstallApp() {
 function IosSheet({ onClose }: { onClose: () => void }) {
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-end justify-center bg-black/50 p-4 sm:items-center"
+      className="fixed inset-0 z-[200] flex items-end justify-center bg-[color:color-mix(in_oklab,var(--pro-ink)_48%,transparent)] p-4 backdrop-blur-sm sm:items-center"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-3xl bg-card p-6 text-foreground shadow-2xl"
+        className="rita-install-sheet w-full max-w-sm overflow-hidden rounded-[28px] border p-6 text-[color:var(--pro-ink)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <img
-              src="/favicon.png"
-              alt="RitaJet icon"
-              className="h-12 w-12 rounded-xl border border-border bg-white"
-            />
+            <RitaFace size={52} />
             <div>
-              <p className="text-base font-black leading-tight">Add to Home Screen</p>
-              <p className="text-xs text-muted-foreground">Opens full screen, like an app.</p>
+              <p className="text-[17px] font-black leading-tight">Keep RitaJet one tap away</p>
+              <p className="mt-1 text-[13px] text-[color:var(--pro-muted)]">Add it to your Home Screen.</p>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close" className="text-muted-foreground">
+          <button onClick={onClose} aria-label="Close" className="grid h-9 w-9 place-items-center rounded-full text-[color:var(--pro-muted)] transition-colors hover:bg-[color:var(--rita-green-soft)] hover:text-[color:var(--pro-ink)]">
             <X size={18} />
           </button>
         </div>
 
-        <ol className="mt-5 space-y-3 text-sm">
+        <ol className="mt-6 space-y-3 text-sm font-semibold">
           <li className="flex items-center gap-3">
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-muted text-xs font-black">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[color:var(--rita-green-soft)] text-xs font-black text-[color:var(--rita-green-deep)]">
               1
             </span>
             <span className="inline-flex items-center gap-1.5">
-              Tap the <Share size={16} className="text-sky-600" /> Share button in Safari
+              Tap the <Share size={16} className="text-[color:var(--rita-green-deep)]" /> Share button in Safari
             </span>
           </li>
           <li className="flex items-center gap-3">
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-muted text-xs font-black">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[color:var(--rita-green-soft)] text-xs font-black text-[color:var(--rita-green-deep)]">
               2
             </span>
             <span className="inline-flex items-center gap-1.5">
-              Choose <PlusSquare size={16} className="text-sky-600" /> “Add to Home Screen”
+              Choose <PlusSquare size={16} className="text-[color:var(--rita-green-deep)]" /> “Add to Home Screen”
             </span>
           </li>
         </ol>
 
-        <p className="mt-4 text-xs text-muted-foreground">
-          Apple does not let websites do this automatically — these two taps are the only way on
-          iPhone.
+        <p className="mt-5 border-t border-[color:color-mix(in_oklab,var(--pro-ink)_9%,transparent)] pt-4 text-[12px] leading-relaxed text-[color:var(--pro-muted)]">
+          Safari uses these two quick steps on iPhone and iPad. RitaJet will then open like an app.
         </p>
       </div>
     </div>
@@ -178,20 +174,16 @@ export function InstallAppBanner() {
   return (
     <>
       <div className="fixed inset-x-3 bottom-3 z-[150] sm:hidden">
-        <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-xl">
-          <img
-            src="/favicon.png"
-            alt=""
-            className="h-10 w-10 shrink-0 rounded-xl border border-border bg-white"
-          />
+        <div className="rita-install-banner flex items-center gap-3 rounded-[24px] border p-3 shadow-xl">
+          <RitaFace size={44} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-black text-foreground">Add RitaJet to your home screen</p>
-            <p className="truncate text-xs text-muted-foreground">One tap to open it like an app.</p>
+            <p className="truncate text-[14px] font-black text-[color:var(--pro-ink)]">Keep RitaJet close</p>
+            <p className="truncate text-[12px] text-[color:var(--pro-muted)]">Open it from your Home Screen.</p>
           </div>
           <button
             type="button"
             onClick={() => (mode === "ios" ? setSheet(true) : install())}
-            className="shrink-0 rounded-full bg-foreground px-4 py-2 text-xs font-black text-background"
+            className="rita-btn rita-btn-primary !h-9 !px-4 !text-[13px]"
           >
             Add
           </button>
@@ -199,7 +191,7 @@ export function InstallAppBanner() {
             type="button"
             onClick={close}
             aria-label="Dismiss"
-            className="shrink-0 text-muted-foreground"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color:var(--pro-muted)] transition-colors hover:bg-[color:var(--rita-green-soft)]"
           >
             <X size={16} />
           </button>

@@ -26,3 +26,6 @@
 - [x] Connect Rita and shared study AI to one protected Gemini key
 - [x] Make published question-bank outlines visible while keeping questions protected
 - [ ] Import the original courses, subjects, questions, and answers (waiting for old-data upload)
+- [x] Redesign the RitaJet home-screen install prompt
+- [x] Refine and reduce the German Lab iPad with camera details
+- [x] Optimize priority and file weight for home-page pictures
