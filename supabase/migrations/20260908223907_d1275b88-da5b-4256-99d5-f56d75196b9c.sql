@@ -1,1 +1,0 @@
-ALTER TABLE public.aio_summaries ADD COLUMN IF NOT EXISTS summary_id uuid REFERENCES public.summaries(id) ON DELETE SET NULL;
