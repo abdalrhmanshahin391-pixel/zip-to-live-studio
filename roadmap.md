@@ -7,4 +7,4 @@
 - [x] Redesign pricing in the saved dark RitaJet style with new artwork
 - [x] Verify the updated header and pricing page on desktop and phone
 - [x] Add the Plans and Toolkit product boxes to the home page
-- [ ] Verify both product boxes and pricing links on desktop and phone
+- [x] Verify both product boxes and pricing links on desktop and phone

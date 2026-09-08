@@ -31,7 +31,7 @@ function ProductCard({ label, title, note, image, imageAlt, side }: ProductCardP
         }`}
       >
         <div
-          className="relative aspect-[4/3] rounded-[28px] p-[7px] md:rounded-[34px] md:p-[9px]"
+          className="relative aspect-[16/10] rounded-[28px] p-[7px] md:rounded-[34px] md:p-[9px]"
           style={{
             background: "linear-gradient(145deg,#9ca2a8 0%,#444a50 8%,#1b1e21 28%,#111315 72%,#555b61 94%,#a8adb2 100%)",
             boxShadow: "0 1px 0 rgba(255,255,255,.22) inset, 0 30px 80px -24px rgba(0,0,0,.95)",
@@ -45,7 +45,7 @@ function ProductCard({ label, title, note, image, imageAlt, side }: ProductCardP
               loading="lazy"
               width={1920}
               height={1072}
-              className="h-full w-full object-contain"
+              className="h-full w-full object-cover"
             />
             <span
               aria-hidden
