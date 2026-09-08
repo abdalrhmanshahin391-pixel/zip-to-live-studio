@@ -361,16 +361,35 @@ export function ProHeader() {
       </div>
 
       {sheet && (
-        <div className="mx-4 rounded-2xl border border-white/10 bg-[#131313] p-3 backdrop-blur-xl lg:hidden">
-          {MENUS.flatMap((m) => m.items).map((i) => (
+        <div className="relative mx-4 max-h-[80vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-3 backdrop-blur-xl lg:hidden">
+          {NAV_GROUPS.flatMap((g) => g.columns.flatMap((c) => c.items)).map((i) => (
             <Link
-              key={i.to}
+              key={i.to + i.label}
               to={i.to as never}
+              params={i.params as never}
+              onClick={() => setSheet(false)}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] text-white/90 hover:bg-white/10"
+              style={{ fontFamily: "var(--font-grotesk)" }}
+            >
+              <span
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-lg"
+                style={{ background: i.soft, color: i.ink }}
+              >
+                <i.icon size={15} />
+              </span>
+              {i.label}
+            </Link>
+          ))}
+          <div className="mx-1 my-2 border-t border-white/10" />
+          {SIMPLE_LINKS.map((l) => (
+            <Link
+              key={l.to}
+              to={l.to as never}
               onClick={() => setSheet(false)}
               className="block rounded-xl px-3 py-3 text-[16px] text-white/90 hover:bg-white/10"
               style={{ fontFamily: "var(--font-grotesk)" }}
             >
-              {i.label}
+              {l.label}
             </Link>
           ))}
           <div className="mx-1 my-2 border-t border-white/10" />
