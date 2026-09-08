@@ -376,7 +376,7 @@ function PricingPage() {
                 </div>
 
 
-                 <div className="mt-8 border-t border-white/10 pt-6">
+                 <div className="mb-8 mt-8 border-t border-white/10 pt-6">
                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/35">What is included</p>
                    <ul className="mt-4 grid gap-3">
                   {[
@@ -418,7 +418,7 @@ function PricingPage() {
                 {!lifetime && priceCents === 0 ? (
                   <Link
                     to={user ? "/study" : "/register"}
-                     className={`rita-btn mt-auto pt-0 ${best ? "rita-btn-primary" : "rita-btn-secondary"}`}
+                     className={`rita-btn mt-auto ${best ? "rita-btn-primary" : "rita-btn-secondary"}`}
                   >
                     {p.cta_label || "Start free"}
                   </Link>
