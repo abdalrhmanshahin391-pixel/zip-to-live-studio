@@ -28,7 +28,6 @@ import {
   Flame,
   Share2,
   ImageUp,
-  Palette,
 
 
 } from "lucide-react";

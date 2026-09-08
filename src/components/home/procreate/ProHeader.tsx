@@ -10,7 +10,6 @@ import {
   Menu,
   Settings,
   ShieldCheck,
-  Palette,
   Sparkles,
   X,
 } from "lucide-react";

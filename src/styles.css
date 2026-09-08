@@ -171,6 +171,11 @@
 .rita-ink { color: var(--pro-ink) !important; }
 .rita-ink-soft { color: color-mix(in oklab, var(--pro-ink) 62%, transparent) !important; }
 .rita-hairline { border-color: color-mix(in oklab, var(--pro-ink) 12%, transparent) !important; }
+.rita-accent-border {
+  border-color: color-mix(in oklab, var(--rita-green) 70%, transparent) !important;
+  box-shadow: 0 26px 60px -44px color-mix(in oklab, var(--rita-green-deep) 55%, transparent);
+}
+.rita-accent-soft { background-color: color-mix(in oklab, var(--rita-green) 18%, transparent) !important; }
 /* Rita tile — big action button that lifts on hover and presses on click */
 .rita-tile {
   transition: transform 0.16s ease, box-shadow 0.2s ease, background-color 0.2s ease;
