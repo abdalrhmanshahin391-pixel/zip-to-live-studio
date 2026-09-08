@@ -9,6 +9,7 @@ import {
   clearRememberedLogin,
 } from "@/lib/remember-login";
 import { RitaFace } from "@/components/brand/RitaBrand";
+import { AuthDivider, GoogleButton } from "@/components/auth/GoogleButton";
 import {
   closeAuth,
   getAuthDialogState,
