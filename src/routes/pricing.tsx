@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { updateSiteSettings } from "@/lib/site-settings.functions";
 import { useQueryClient } from "@tanstack/react-query";
+import { EditableImage } from "@/components/site/EditableImage";
 import monthlyArt from "@/assets/pricing-monthly-dark.jpg.asset.json";
 import packsArt from "@/assets/pricing-packs-dark.jpg.asset.json";
 import packStarter from "@/assets/pack-starter-dark.jpg.asset.json";
@@ -219,13 +220,13 @@ function PricingPage() {
               onClick={() => setKind(b.k)}
                className="group overflow-hidden rounded-[24px] border border-white/10 bg-[#131313] text-left transition-transform hover:-translate-y-1"
             >
-              <img
-                src={b.art}
+              <EditableImage
+                imageKey={`pricing.${b.k}`}
+                fallback={b.art}
                 alt=""
-                loading="lazy"
                 width={1024}
                 height={640}
-                 className="h-52 w-full object-cover opacity-90 transition-opacity group-hover:opacity-100 md:h-64"
+                className="h-52 w-full object-cover opacity-90 transition-opacity group-hover:opacity-100 md:h-64"
               />
                <div className="p-7 md:p-8">
                  <h2 className="text-[26px] font-bold">{b.title}</h2>
@@ -328,10 +329,10 @@ function PricingPage() {
                 )}
 
                 {lifetime && (
-                  <img
-                    src={PACK_ART[i % PACK_ART.length]}
+                  <EditableImage
+                    imageKey={`pricing.pack${i % 3}`}
+                    fallback={PACK_ART[i % PACK_ART.length] as string}
                     alt=""
-                    loading="lazy"
                     width={768}
                     height={512}
                     className="-mx-7 -mt-7 mb-5 h-36 w-[calc(100%+3.5rem)] max-w-none object-cover"
