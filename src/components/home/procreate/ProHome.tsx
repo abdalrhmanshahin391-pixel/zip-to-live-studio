@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ProHeader } from "./ProHeader";
 import { IpadStage } from "./IpadStage";
+import { ShareBand } from "./ShareBand";
 
 /** Black, single-screen home page. */
 export function ProHome() {
@@ -38,6 +39,8 @@ export function ProHome() {
         </div>
         <p className="mt-5 text-[15px] text-white/45">Free to start. No card needed.</p>
       </div>
+
+      <ShareBand />
     </main>
   );
 }

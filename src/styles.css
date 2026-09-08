@@ -43,6 +43,9 @@
   --rita-green-deep: oklch(0.62 0.19 130);
   --rita-green-ink: oklch(1 0 0);
   --rita-green-soft: oklch(0.95 0.06 130);
+  /* Bright action blue used by the home page share band */
+  --rita-blue: #0a84ff;
+  --rita-blue-deep: #0071e3;
 }
 
 /* Rita pill button — solid green */
