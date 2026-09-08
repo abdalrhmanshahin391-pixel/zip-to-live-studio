@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ProHome } from "@/components/home/procreate/ProHome";
 import { InstallAppBanner } from "@/components/InstallAppButton";
+import { useClassicColors } from "@/lib/classic-colors";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,8 +38,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { classic } = useClassicColors();
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className={`min-h-screen bg-black text-white ${classic ? "rita-classic" : ""}`}>
       <ProHome />
       <InstallAppBanner />
     </div>

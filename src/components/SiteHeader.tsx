@@ -28,11 +28,13 @@ import {
   Flame,
   Share2,
   ImageUp,
+  Palette,
 
 
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { setImageEditMode, useImageEditMode } from "@/lib/image-edit-mode";
+import { useClassicColors } from "@/lib/classic-colors";
 import { useAuth } from "@/hooks/useAuth";
 import { GoldenBadge } from "@/components/GoldenBadge";
 import { CommitteeBadge } from "@/components/CommitteeBadge";
@@ -164,6 +166,7 @@ export function SiteHeader(_props: { variant?: "dark" | "light" } = {}) {
   const settings = useSiteSettings();
   const skin = resolveHeaderSkin(settings.header_style);
   const imageEdit = useImageEditMode();
+  const { classic, setClassic, saving: savingColors } = useClassicColors();
 
   
   const navigate = useNavigate();
@@ -336,6 +339,32 @@ export function SiteHeader(_props: { variant?: "dark" | "light" } = {}) {
                     <span
                       className={`absolute top-1 h-4 w-4 rounded-full bg-card shadow-sm transition-all ${
                         imageEdit ? "left-6" : "left-1"
+                      }`}
+                    />
+                  </span>
+                </button>
+              )}
+              {isRealAdmin && (
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={classic}
+                  disabled={savingColors}
+                  onClick={() => setClassic(!classic)}
+                  className="mx-2 flex w-[calc(100%-1rem)] items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-[14px] font-semibold text-[#3a352e] transition-colors hover:bg-white disabled:opacity-60"
+                >
+                  <span className="inline-flex items-center gap-3">
+                    <Palette size={16} className={classic ? "text-emerald-600" : "text-muted-foreground"} />
+                    Classic colours
+                  </span>
+                  <span
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                      classic ? "bg-emerald-500" : "bg-muted-foreground/40"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-1 h-4 w-4 rounded-full bg-card shadow-sm transition-all ${
+                        classic ? "left-6" : "left-1"
                       }`}
                     />
                   </span>

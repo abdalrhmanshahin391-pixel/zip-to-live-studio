@@ -2974,6 +2974,7 @@ export type Database = {
       site_settings: {
         Row: {
           brand_style: string
+          classic_colors: boolean
           committee_default_storage: string
           committee_qr_link: string | null
           committee_qr_path: string | null
@@ -3018,6 +3019,7 @@ export type Database = {
         }
         Insert: {
           brand_style?: string
+          classic_colors?: boolean
           committee_default_storage?: string
           committee_qr_link?: string | null
           committee_qr_path?: string | null
@@ -3062,6 +3064,7 @@ export type Database = {
         }
         Update: {
           brand_style?: string
+          classic_colors?: boolean
           committee_default_storage?: string
           committee_qr_link?: string | null
           committee_qr_path?: string | null
