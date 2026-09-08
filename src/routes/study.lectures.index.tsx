@@ -77,7 +77,7 @@ function LectureLabPage() {
   const [stats, setStats] = useState<Stats>({});
   const [busy, setBusy] = useState(true);
   const [open, setOpen] = useState<Record<string, boolean>>({});
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [pickedTopics, setPickedTopics] = useState<Set<string>>(new Set());
   const [pool, setPool] = useState<"all" | "flagged" | "wrong">("all");
   const [mode, setMode] = useState<"study" | "session" | "exam">("study");
   const [minutes, setMinutes] = useState(20);
