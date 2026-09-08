@@ -10,6 +10,7 @@ import {
   Menu,
   Settings,
   ShieldCheck,
+  Palette,
   Sparkles,
   X,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import { AdminBadge, StudentBadge } from "@/components/RoleBadge";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { avatarTone, useAvatarUrl } from "@/lib/avatars";
 import { setImageEditMode, useImageEditMode } from "@/lib/image-edit-mode";
+import { useClassicColors } from "@/lib/classic-colors";
 import { ProWordmark } from "./ProWordmark";
 
 const MENUS: { label: string; items: { to: string; label: string }[] }[] = [
@@ -54,6 +56,7 @@ export function ProHeader() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [sheet, setSheet] = useState(false);
   const imageEdit = useImageEditMode();
+  const { classic, setClassic, saving: savingColors } = useClassicColors();
 
   const displayName = profile?.username ?? user?.email ?? "";
   const avatar = useAvatarUrl((profile as any)?.avatar_url ?? null);
@@ -254,6 +257,32 @@ export function ProHeader() {
                           <span
                             className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
                               imageEdit ? "left-6" : "left-1"
+                            }`}
+                          />
+                        </span>
+                      </button>
+                    )}
+                    {isRealAdmin && (
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={classic}
+                        disabled={savingColors}
+                        onClick={() => setClassic(!classic)}
+                        className="mx-2 flex w-[calc(100%-1rem)] items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-white/85 transition-colors hover:bg-white/10 disabled:opacity-60"
+                      >
+                        <span className="inline-flex items-center gap-3">
+                          <Palette size={16} className={classic ? "text-emerald-400" : "text-white/40"} />
+                          Classic colours
+                        </span>
+                        <span
+                          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                            classic ? "bg-emerald-500" : "bg-white/20"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
+                              classic ? "left-6" : "left-1"
                             }`}
                           />
                         </span>

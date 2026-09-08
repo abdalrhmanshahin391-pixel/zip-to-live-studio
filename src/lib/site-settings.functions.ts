@@ -38,6 +38,7 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
     credit_packs_enabled?: boolean;
     home_video_url?: string | null;
     home_video_poster_url?: string | null;
+    classic_colors?: boolean;
   }) => {
     if (data.site_name !== undefined && !data.site_name.trim()) {
       throw new Error("site_name cannot be empty");
@@ -116,6 +117,7 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
       "credit_packs_enabled",
       "home_video_url",
       "home_video_poster_url",
+      "classic_colors",
     ] as const) {
       if (data[key] !== undefined) patch[key] = data[key];
     }

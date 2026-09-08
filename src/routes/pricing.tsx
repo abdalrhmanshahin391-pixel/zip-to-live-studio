@@ -12,6 +12,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { updateSiteSettings } from "@/lib/site-settings.functions";
 import { useQueryClient } from "@tanstack/react-query";
 import { EditableImage } from "@/components/site/EditableImage";
+import { useClassicColors } from "@/lib/classic-colors";
 import monthlyArt from "@/assets/pricing-monthly-dark.jpg.asset.json";
 import packsArt from "@/assets/pricing-packs-dark.jpg.asset.json";
 import packStarter from "@/assets/pack-starter-dark.jpg.asset.json";
@@ -105,6 +106,7 @@ function PricingPage() {
     enabled: !!user,
   });
 
+  const { classic } = useClassicColors();
   const isAdmin = !!(mine as any)?.is_admin;
   const packsVisible = settings.credit_packs_enabled || isAdmin;
 
@@ -134,7 +136,10 @@ function PricingPage() {
   const cols = Math.min(live.length || 1, 5);
 
   return (
-    <div className="min-h-screen bg-black text-white" style={{ fontFamily: "var(--font-grotesk)" }}>
+    <div
+      className={`min-h-screen bg-black text-white ${classic ? "rita-classic" : ""}`}
+      style={{ fontFamily: "var(--font-grotesk)" }}
+    >
       <ProHeader />
 
       <section className="relative pt-24 md:pt-28">
