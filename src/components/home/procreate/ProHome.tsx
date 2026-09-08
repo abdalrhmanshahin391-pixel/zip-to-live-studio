@@ -8,7 +8,7 @@ import { ProductShowcase } from "./ProductShowcase";
 export function ProHome() {
   return (
     <main
-      className="relative min-h-screen overflow-hidden bg-black text-white"
+      className="rita-cream relative min-h-screen overflow-hidden bg-black text-white"
       style={{ fontFamily: "var(--font-grotesk)" }}
     >
       <ProHeader />
@@ -16,30 +16,29 @@ export function ProHome() {
       <IpadStage />
 
       <div className="mx-auto max-w-[900px] px-5 pb-24 pt-8 text-center md:pt-10">
-        <p className="text-[13px] font-medium uppercase tracking-[0.18em] text-white/45">
+        <p className="rita-accent text-[13px] font-bold uppercase tracking-[0.18em]">
           RitaJet Study
         </p>
         <h1
           className="mt-6 font-bold leading-[1.02] tracking-[-0.03em]"
           style={{ fontSize: "clamp(2.6rem,7vw,5.5rem)" }}
         >
-          Learn. Recall. Pass.
+          Learn. Recall. <span className="rita-accent">Pass.</span>
         </h1>
         <p className="mx-auto mt-7 max-w-[620px] text-[19px] leading-[1.5] text-white/60 md:text-[21px]">
           RitaJet is a study workspace that turns your own notes and lecture PDFs
           into flashcards, summaries and practice questions.
         </p>
-        <div className="mt-10">
+        <div className="mt-10 flex justify-center">
           <Link to="/learn" className="rita-btn rita-btn-primary">
             Start learning
           </Link>
-
         </div>
         <p className="mt-5 text-[15px] text-white/45">Free to start. No card needed.</p>
       </div>
 
-      <ShareBand />
       <ProductShowcase />
+      <ShareBand />
     </main>
   );
 }

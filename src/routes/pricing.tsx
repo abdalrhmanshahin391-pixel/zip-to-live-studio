@@ -12,7 +12,6 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { updateSiteSettings } from "@/lib/site-settings.functions";
 import { useQueryClient } from "@tanstack/react-query";
 import { EditableImage } from "@/components/site/EditableImage";
-import { useClassicColors } from "@/lib/classic-colors";
 import monthlyArt from "@/assets/pricing-monthly-dark.jpg.asset.json";
 import packsArt from "@/assets/pricing-packs-dark.jpg.asset.json";
 import packStarter from "@/assets/pack-starter-dark.jpg.asset.json";
@@ -106,7 +105,6 @@ function PricingPage() {
     enabled: !!user,
   });
 
-  const { classic } = useClassicColors();
   const isAdmin = !!(mine as any)?.is_admin;
   const packsVisible = settings.credit_packs_enabled || isAdmin;
 
@@ -137,7 +135,7 @@ function PricingPage() {
 
   return (
     <div
-      className={`min-h-screen bg-black text-white ${classic ? "rita-classic" : ""}`}
+      className="rita-cream min-h-screen bg-black text-white"
       style={{ fontFamily: "var(--font-grotesk)" }}
     >
       <ProHeader />
@@ -236,7 +234,7 @@ function PricingPage() {
                <div className="p-7 md:p-8">
                  <h2 className="text-[26px] font-bold">{b.title}</h2>
                  <p className="mt-3 text-[15px] leading-relaxed text-white/50">{b.copy}</p>
-                 <span className="mt-6 inline-flex items-center gap-2 text-[15px] font-semibold text-[#0a84ff]">
+                 <span className="mt-6 inline-flex items-center gap-2 text-[15px] font-semibold rita-accent">
                   {b.cta} <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
                 </span>
               </div>
@@ -318,12 +316,12 @@ function PricingPage() {
               <article
                 key={p.slug}
                  className={`relative flex flex-col overflow-hidden rounded-[20px] border bg-[#131313] p-7 transition-transform hover:-translate-y-1 ${
-                   best ? "border-[#0a84ff]/70 shadow-[0_28px_70px_-42px_rgba(10,132,255,0.75)]" : "border-white/10"
+                   best ? "rita-accent-border" : "border-white/10"
                 }`}
               >
                 <OfferRibbon label={p.ribbon_label} color={p.ribbon_color} endsAt={p.offer_ends_at} />
                 {best && !p.ribbon_label && (
-                   <span className="absolute right-0 top-0 rounded-bl-xl bg-[#0071e3] px-3.5 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-white">
+                   <span className="absolute right-0 top-0 rounded-bl-xl rita-accent-bg px-3.5 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-white">
                     Most popular
                   </span>
                 )}
@@ -473,9 +471,9 @@ function Line({ on, text }: { on?: boolean; text: string }) {
   return (
     <li className={`flex items-start gap-2.5 text-[15px] ${on ? "font-medium text-white/75" : "text-white/30 line-through"}`}>
       <span
-        className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full ${on ? "bg-[#0a84ff]/15" : "bg-white/[0.06]"}`}
+        className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full ${on ? "rita-accent-soft" : "bg-white/[0.06]"}`}
       >
-        {on ? <Check size={12} strokeWidth={3.5} className="text-[#0a84ff]" /> : <Minus size={12} className="text-white/30" />}
+        {on ? <Check size={12} strokeWidth={3.5} className="rita-accent" /> : <Minus size={12} className="text-white/30" />}
       </span>
       {text}
     </li>

@@ -10,16 +10,16 @@ import { EditableImage } from "@/components/site/EditableImage";
  */
 export function IpadStage() {
   return (
-    <div className="relative mx-auto w-full max-w-[880px] px-6 md:px-12">
+    <div className="relative mx-auto w-full max-w-[1000px] px-6 md:px-12">
       {/* Negative top margin pushes only a small sliver of the device top off-screen. */}
-      <div className="-mt-[7%] md:-mt-[8%]">
+      <div className="pt-6 md:pt-8">
         <div
           className="relative mx-auto rounded-[2rem] p-[9px] md:rounded-[2.5rem] md:p-[11px]"
           style={{
             background:
               "linear-gradient(148deg,#8f959c 0%,#4b5157 12%,#22262a 34%,#1b1e21 62%,#3d4247 88%,#7e848b 100%)",
             boxShadow:
-              "0 2px 0 rgba(255,255,255,.18) inset, 0 -2px 0 rgba(0,0,0,.6) inset, 0 60px 120px -40px rgba(0,0,0,.9)",
+              "0 2px 0 rgba(255,255,255,.18) inset, 0 -2px 0 rgba(0,0,0,.35) inset",
           }}
         >
           {/* Top button (landscape top edge) */}
@@ -35,8 +35,8 @@ export function IpadStage() {
             style={{ background: "linear-gradient(0deg,#6d7379,#2a2e32)" }}
           />
 
-          {/* Screen — 4:3 tablet panel (less horizontal), artwork covers it completely */}
-          <div className="relative aspect-[4/3] overflow-hidden rounded-[1.8rem] bg-black md:rounded-[2.3rem]">
+          {/* Screen — landscape tablet panel, artwork covers it completely */}
+          <div className="relative aspect-[16/10] overflow-hidden rounded-[1.8rem] bg-black md:rounded-[2.3rem]">
             <EditableImage
               imageKey="home.ipad"
               fallback={screenAsset.url}

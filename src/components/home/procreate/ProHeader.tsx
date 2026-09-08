@@ -10,7 +10,6 @@ import {
   Menu,
   Settings,
   ShieldCheck,
-  Palette,
   Sparkles,
   X,
 } from "lucide-react";
@@ -25,7 +24,6 @@ import { AdminBadge, StudentBadge } from "@/components/RoleBadge";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { avatarTone, useAvatarUrl } from "@/lib/avatars";
 import { setImageEditMode, useImageEditMode } from "@/lib/image-edit-mode";
-import { useClassicColors } from "@/lib/classic-colors";
 import { ProWordmark } from "./ProWordmark";
 
 const MENUS: { label: string; items: { to: string; label: string }[] }[] = [
@@ -56,7 +54,6 @@ export function ProHeader() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [sheet, setSheet] = useState(false);
   const imageEdit = useImageEditMode();
-  const { classic, setClassic, saving: savingColors } = useClassicColors();
 
   const displayName = profile?.username ?? user?.email ?? "";
   const avatar = useAvatarUrl((profile as any)?.avatar_url ?? null);
@@ -90,7 +87,7 @@ export function ProHeader() {
     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white";
 
   return (
-    <header className="absolute inset-x-0 top-0 z-50">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[color:var(--pro-page)]/92 backdrop-blur-xl">
       <div className="mx-auto flex h-[72px] max-w-[1120px] items-center justify-between gap-4 px-6 md:px-10">
         <Link to="/" className="shrink-0 text-white">
           <ProWordmark size={30} />
@@ -114,7 +111,7 @@ export function ProHeader() {
               </button>
               {open === m.label && (
                 <div className="absolute left-0 top-full min-w-[220px] pt-3">
-                  <div className="rounded-2xl border border-white/10 bg-black/90 p-2 backdrop-blur-xl">
+                  <div className="rounded-2xl border border-white/10 bg-[#131313] p-2 backdrop-blur-xl">
                     {m.items.map((i) => (
                       <Link
                         key={i.to}
@@ -144,7 +141,7 @@ export function ProHeader() {
           {settings.offers_page_enabled && (
             <Link
               to="/offers"
-              className="inline-flex h-10 items-center rounded-full bg-white px-5 text-[14px] font-bold text-black transition-opacity hover:opacity-90"
+              className="rita-accent-bg inline-flex h-10 items-center rounded-full px-5 text-[14px] font-bold transition-opacity hover:opacity-90"
               style={{ fontFamily: "var(--font-grotesk)" }}
             >
               Special offers
@@ -187,7 +184,7 @@ export function ProHeader() {
               </button>
 
               {accountOpen && (
-                <div className="absolute right-0 z-50 mt-3 flex max-h-[calc(100vh-8rem)] w-72 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[22px] border border-white/10 bg-[#0c0c0e]/95 shadow-[0_28px_70px_-24px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+                <div className="absolute right-0 z-50 mt-3 flex max-h-[calc(100vh-8rem)] w-72 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[22px] border border-white/10 bg-[#0c0c0e] shadow-[0_28px_70px_-30px_rgba(43,39,33,0.35)] backdrop-blur-xl">
                   <div className="shrink-0 px-4 pb-3 pt-4">
                     <div className="flex items-center gap-3 rounded-2xl bg-white/[0.06] px-3.5 py-3">
                       <span
@@ -221,12 +218,12 @@ export function ProHeader() {
                         className="mx-2 flex w-[calc(100%-1rem)] items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-white/85 transition-colors hover:bg-white/10"
                       >
                         <span className="inline-flex items-center gap-3">
-                          <ShieldCheck size={16} className={adminMode ? "text-emerald-400" : "text-white/40"} />
+                          <ShieldCheck size={16} className={adminMode ? "rita-accent" : "text-white/40"} />
                           Admin mode
                         </span>
                         <span
                           className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                            adminMode ? "bg-emerald-500" : "bg-white/20"
+                            adminMode ? "rita-accent-bg" : "bg-white/20"
                           }`}
                         >
                           <span
@@ -246,43 +243,17 @@ export function ProHeader() {
                         className="mx-2 flex w-[calc(100%-1rem)] items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-white/85 transition-colors hover:bg-white/10"
                       >
                         <span className="inline-flex items-center gap-3">
-                          <ImageUp size={16} className={imageEdit ? "text-sky-400" : "text-white/40"} />
+                          <ImageUp size={16} className={imageEdit ? "rita-accent" : "text-white/40"} />
                           Image edit mode
                         </span>
                         <span
                           className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                            imageEdit ? "bg-[#0071e3]" : "bg-white/20"
+                            imageEdit ? "rita-accent-bg" : "bg-white/20"
                           }`}
                         >
                           <span
                             className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
                               imageEdit ? "left-6" : "left-1"
-                            }`}
-                          />
-                        </span>
-                      </button>
-                    )}
-                    {isRealAdmin && (
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={classic}
-                        disabled={savingColors}
-                        onClick={() => setClassic(!classic)}
-                        className="mx-2 flex w-[calc(100%-1rem)] items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-white/85 transition-colors hover:bg-white/10 disabled:opacity-60"
-                      >
-                        <span className="inline-flex items-center gap-3">
-                          <Palette size={16} className={classic ? "text-emerald-400" : "text-white/40"} />
-                          Classic colours
-                        </span>
-                        <span
-                          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                            classic ? "bg-emerald-500" : "bg-white/20"
-                          }`}
-                        >
-                          <span
-                            className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
-                              classic ? "left-6" : "left-1"
                             }`}
                           />
                         </span>
@@ -348,7 +319,7 @@ export function ProHeader() {
       </div>
 
       {sheet && (
-        <div className="mx-4 rounded-2xl border border-white/10 bg-black/90 p-3 backdrop-blur-xl lg:hidden">
+        <div className="mx-4 rounded-2xl border border-white/10 bg-[#131313] p-3 backdrop-blur-xl lg:hidden">
           {MENUS.flatMap((m) => m.items).map((i) => (
             <Link
               key={i.to}

@@ -37,15 +37,16 @@
   .rita-disc { animation: none; }
 }
 
-/* Rita green — fixed brand action colour, not affected by seasonal themes */
+/* Rita green — the one brand action colour */
 :root {
   --rita-green: oklch(0.74 0.22 130);
   --rita-green-deep: oklch(0.62 0.19 130);
   --rita-green-ink: oklch(1 0 0);
   --rita-green-soft: oklch(0.95 0.06 130);
-  /* Bright action blue used by the home page share band */
-  --rita-blue: #0a84ff;
-  --rita-blue-deep: #0071e3;
+  /* Cream editorial surface used by the home, pricing, header and footer */
+  --pro-page: #fbf5e9;
+  --pro-card: #fffdf7;
+  --pro-ink: #2b2721;
 }
 
 /* Rita pill button — solid green */
@@ -84,84 +85,98 @@
 }
 .rita-btn:active { transform: translateY(1px); }
 .rita-btn:focus-visible {
-  outline: 2px solid var(--rita-blue);
+  outline: 2px solid var(--rita-green-deep);
   outline-offset: 3px;
 }
 .rita-btn-primary {
-  background-color: var(--rita-blue-deep);
-  color: #fff;
+  background-color: var(--rita-green);
+  color: var(--rita-green-ink);
 }
-.rita-btn-primary:hover { background-color: var(--rita-blue); }
+.rita-btn-primary:hover { background-color: var(--rita-green-deep); }
 .rita-btn-secondary {
-  background-color: rgba(255, 255, 255, 0.09);
-  color: #fff;
+  background-color: color-mix(in oklab, var(--pro-ink) 8%, transparent);
+  color: var(--pro-ink);
 }
-.rita-btn-secondary:hover { background-color: rgba(255, 255, 255, 0.16); }
+.rita-btn-secondary:hover { background-color: color-mix(in oklab, var(--pro-ink) 14%, transparent); }
 @media (prefers-reduced-motion: reduce) {
   .rita-btn { transition: none; }
   .rita-btn:active { transform: none; }
 }
 
 /* ---------------------------------------------------------------------------
-   Classic colours — admin switch that returns the home and pricing pages to
-   the site's original cream surface and green action buttons. Only colours
-   change: fonts, sizes, weights, spacing and layout stay identical.
+   Cream editorial pages (home, pricing, header, footer). The layout was built
+   with dark utilities; these rules map each of them onto the cream palette so
+   fonts, sizes, weights and spacing stay exactly as designed.
    --------------------------------------------------------------------------- */
-.rita-classic {
-  --pro-page: #fbf5e9;
-  --pro-card: #fffdf7;
-  --pro-ink: #2b2721;
-}.rita-classic.bg-black,
-.rita-classic .bg-black { background-color: var(--pro-page) !important; }.rita-classic.bg-\[\#0c0c0e\],
-.rita-classic .bg-\[\#0c0c0e\],
-.rita-classic.bg-\[\#121212\],
-.rita-classic .bg-\[\#121212\],
-.rita-classic.bg-\[\#131313\],
-.rita-classic .bg-\[\#131313\] { background-color: var(--pro-card) !important; }.rita-classic.text-white,
-.rita-classic .text-white { color: var(--pro-ink) !important; }.rita-classic.text-white\/95,
-.rita-classic .text-white\/95 { color: color-mix(in oklab, var(--pro-ink) 95%, transparent) !important; }.rita-classic.text-white\/90,
-.rita-classic .text-white\/90 { color: color-mix(in oklab, var(--pro-ink) 90%, transparent) !important; }.rita-classic.text-white\/85,
-.rita-classic .text-white\/85 { color: color-mix(in oklab, var(--pro-ink) 85%, transparent) !important; }.rita-classic.text-white\/80,
-.rita-classic .text-white\/80 { color: color-mix(in oklab, var(--pro-ink) 80%, transparent) !important; }.rita-classic.text-white\/75,
-.rita-classic .text-white\/75 { color: color-mix(in oklab, var(--pro-ink) 78%, transparent) !important; }.rita-classic.text-white\/70,
-.rita-classic .text-white\/70 { color: color-mix(in oklab, var(--pro-ink) 74%, transparent) !important; }.rita-classic.text-white\/65,
-.rita-classic .text-white\/65 { color: color-mix(in oklab, var(--pro-ink) 70%, transparent) !important; }.rita-classic.text-white\/60,
-.rita-classic .text-white\/60 { color: color-mix(in oklab, var(--pro-ink) 68%, transparent) !important; }.rita-classic.text-white\/55,
-.rita-classic .text-white\/55 { color: color-mix(in oklab, var(--pro-ink) 64%, transparent) !important; }.rita-classic.text-white\/50,
-.rita-classic .text-white\/50 { color: color-mix(in oklab, var(--pro-ink) 60%, transparent) !important; }.rita-classic.text-white\/48,
-.rita-classic .text-white\/48 { color: color-mix(in oklab, var(--pro-ink) 58%, transparent) !important; }.rita-classic.text-white\/45,
-.rita-classic .text-white\/45 { color: color-mix(in oklab, var(--pro-ink) 56%, transparent) !important; }.rita-classic.text-white\/40,
-.rita-classic .text-white\/40 { color: color-mix(in oklab, var(--pro-ink) 52%, transparent) !important; }.rita-classic.text-white\/35,
-.rita-classic .text-white\/35 { color: color-mix(in oklab, var(--pro-ink) 48%, transparent) !important; }.rita-classic.text-white\/30,
-.rita-classic .text-white\/30 { color: color-mix(in oklab, var(--pro-ink) 45%, transparent) !important; }.rita-classic.border-white\/10,
-.rita-classic .border-white\/10,
-.rita-classic.border-white\/12,
-.rita-classic .border-white\/12,
-.rita-classic.border-white\/15,
-.rita-classic .border-white\/15 { border-color: color-mix(in oklab, var(--pro-ink) 14%, transparent) !important; }.rita-classic.bg-white\/5,
-.rita-classic .bg-white\/5,
-.rita-classic.bg-white\/\[0\.04\],
-.rita-classic .bg-white\/\[0\.04\] { background-color: color-mix(in oklab, var(--pro-ink) 5%, transparent) !important; }.rita-classic.bg-white\/10,
-.rita-classic .bg-white\/10 { background-color: color-mix(in oklab, var(--pro-ink) 8%, transparent) !important; }.rita-classic.bg-white\/15,
-.rita-classic .bg-white\/15 { background-color: color-mix(in oklab, var(--pro-ink) 11%, transparent) !important; }.rita-classic.bg-white\/20,
-.rita-classic .bg-white\/20 { background-color: color-mix(in oklab, var(--pro-ink) 16%, transparent) !important; }.rita-classic.rita-btn-primary,
+.rita-cream.bg-black,
+.rita-cream .bg-black { background-color: var(--pro-page) !important; }
+.rita-cream.bg-\[\#0c0c0e\],
+.rita-cream .bg-\[\#0c0c0e\],
+.rita-cream.bg-\[\#0c0c0e\]\/95,
+.rita-cream .bg-\[\#0c0c0e\]\/95,
+.rita-cream.bg-\[\#151515\],
+.rita-cream .bg-\[\#151515\],
+.rita-cream.bg-\[\#121212\],
+.rita-cream .bg-\[\#121212\],
+.rita-cream.bg-\[\#131313\],
+.rita-cream .bg-\[\#131313\] { background-color: var(--pro-card) !important; }
+.rita-cream.text-white,
+.rita-cream .text-white { color: var(--pro-ink) !important; }
+.rita-cream [class*="text-white/"] { color: color-mix(in oklab, var(--pro-ink) 66%, transparent) !important; }
+.rita-cream.text-white\/95,
+.rita-cream .text-white\/95,
+.rita-cream.text-white\/90,
+.rita-cream .text-white\/90,
+.rita-cream.text-white\/85,
+.rita-cream .text-white\/85 { color: color-mix(in oklab, var(--pro-ink) 92%, transparent) !important; }
+.rita-cream.text-white\/80,
+.rita-cream .text-white\/80,
+.rita-cream.text-white\/75,
+.rita-cream .text-white\/75,
+.rita-cream.text-white\/70,
+.rita-cream .text-white\/70 { color: color-mix(in oklab, var(--pro-ink) 78%, transparent) !important; }
+.rita-cream.text-white\/65,
+.rita-cream .text-white\/65,
+.rita-cream.text-white\/60,
+.rita-cream .text-white\/60,
+.rita-cream.text-white\/55,
+.rita-cream .text-white\/55,
+.rita-cream.text-white\/50,
+.rita-cream .text-white\/50,
+.rita-cream.text-white\/48,
+.rita-cream .text-white\/48,
+.rita-cream.text-white\/45,
+.rita-cream .text-white\/45 { color: color-mix(in oklab, var(--pro-ink) 62%, transparent) !important; }
+.rita-cream.text-white\/40,
+.rita-cream .text-white\/40,
+.rita-cream.text-white\/35,
+.rita-cream .text-white\/35,
+.rita-cream.text-white\/30,
+.rita-cream .text-white\/30 { color: color-mix(in oklab, var(--pro-ink) 48%, transparent) !important; }
+.rita-cream [class*="border-white/"] { border-color: color-mix(in oklab, var(--pro-ink) 12%, transparent) !important; }
+.rita-cream [class*="bg-white/"] { background-color: color-mix(in oklab, var(--pro-ink) 6%, transparent) !important; }
+.rita-cream.bg-white\/10,
+.rita-cream .bg-white\/10 { background-color: color-mix(in oklab, var(--pro-ink) 8%, transparent) !important; }
+.rita-cream.bg-white\/15,
+.rita-cream .bg-white\/15 { background-color: color-mix(in oklab, var(--pro-ink) 11%, transparent) !important; }
+.rita-cream.bg-white\/20,
+.rita-cream .bg-white\/20 { background-color: color-mix(in oklab, var(--pro-ink) 16%, transparent) !important; }
 
-/* Catch-all for any remaining white-on-dark utilities inside classic pages. */
-.rita-classic [class*="text-white/"] { color: color-mix(in oklab, var(--pro-ink) 70%, transparent) !important; }
-.rita-classic [class*="border-white/"] { border-color: color-mix(in oklab, var(--pro-ink) 14%, transparent) !important; }
-.rita-classic [class*="bg-white/"] { background-color: color-mix(in oklab, var(--pro-ink) 7%, transparent) !important; }
-.rita-classic .rita-btn-primary {
-  background-color: var(--rita-green);
-  color: var(--rita-green-ink);
-}.rita-classic.rita-btn-primary:hover,
-.rita-classic .rita-btn-primary:hover { background-color: var(--rita-green-deep); }.rita-classic.rita-btn-secondary,
-.rita-classic .rita-btn-secondary {
-  background-color: color-mix(in oklab, var(--pro-ink) 8%, transparent);
-  color: var(--pro-ink);
-}.rita-classic.rita-btn-secondary:hover,
-.rita-classic .rita-btn-secondary:hover {
-  background-color: color-mix(in oklab, var(--pro-ink) 14%, transparent);
-}/* Rita tile — big action button that lifts on hover and presses on click */
+/* Emphasis: green leads the eye, ink carries the reading. */
+.rita-accent { color: var(--rita-green-deep) !important; }
+.rita-accent-bg {
+  background-color: var(--rita-green) !important;
+  color: var(--rita-green-ink) !important;
+}
+.rita-ink { color: var(--pro-ink) !important; }
+.rita-ink-soft { color: color-mix(in oklab, var(--pro-ink) 62%, transparent) !important; }
+.rita-hairline { border-color: color-mix(in oklab, var(--pro-ink) 12%, transparent) !important; }
+.rita-accent-border {
+  border-color: color-mix(in oklab, var(--rita-green) 70%, transparent) !important;
+  box-shadow: 0 26px 60px -44px color-mix(in oklab, var(--rita-green-deep) 55%, transparent);
+}
+.rita-accent-soft { background-color: color-mix(in oklab, var(--rita-green) 18%, transparent) !important; }
+/* Rita tile — big action button that lifts on hover and presses on click */
 .rita-tile {
   transition: transform 0.16s ease, box-shadow 0.2s ease, background-color 0.2s ease;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
