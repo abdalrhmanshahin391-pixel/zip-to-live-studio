@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Layers, FileText, ListChecks, Sparkles } from "lucide-react";
 import { KitaBrand } from "@/components/brand/KitaBrand";
-import ritaAsset from "@/assets/rita-cutout.png.asset.json";
+import ritaAsset from "@/assets/rita-mark.png.asset.json";
 import { cn } from "@/lib/utils";
 
 const TRUST = [
