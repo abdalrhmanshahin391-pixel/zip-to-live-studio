@@ -149,7 +149,6 @@ function WelcomePage() {
 
       await refreshAuthProfile();
       try {
-        sessionStorage.removeItem("aqua-auth-next");
       } catch {
         /* ignore */
       }

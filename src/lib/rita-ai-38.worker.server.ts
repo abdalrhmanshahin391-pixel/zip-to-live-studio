@@ -143,90 +143,6 @@ async function submitChunk(admin: Admin, apiKey: string, chunk: any, log: RitaLo
   log.push({ at: now(), text: `${label}: ${blocks.length} question${blocks.length === 1 ? "" : "s"} are being written up.` });
 }
 
-/**
- * Shared-AI route: used when the site has no Google AI Studio key of its own.
- * Same result, done in one pass instead of Google's cheaper overnight batch.
- */
-async function runChunkOnSharedAi(admin: Admin, chunk: any, job: any, log: RitaLogEntry[]) {
-  const label = chunk.page_from ? `Pages ${chunk.page_from}–${chunk.page_to}` : "Your text";
-  const text = String(chunk.chunk_text ?? "").trim();
-  if (text.length < 40) {
-    await admin.from(CHUNKS).update({ status: "empty" }).eq("id", chunk.id);
-    log.push({ at: now(), text: `${label}: nothing readable here.`, tech: true });
-    return 0;
-  }
-
-  const { GATEWAY_URL, GATEWAY_MODEL } = await import("@/lib/mode-ai.server");
-  const key = (process.env["LOVABLE_API_KEY"] ?? "").trim();
-  if (!key) throw new Error("Rita AI 3.8 has no AI key yet. Ask the site owner to add one.");
-
-  const ask = async (system: string, user: string) => {
-    const res = await fetch(GATEWAY_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: GATEWAY_MODEL,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-    const raw = await res.text();
-    if (!res.ok) throw new Error(`AI error ${res.status}: ${raw.slice(0, 200)}`);
-    try {
-      return JSON.parse(raw)?.choices?.[0]?.message?.content ?? "";
-    } catch {
-      return "";
-    }
-  };
-
-  await admin.from(CHUNKS).update({ status: "borders", error: null }).eq("id", chunk.id);
-
-  let blocks: string[] = [];
-  try {
-    const borderText = await ask(BORDERS_SYSTEM, `--- TEXT ---\n${text}\n--- END ---`);
-    const bookends = normalizeBookends(extractJsonArray(borderText) ?? []);
-    blocks = sliceByBookends(text, bookends).map((s) => s.text);
-  } catch (e: any) {
-    log.push({ at: now(), text: `${label}: border pass failed — ${e?.message || e}`, tech: true });
-  }
-  if (blocks.length === 0) blocks = sliceByNumbers(text).map((s) => s.text);
-  blocks = blocks.map((b) => b.trim()).filter((b) => b.length > 15).slice(0, 40);
-
-  if (blocks.length === 0) {
-    await admin.from(CHUNKS)
-      .update({ status: "empty", question_blocks: [], results: { found_count: 0 } })
-      .eq("id", chunk.id);
-    log.push({ at: now(), text: `${label}: no questions found — skipped.`, tech: true });
-    return 0;
-  }
-
-  await admin.from(CHUNKS)
-    .update({ status: "borders", question_blocks: blocks, results: { found_count: blocks.length } })
-    .eq("id", chunk.id);
-  log.push({ at: now(), text: `${label}: cut ${blocks.length} question${blocks.length === 1 ? "" : "s"} — writing them up now.` });
-
-  const parsedList: { key: string; parsed: any }[] = [];
-  for (let i = 0; i < blocks.length; i++) {
-    try {
-      const out = await ask(
-        SOLVER_SYSTEM,
-        `Solve this question and return JSON per the system prompt.\n\n--- QUESTION ---\n${blocks[i]}\n--- END ---`,
-      );
-      parsedList.push({ key: `q-${i}`, parsed: extractJsonObject(out) });
-    } catch (e: any) {
-      parsedList.push({ key: `q-${i}`, parsed: null });
-      log.push({ at: now(), text: `${label}: question ${i + 1} failed — ${e?.message || e}`, tech: true });
-    }
-  }
-
-  return await importParsed(admin, job, chunk, parsedList, label, log);
-}
-
-
-
 /** Poll a submitted chunk; import automatically the moment it is ready. */
 async function collectChunk(admin: Admin, apiKey: string, chunk: any, job: any, log: RitaLogEntry[]) {
   const label = chunk.page_from ? `Pages ${chunk.page_from}–${chunk.page_to}` : "Your text";
@@ -393,21 +309,13 @@ export async function runRitaWorker(maxSubmit = 2): Promise<{ handled: number; j
   let handled = 0;
 
   try {
-    // The owner's own Google AI Studio key does the cheap overnight batch.
-    // With no key of its own the run goes through RitaJet's shared AI instead.
-    let apiKey = "";
-    let sharedAi = false;
-    try {
-      apiKey = await resolveRitaKey(admin);
-    } catch {
-      sharedAi = true;
-    }
-    if (!apiKey.startsWith("AIza")) sharedAi = true;
+    // Rita uses the same protected Gemini key as every text/vision study tool.
+    const apiKey = await resolveRitaKey(admin);
 
     const { data: waiting } = await admin
       .from(CHUNKS).select("*").eq("job_id", job.id).eq("status", "awaiting_batch").order("chunk_index");
     let importedThisTick = 0;
-    for (const chunk of sharedAi ? [] : (waiting ?? [])) {
+    for (const chunk of waiting ?? []) {
       importedThisTick += await collectChunk(admin, apiKey, chunk, job, log);
       handled++;
     }
@@ -448,13 +356,8 @@ export async function runRitaWorker(maxSubmit = 2): Promise<{ handled: number; j
       .from(CHUNKS).select("*").eq("job_id", job.id).in("status", ["pending", "borders", "solving"])
       .order("chunk_index").limit(maxSubmit);
     for (const chunk of pending ?? []) {
-      if (sharedAi) importedThisTick += await runChunkOnSharedAi(admin, chunk, job, log);
-      else await submitChunk(admin, apiKey, chunk, log);
+      await submitChunk(admin, apiKey, chunk, log);
       handled++;
-    }
-    if (sharedAi && importedThisTick > 0) {
-      const { bumpQuota: bump2 } = await import("@/lib/quota.server");
-      await bump2(job.user_id, "rita_questions", importedThisTick);
     }
 
     const counters = await refreshJobCounters(admin, job.id);
