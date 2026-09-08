@@ -29,13 +29,10 @@ export function ProHome() {
           into flashcards, summaries and practice questions.
         </p>
         <div className="mt-10">
-          <Link
-            to="/learn"
-            className="inline-flex h-[52px] items-center justify-center rounded-full px-9 text-[17px] font-medium text-white transition-opacity hover:opacity-90"
-            style={{ background: "var(--rita-green-deep)" }}
-          >
+          <Link to="/learn" className="rita-btn rita-btn-primary">
             Start learning
           </Link>
+
         </div>
         <p className="mt-5 text-[15px] text-white/45">Free to start. No card needed.</p>
       </div>
