@@ -12,7 +12,7 @@ export function IpadStage() {
   return (
     <div className="relative mx-auto w-full max-w-[1000px] px-6 md:px-12">
       {/* Negative top margin pushes only a small sliver of the device top off-screen. */}
-      <div className="-mt-[7%] md:-mt-[8%]">
+      <div className="pt-6 md:pt-8">
         <div
           className="relative mx-auto rounded-[2rem] p-[9px] md:rounded-[2.5rem] md:p-[11px]"
           style={{

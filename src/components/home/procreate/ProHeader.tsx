@@ -87,7 +87,7 @@ export function ProHeader() {
     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white";
 
   return (
-    <header className="absolute inset-x-0 top-0 z-50">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[color:var(--pro-page)]/92 backdrop-blur-xl">
       <div className="mx-auto flex h-[72px] max-w-[1120px] items-center justify-between gap-4 px-6 md:px-10">
         <Link to="/" className="shrink-0 text-white">
           <ProWordmark size={30} />
