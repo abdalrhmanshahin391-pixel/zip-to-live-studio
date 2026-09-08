@@ -61,6 +61,47 @@
   .rita-pill { transition: none; }
 }
 
+/* Apple / Procreate style action pills — fixed height, hug their label */
+.rita-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  flex: 0 0 auto;
+  align-self: flex-start;
+  white-space: nowrap;
+  height: 44px;
+  padding-inline: 22px;
+  border-radius: 9999px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+  transition: background-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+}
+@media (min-width: 768px) {
+  .rita-btn { height: 48px; padding-inline: 26px; font-size: 17px; }
+}
+.rita-btn:active { transform: translateY(1px); }
+.rita-btn:focus-visible {
+  outline: 2px solid var(--rita-blue);
+  outline-offset: 3px;
+}
+.rita-btn-primary {
+  background-color: var(--rita-blue-deep);
+  color: #fff;
+}
+.rita-btn-primary:hover { background-color: var(--rita-blue); }
+.rita-btn-secondary {
+  background-color: rgba(255, 255, 255, 0.09);
+  color: #fff;
+}
+.rita-btn-secondary:hover { background-color: rgba(255, 255, 255, 0.16); }
+@media (prefers-reduced-motion: reduce) {
+  .rita-btn { transition: none; }
+  .rita-btn:active { transform: none; }
+}
+
 /* Rita tile — big action button that lifts on hover and presses on click */
 .rita-tile {
   transition: transform 0.16s ease, box-shadow 0.2s ease, background-color 0.2s ease;
