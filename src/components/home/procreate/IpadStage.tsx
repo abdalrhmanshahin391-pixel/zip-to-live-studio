@@ -2,32 +2,26 @@ import screenAsset from "@/assets/rita-girl-ipad.jpg.asset.json";
 import { EditableImage } from "@/components/site/EditableImage";
 
 /**
- * A photoreal horizontal iPad Pro shell, deliberately cropped by the top
- * of the viewport: only the upper ~10% of the device sits above the page.
- * The illustration fills the whole screen edge to edge (absolute inset-0 +
- * object-cover). Buttons are placed on the top/bottom edges to read as
- * landscape orientation, matching the Procreate homepage treatment.
+ * A photoreal horizontal iPad Pro shell, deliberately cropped by the top of
+ * the page: roughly the upper third of the device sits above the viewport and
+ * is clipped away. The artwork is placed inside the *visible* band only, so the
+ * picture always fills what you can see instead of disappearing behind the cut.
  */
 export function IpadStage() {
   return (
-    <div className="relative mx-auto w-full max-w-[1000px] px-6 md:px-12">
-      {/* Negative top margin pushes only a small sliver of the device top off-screen. */}
-      <div className="pt-6 md:pt-8">
-        <div
-          className="relative mx-auto rounded-[2rem] p-[9px] md:rounded-[2.5rem] md:p-[11px]"
-          style={{
-            background:
-              "linear-gradient(148deg,#8f959c 0%,#4b5157 12%,#22262a 34%,#1b1e21 62%,#3d4247 88%,#7e848b 100%)",
-            boxShadow:
-              "0 2px 0 rgba(255,255,255,.18) inset, 0 -2px 0 rgba(0,0,0,.35) inset",
-          }}
-        >
-          {/* Top button (landscape top edge) */}
-          <span
-            aria-hidden
-            className="absolute -top-[3px] left-[58%] h-[3px] w-20 rounded-t-sm md:w-28"
-            style={{ background: "linear-gradient(180deg,#6d7379,#2a2e32)" }}
-          />
+    <div className="relative w-full overflow-hidden">
+      <div className="relative mx-auto w-full max-w-[1100px] px-4 md:px-10">
+        {/* Negative top margin pushes about a third of the device off-screen. */}
+        <div className="-mt-[20%] md:-mt-[22%]">
+          <div
+            className="relative mx-auto rounded-[2rem] p-[9px] md:rounded-[2.5rem] md:p-[11px]"
+            style={{
+              background:
+                "linear-gradient(148deg,#8f959c 0%,#4b5157 12%,#22262a 34%,#1b1e21 62%,#3d4247 88%,#7e848b 100%)",
+              boxShadow:
+                "0 2px 0 rgba(255,255,255,.18) inset, 0 -2px 0 rgba(0,0,0,.35) inset",
+            }}
+          >
           {/* Bottom button (landscape bottom edge) */}
           <span
             aria-hidden
@@ -35,17 +29,18 @@ export function IpadStage() {
             style={{ background: "linear-gradient(0deg,#6d7379,#2a2e32)" }}
           />
 
-          {/* Screen — landscape tablet panel, artwork covers it completely */}
+          {/* Screen — landscape tablet panel; artwork fills the visible band */}
           <div className="relative aspect-[16/10] overflow-hidden rounded-[1.8rem] bg-black md:rounded-[2.3rem]">
             <EditableImage
               imageKey="home.ipad"
               fallback={screenAsset.url}
               alt="A student studying on a tablet at night on a balcony under a starry sky, shown on an iPad screen"
-              className="absolute inset-0 h-full w-full object-cover object-center"
+              className="absolute inset-x-0 bottom-0 top-[32%] w-full object-cover object-center"
               width={1280}
               height={800}
               loading="eager"
             />
+
             {/* Glass sheen across the panel */}
             <span
               aria-hidden
