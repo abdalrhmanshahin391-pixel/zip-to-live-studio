@@ -70,8 +70,8 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
     setAdminMode(!adminMode);
   }
 
-  const darkMenuLink =
-    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white";
+  const menuLink =
+    "flex items-center gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold text-white/85 transition-opacity hover:opacity-65";
 
   return (
     <header
@@ -187,7 +187,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
               {accountOpen && (
                 <div className="rita-panel absolute right-0 z-50 mt-3 flex max-h-[calc(100vh-8rem)] w-72 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[22px] border border-black/[0.07] shadow-[0_28px_70px_-30px_rgba(60,45,20,0.45)]">
                   <div className="shrink-0 px-4 pb-3 pt-4">
-                    <div className="flex items-center gap-3 rounded-2xl bg-white/[0.06] px-3.5 py-3">
+                    <div className="flex items-center gap-3 px-1 py-1">
                       <span
                         className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full text-[16px] font-black text-white"
                         style={{ background: tone }}
@@ -202,21 +202,21 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                         <p className="truncate text-[14.5px] font-extrabold text-white">
                           {profile?.full_name || displayName}
                         </p>
-                        <p className="mt-0.5 inline-flex rounded-full bg-white/10 px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/60">
+                        <p className="mt-0.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/60">
                           {isAdmin ? t("cms.header.roleAdmin") : isGolden ? "Golden member" : t("cms.header.roleUser")}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1">
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                     {isRealAdmin && (
                       <button
                         type="button"
                         role="switch"
                         aria-checked={adminMode}
                         onClick={toggleAdminMode}
-                        className="mx-2 flex w-[calc(100%-1rem)] items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-white/85 transition-colors hover:bg-white/10"
+                        className="flex w-full items-center justify-between gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold text-white/85 transition-opacity hover:opacity-65"
                       >
                         <span className="inline-flex items-center gap-3">
                           <ShieldCheck size={16} className={adminMode ? "rita-accent" : "text-white/40"} />
@@ -241,7 +241,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                         role="switch"
                         aria-checked={imageEdit}
                         onClick={() => setImageEditMode(!imageEdit)}
-                        className="mx-2 flex w-[calc(100%-1rem)] items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-white/85 transition-colors hover:bg-white/10"
+                        className="flex w-full items-center justify-between gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold text-white/85 transition-opacity hover:opacity-65"
                       >
                         <span className="inline-flex items-center gap-3">
                           <ImageUp size={16} className={imageEdit ? "rita-accent" : "text-white/40"} />
@@ -260,15 +260,15 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                         </span>
                       </button>
                     )}
-                    <Link to="/profile" onClick={() => setAccountOpen(false)} className={`mx-2 ${darkMenuLink}`}>
+                    <Link to="/profile" onClick={() => setAccountOpen(false)} className={menuLink}>
                       <Settings size={16} className="text-white/50" />
                       {t("cms.header.profileSettings")}
                     </Link>
-                    <Link to="/my-plan" onClick={() => setAccountOpen(false)} className={`mx-2 ${darkMenuLink}`}>
+                    <Link to="/my-plan" onClick={() => setAccountOpen(false)} className={menuLink}>
                       <Gauge size={16} className="text-white/50" />
                       My plan
                     </Link>
-                    <Link to="/pricing" onClick={() => setAccountOpen(false)} className={`mx-2 ${darkMenuLink}`}>
+                    <Link to="/pricing" onClick={() => setAccountOpen(false)} className={menuLink}>
                       <Sparkles size={16} className="text-white/50" />
                       Plans & pricing
                     </Link>
@@ -276,16 +276,15 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                       to="/profile"
                       hash="notifications"
                       onClick={() => setAccountOpen(false)}
-                      className={`mx-2 ${darkMenuLink}`}
+                      className={menuLink}
                     >
                       <Bell size={16} className="text-white/50" />
                       {t("cms.header.notifications", { defaultValue: "Notifications" })}
                     </Link>
-                    <InstallAppButton />
+                    <InstallAppButton className={menuLink} />
                     {isAdmin && (
                       <>
-                        <div className="mx-3 my-1 border-t border-white/10" />
-                        <Link to="/admin" onClick={() => setAccountOpen(false)} className={`mx-2 ${darkMenuLink}`}>
+                        <Link to="/admin" onClick={() => setAccountOpen(false)} className={menuLink}>
                           <LayoutGrid size={16} className="text-white/50" />
                           Admin
                         </Link>
@@ -293,11 +292,11 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                     )}
                   </div>
 
-                  <div className="shrink-0 border-t border-white/10 p-2">
+                  <div className="shrink-0 border-t border-black/[0.07]">
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-bold text-rose-300 transition-colors hover:bg-rose-500/10"
+                      className="flex w-full items-center gap-3 px-5 py-3.5 text-[14px] font-bold text-rose-600 transition-colors hover:text-rose-700"
                     >
                       <LogOut size={16} />
                       {t("cms.header.logout")}
@@ -327,7 +326,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
               to={i.to as never}
               params={i.params as never}
               onClick={() => setSheet(false)}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] text-white/90 hover:bg-white/10"
+              className="flex items-center gap-3 border-b border-black/[0.06] px-3 py-3 text-[15px] text-white/90"
               style={{ fontFamily: "var(--font-grotesk)" }}
             >
               <span
@@ -345,7 +344,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
               key={l.to}
               to={l.to as never}
               onClick={() => setSheet(false)}
-              className="block rounded-xl px-3 py-3 text-[16px] text-white/90 hover:bg-white/10"
+               className="block border-b border-black/[0.06] px-3 py-3 text-[16px] text-white/90"
               style={{ fontFamily: "var(--font-grotesk)" }}
             >
               {l.label}
@@ -355,7 +354,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
           <Link
             to="/pricing"
             onClick={() => setSheet(false)}
-            className="block rounded-xl px-3 py-3 text-[16px] text-white/90 hover:bg-white/10"
+            className="block border-b border-black/[0.06] px-3 py-3 text-[16px] text-white/90"
             style={{ fontFamily: "var(--font-grotesk)" }}
           >
             Pricing
@@ -364,7 +363,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
             <Link
               to="/offers"
               onClick={() => setSheet(false)}
-              className="block rounded-xl px-3 py-3 text-[16px] font-bold text-white hover:bg-white/10"
+              className="block border-b border-black/[0.06] px-3 py-3 text-[16px] font-bold text-white"
               style={{ fontFamily: "var(--font-grotesk)" }}
             >
               Special offers
@@ -392,21 +391,21 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                   </p>
                 </div>
               </div>
-              <Link to="/profile" onClick={() => setSheet(false)} className="block rounded-xl px-3 py-3 text-[16px] text-white/90 hover:bg-white/10" style={{ fontFamily: "var(--font-grotesk)" }}>
+              <Link to="/profile" onClick={() => setSheet(false)} className="block border-t border-black/[0.06] px-3 py-3 text-[16px] text-white/90" style={{ fontFamily: "var(--font-grotesk)" }}>
                 Profile settings
               </Link>
-              <Link to="/my-plan" onClick={() => setSheet(false)} className="block rounded-xl px-3 py-3 text-[16px] text-white/90 hover:bg-white/10" style={{ fontFamily: "var(--font-grotesk)" }}>
+              <Link to="/my-plan" onClick={() => setSheet(false)} className="block border-t border-black/[0.06] px-3 py-3 text-[16px] text-white/90" style={{ fontFamily: "var(--font-grotesk)" }}>
                 My plan
               </Link>
               {isAdmin && (
-                <Link to="/admin" onClick={() => setSheet(false)} className="block rounded-xl px-3 py-3 text-[16px] font-bold text-white hover:bg-white/10" style={{ fontFamily: "var(--font-grotesk)" }}>
+                <Link to="/admin" onClick={() => setSheet(false)} className="block border-t border-black/[0.06] px-3 py-3 text-[16px] font-bold text-white" style={{ fontFamily: "var(--font-grotesk)" }}>
                   Admin panel
                 </Link>
               )}
               <button
                 type="button"
                 onClick={handleLogout}
-                className="block w-full rounded-xl px-3 py-3 text-left text-[16px] font-bold text-rose-300 hover:bg-rose-500/10"
+                className="block w-full border-t border-black/[0.06] px-3 py-3 text-left text-[16px] font-bold text-rose-600"
                 style={{ fontFamily: "var(--font-grotesk)" }}
               >
                 {t("cms.header.logout")}
@@ -420,7 +419,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                   setSheet(false);
                   openAuth("signin");
                 }}
-                className="block w-full rounded-xl px-3 py-3 text-left text-[16px] text-white/90 hover:bg-white/10"
+                className="block w-full px-3 py-3 text-left text-[16px] text-white/90"
                 style={{ fontFamily: "var(--font-grotesk)" }}
               >
                 Sign in

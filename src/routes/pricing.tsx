@@ -12,8 +12,8 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { updateSiteSettings } from "@/lib/site-settings.functions";
 import { useQueryClient } from "@tanstack/react-query";
 import { EditableImage } from "@/components/site/EditableImage";
-import monthlyArt from "@/assets/pricing-monthly-dark.jpg.asset.json";
-import packsArt from "@/assets/pricing-packs-dark.jpg.asset.json";
+import monthlyArt from "@/assets/pricing-monthly-green.jpg.asset.json";
+import packsArt from "@/assets/pricing-packs-green.jpg.asset.json";
 import packStarter from "@/assets/pack-starter-dark.jpg.asset.json";
 import packStudy from "@/assets/pack-study-dark.jpg.asset.json";
 import packExam from "@/assets/pack-exam-dark.jpg.asset.json";
@@ -131,8 +131,6 @@ function PricingPage() {
     navigate({ to: "/checkout", search: { plan: p.slug, billing } as any });
   };
 
-  const cols = Math.min(live.length || 1, 5);
-
   return (
     <div
       className="rita-cream min-h-screen bg-black text-white"
@@ -140,18 +138,18 @@ function PricingPage() {
     >
       <ProHeader variant="solid" />
 
-      <section className="relative pt-24 md:pt-28">
-        <div className="relative mx-auto flex max-w-[1120px] flex-col items-center px-6 pt-10 text-center md:px-10 md:pt-14">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.07] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/55">
+       <section className="relative pt-24 md:pt-28">
+         <div className="relative mx-auto flex max-w-[1120px] flex-col items-center px-6 pt-12 text-center md:px-10 md:pt-20">
+           <span className="rita-accent inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em]">
             <Sparkles size={13} /> Plans
           </span>
           <h1
-            className="mt-5 max-w-[820px] font-bold leading-[1.04]"
+             className="mt-6 max-w-[820px] font-bold leading-[1.04]"
             style={{ fontSize: "clamp(2.5rem, 5.4vw, 4.6rem)" }}
           >
             Choose how you want to study.
           </h1>
-          <p className="mt-6 max-w-2xl text-[17px] font-normal leading-[1.55] text-white/55 md:text-[19px]">
+           <p className="mt-7 max-w-[720px] text-[17px] font-normal leading-[1.62] text-white/55 md:text-[20px]">
             Every plan includes the flashcard workspace, the to-do board and spaced repetition.
             Every allowance is a lifetime balance — it counts down as you use it and never
             expires at the end of the month. The bigger plans simply give you more AI.
@@ -169,7 +167,7 @@ function PricingPage() {
           )}
 
           {kind === "monthly" && (
-            <div className="mt-5 inline-flex rounded-full border border-white/10 bg-white/[0.06] p-1">
+             <div className="mt-6 inline-flex rounded-full border border-white/10 bg-white/[0.06] p-1">
               {[
                 { k: false, label: "Monthly" },
                 { k: true, label: "Yearly · save more" },
@@ -179,7 +177,7 @@ function PricingPage() {
                   type="button"
                   onClick={() => setYearly(o.k)}
                   className={`rounded-full px-5 py-2 text-[13.5px] font-semibold transition-colors ${
-                    yearly === o.k ? "bg-white text-black" : "text-white/55 hover:text-white"
+                     yearly === o.k ? "rita-accent-bg" : "text-white/55 hover:text-white"
                   }`}
                 >
                   {o.label}
@@ -198,7 +196,7 @@ function PricingPage() {
       </section>
 
       {!kind && (
-        <section className="mx-auto grid max-w-[1120px] gap-5 px-6 pb-24 pt-12 md:grid-cols-2 md:px-10 md:pt-16">
+        <section className="mx-auto grid max-w-[1120px] gap-6 px-6 pb-32 pt-16 md:grid-cols-2 md:px-10 md:pt-20">
           {[
             {
               k: "monthly" as const,
@@ -217,35 +215,39 @@ function PricingPage() {
           ]
             .filter((b) => b.k !== "lifetime" || packsVisible)
             .map((b) => (
-            <button
+            <article
               key={b.k}
-              type="button"
-              onClick={() => setKind(b.k)}
-               className="group overflow-hidden rounded-[24px] border border-white/10 bg-[#131313] text-left transition-transform hover:-translate-y-1"
+               className="group flex min-h-[650px] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#131313] text-left transition-transform hover:-translate-y-1 md:rounded-[34px]"
             >
-              <EditableImage
-                imageKey={`pricing.${b.k}`}
-                fallback={b.art}
-                alt=""
-                width={1024}
-                height={640}
-                className="h-52 w-full object-cover opacity-90 transition-opacity group-hover:opacity-100 md:h-64"
-              />
-               <div className="p-7 md:p-8">
-                 <h2 className="text-[26px] font-bold">{b.title}</h2>
-                 <p className="mt-3 text-[15px] leading-relaxed text-white/50">{b.copy}</p>
-                 <span className="mt-6 inline-flex items-center gap-2 text-[15px] font-semibold rita-accent">
-                  {b.cta} <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-                </span>
-              </div>
-            </button>
+                <div className="p-8 md:p-10">
+                  <p className="text-[19px] font-bold md:text-[21px]">RitaJet <span className="rita-accent font-normal">Study</span></p>
+                  <h2 className="mt-5 max-w-[25rem] text-[34px] font-bold leading-[1.06] md:text-[43px]">{b.title}</h2>
+                  <p className="mt-5 max-w-[28rem] text-[16px] leading-[1.6] text-white/50 md:text-[17px]">{b.copy}</p>
+                  <button type="button" onClick={() => setKind(b.k)} className="rita-btn rita-btn-primary mt-7 gap-2">
+                    {b.cta} <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                  </button>
+                </div>
+                <div className="mt-auto px-5 pb-5 md:px-7 md:pb-7">
+                  <div className="overflow-hidden rounded-[22px] md:rounded-[26px]">
+                    <EditableImage
+                      imageKey={`pricing.${b.k}`}
+                      fallback={b.art}
+                      alt={b.k === "monthly" ? "A student using RitaJet flashcards at a focused study desk" : "An organized collection of reusable RitaJet study credits"}
+                      width={1536}
+                      height={1024}
+                      loading="eager"
+                      className="aspect-[3/2] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                    />
+                  </div>
+                </div>
+             </article>
             ))}
         </section>
       )}
 
       {!kind && isAdmin && (
         <section className="mx-auto -mt-16 max-w-[1120px] px-6 pb-16 md:px-10">
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-[20px] border border-white/10 bg-[#131313] p-5">
+           <div className="flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-white/10 bg-[#131313] p-6">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">Admin only</p>
               <p className="mt-1 text-[15px] font-bold text-white">
@@ -292,10 +294,7 @@ function PricingPage() {
           </p>
         )}
 
-        <div
-          className="grid items-stretch gap-6 max-lg:!grid-cols-1 max-xl:!grid-cols-2"
-          style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-        >
+         <div className="grid items-stretch gap-6 lg:grid-cols-2 xl:grid-cols-3">
           {live.map((p, i) => {
             const lifetime = kind === "lifetime";
             const priceCents = lifetime
@@ -315,18 +314,18 @@ function PricingPage() {
             return (
               <article
                 key={p.slug}
-                 className={`relative flex flex-col overflow-hidden rounded-[20px] border bg-[#131313] p-7 transition-transform hover:-translate-y-1 ${
+                 className={`relative flex min-h-[610px] flex-col overflow-hidden rounded-[28px] border bg-[#131313] p-8 transition-transform hover:-translate-y-1 md:rounded-[32px] md:p-9 ${
                    best ? "rita-accent-border" : "border-white/10"
                 }`}
               >
                 <OfferRibbon label={p.ribbon_label} color={p.ribbon_color} endsAt={p.offer_ends_at} />
                 {best && !p.ribbon_label && (
-                   <span className="absolute right-0 top-0 rounded-bl-xl rita-accent-bg px-3.5 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-white">
+                    <span className="absolute right-5 top-5 rounded-full rita-accent-bg px-3.5 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em]">
                     Most popular
                   </span>
                 )}
                 {isMine && (
-                   <span className="absolute left-0 top-0 rounded-br-xl bg-white px-3.5 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-black">
+                    <span className="absolute left-5 top-5 rounded-full bg-white px-3.5 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] rita-ink">
                     Your plan
                   </span>
                 )}
@@ -338,22 +337,20 @@ function PricingPage() {
                     alt=""
                     width={768}
                     height={512}
-                    className="-mx-7 -mt-7 mb-5 h-36 w-[calc(100%+3.5rem)] max-w-none object-cover"
+                    className="-mx-8 -mt-8 mb-7 h-44 w-[calc(100%+4rem)] max-w-none object-cover md:-mx-9 md:-mt-9 md:w-[calc(100%+4.5rem)]"
                   />
                 )}
 
-                 <span className="inline-flex w-fit rounded-full border border-white/10 bg-white/[0.07] px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white/65">
-                  {p.name}
-                </span>
+                 <p className={`${lifetime ? "" : "mt-2"} text-[19px] font-bold md:text-[21px]`}>RitaJet <span className="rita-accent font-normal">{p.name}</span></p>
 
                 {p.tagline && (
-                   <p className="mt-3 text-[15px] font-medium leading-snug text-white/50">
+                    <p className="mt-5 min-h-12 text-[16px] font-medium leading-[1.5] text-white/50">
                     {p.tagline}
                   </p>
                 )}
 
-                <div className="mt-5 flex flex-wrap items-end gap-x-2 gap-y-1">
-                   <span className="text-[44px] font-bold leading-none">
+                 <div className="mt-7 flex flex-wrap items-end gap-x-2 gap-y-2">
+                    <span className="text-[48px] font-bold leading-none md:text-[54px]">
                     {money(priceCents, p.currency)}
                   </span>
                    <span className="pb-1.5 text-[14px] font-medium text-white/35">
@@ -365,22 +362,23 @@ function PricingPage() {
                         {money(p.compare_cents ?? 0, p.currency)}
                       </span>
                       <span
-                        className="rounded-full px-2.5 py-1 text-[11.5px] font-black text-white"
-                        style={{ background: "#d1795e" }}
+                        className="rounded-full rita-accent-bg px-2.5 py-1 text-[11.5px] font-black"
                       >
                         −{off}%
                       </span>
                     </span>
                   )}
                   {semesterSave > 0 && (
-                    <span className="mb-1.5 rounded-full bg-[#e7f3d6] px-2.5 py-1 text-[11.5px] font-black text-[#4d7a1f]">
+                     <span className="rita-accent-soft rita-accent mb-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-black">
                       save {semesterSave}% vs monthly
                     </span>
                   )}
                 </div>
 
 
-                 <ul className="mt-6 grid gap-2.5 border-t border-white/10 pt-6">
+                 <div className="mb-8 mt-8 border-t border-white/10 pt-6">
+                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/35">What is included</p>
+                   <ul className="mt-4 grid gap-3">
                   {[
                     { on: p.max_flashcards !== 0, text: cap(p.max_flashcards, "flashcards") },
                     { on: p.max_summaries !== 0, text: cap(p.max_summaries, "PDF summaries") },
@@ -412,14 +410,15 @@ function PricingPage() {
                     .map((l) => (
                       <Line key={l.text} on text={l.text} />
                     ))}
-                </ul>
+                   </ul>
+                 </div>
 
 
 
                 {!lifetime && priceCents === 0 ? (
                   <Link
                     to={user ? "/study" : "/register"}
-                     className={`rita-btn mt-7 ${best ? "rita-btn-primary" : "rita-btn-secondary"}`}
+                     className={`rita-btn mt-auto ${best ? "rita-btn-primary" : "rita-btn-secondary"}`}
                   >
                     {p.cta_label || "Start free"}
                   </Link>
@@ -427,7 +426,7 @@ function PricingPage() {
                   <button
                     type="button"
                     onClick={() => buy(p)}
-                     className={`rita-btn mt-7 disabled:opacity-60 ${best ? "rita-btn-primary" : "rita-btn-secondary"}`}
+                     className={`rita-btn mt-auto disabled:opacity-60 ${best ? "rita-btn-primary" : "rita-btn-secondary"}`}
                   >
                     {p.cta_label ||
                       (lifetime
@@ -447,7 +446,7 @@ function PricingPage() {
 
 
         {mine && (
-          <section className="mt-14 flex flex-wrap items-center gap-4 rounded-[20px] border border-white/10 bg-[#131313] p-7">
+           <section className="mt-16 flex flex-wrap items-center gap-4 rounded-[28px] border border-white/10 bg-[#131313] p-8">
             <div className="min-w-0">
               <h2 className="text-[18px] font-bold">You are on {mine.plan?.name}</h2>
               <p className="mt-1 text-[14px] font-medium text-white/45">
