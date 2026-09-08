@@ -243,6 +243,9 @@ function SignInPanel({ next }: { next?: string }) {
     <div>
       {error && <Err message={error} />}
 
+      <GoogleButton label="Sign in with Google" />
+      <AuthDivider />
+
       <label className="mb-5 flex cursor-pointer select-none items-start gap-3 rounded-2xl border border-black/[0.05] bg-[#f6f1e5] px-4 py-3.5 text-[13px] font-semibold leading-relaxed text-[#4b463f]">
         <input
           type="checkbox"
@@ -462,6 +465,9 @@ function SignUpPanel() {
   return (
     <div>
       {error && <Err message={error} />}
+
+      <GoogleButton label="Sign up with Google" />
+      <AuthDivider />
 
       <form onSubmit={handleSubmit} className="space-y-3.5">
           <label className="block">
