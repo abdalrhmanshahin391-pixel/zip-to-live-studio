@@ -43,22 +43,19 @@ export function ShareBand() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link
-              to="/share"
-              className="inline-flex h-[46px] items-center justify-center rounded-full bg-white/[0.09] px-6 text-[15px] font-semibold text-white transition-colors hover:bg-white/[0.16]"
-            >
+          <div className="flex flex-wrap items-center gap-3">
+            <Link to="/share" className="rita-btn rita-btn-secondary">
               Browse decks
             </Link>
             <Link
               to="/share/new"
               search={{ space: undefined }}
-              className="inline-flex h-[46px] items-center justify-center rounded-full px-6 text-[15px] font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ background: "var(--rita-blue)" }}
+              className="rita-btn rita-btn-primary"
             >
               Share a deck
             </Link>
           </div>
+
         </div>
       </div>
     </section>
