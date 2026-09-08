@@ -1679,9 +1679,37 @@ hairline borders and generous radii.
 .rita-onart [class*="border-white/"] { border-color: rgba(255, 255, 255, 0.24) !important; }
 .rita-onart [class*="bg-white/"] { background-color: rgba(255, 255, 255, 0.12) !important; }
 
-/* Panels that stay dark inside a cream page (account menu, mobile sheet). */
-.rita-ondark { background-color: #0c0c0e !important; }
-.rita-ondark .text-white { color: #fff !important; }
-.rita-ondark [class*="text-white/"] { color: rgba(255, 255, 255, 0.82) !important; }
-.rita-ondark [class*="border-white/"] { border-color: rgba(255, 255, 255, 0.12) !important; }
-.rita-ondark [class*="bg-white/"] { background-color: rgba(255, 255, 255, 0.08) !important; }
+/* Dropped panels (mega menu, account menu, mobile sheet) are cream cards and
+   must escape the white-on-artwork treatment of the header they hang from. */
+.rita-panel {
+  background-color: var(--pro-card) !important;
+  color: var(--pro-ink) !important;
+}
+.rita-onart .rita-panel .text-white,
+.rita-panel .text-white { color: var(--pro-ink) !important; }
+.rita-onart .rita-panel [class*="text-white/"],
+.rita-panel [class*="text-white/"] { color: color-mix(in oklab, var(--pro-ink) 62%, transparent) !important; }
+.rita-onart .rita-panel [class*="border-white/"],
+.rita-panel [class*="border-white/"] { border-color: color-mix(in oklab, var(--pro-ink) 12%, transparent) !important; }
+.rita-onart .rita-panel [class*="bg-white/"],
+.rita-panel [class*="bg-white/"] { background-color: color-mix(in oklab, var(--pro-ink) 6%, transparent) !important; }
+
+/* Quiet header controls: no pill, just words that light up on hover. */
+.rita-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding-inline: 10px;
+  border-radius: 9999px;
+  background-color: transparent;
+  border: 0;
+  transition: background-color 0.16s ease, opacity 0.16s ease;
+}
+.rita-ghost:hover,
+.rita-ghost[data-open="true"] { background-color: rgba(255, 255, 255, 0.14); }
+.rita-ghost:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .rita-ghost { transition: none; }
+}
+
