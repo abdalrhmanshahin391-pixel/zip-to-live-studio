@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, ArrowRight, Check, Minus, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Minus } from "lucide-react";
 import { ProHeader } from "@/components/home/procreate/ProHeader";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import { OfferRibbon, discountPercent, offerLive } from "@/components/pricing/offer";
@@ -139,22 +139,7 @@ function PricingPage() {
       <ProHeader variant="solid" />
 
        <section className="relative pt-24 md:pt-28">
-         <div className="relative mx-auto flex max-w-[1120px] flex-col items-center px-6 pt-12 text-center md:px-10 md:pt-20">
-           <span className="rita-accent inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em]">
-            <Sparkles size={13} /> Plans
-          </span>
-          <h1
-             className="mt-6 max-w-[820px] font-bold leading-[1.04]"
-            style={{ fontSize: "clamp(2.5rem, 5.4vw, 4.6rem)" }}
-          >
-            Choose how you want to study.
-          </h1>
-           <p className="mt-7 max-w-[720px] text-[17px] font-normal leading-[1.62] text-white/55 md:text-[20px]">
-            Every plan includes the flashcard workspace, the to-do board and spaced repetition.
-            Every allowance is a lifetime balance — it counts down as you use it and never
-            expires at the end of the month. The bigger plans simply give you more AI.
-          </p>
-
+         <div className="relative mx-auto flex max-w-[1120px] flex-col items-center px-6 pt-6 text-center md:px-10 md:pt-8">
           {kind && (
             <button
               type="button"
@@ -196,7 +181,7 @@ function PricingPage() {
       </section>
 
       {!kind && (
-        <section className="mx-auto grid max-w-[1120px] gap-6 px-6 pb-32 pt-16 md:grid-cols-2 md:px-10 md:pt-20">
+        <section className="mx-auto grid max-w-[1120px] gap-6 px-6 pb-32 pt-8 md:grid-cols-2 md:px-10 md:pt-10">
           {[
             {
               k: "monthly" as const,
