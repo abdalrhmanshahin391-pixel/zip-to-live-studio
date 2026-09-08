@@ -260,32 +260,6 @@ export function ProHeader() {
                         </span>
                       </button>
                     )}
-                    {isRealAdmin && (
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={classic}
-                        disabled={savingColors}
-                        onClick={() => setClassic(!classic)}
-                        className="mx-2 flex w-[calc(100%-1rem)] items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-white/85 transition-colors hover:bg-white/10 disabled:opacity-60"
-                      >
-                        <span className="inline-flex items-center gap-3">
-                          <Palette size={16} className={classic ? "text-emerald-400" : "text-white/40"} />
-                          Classic colours
-                        </span>
-                        <span
-                          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                            classic ? "bg-emerald-500" : "bg-white/20"
-                          }`}
-                        >
-                          <span
-                            className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
-                              classic ? "left-6" : "left-1"
-                            }`}
-                          />
-                        </span>
-                      </button>
-                    )}
                     <Link to="/profile" onClick={() => setAccountOpen(false)} className={`mx-2 ${darkMenuLink}`}>
                       <Settings size={16} className="text-white/50" />
                       {t("cms.header.profileSettings")}
