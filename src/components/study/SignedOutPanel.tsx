@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Lock, Sparkles, Smartphone, Layers, CalendarCheck, ListChecks } from "lucide-react";
 import { openAuth } from "@/lib/auth-dialog";
-import ritaMark from "@/assets/rita-mark.png.asset.json";
+import { RitaFace } from "@/components/brand/RitaBrand";
 
 const ASSURANCES = [
   { icon: Lock, text: "Your subjects and cards stay private to you." },
@@ -24,14 +24,7 @@ export function SignedOutPanel({ what }: { what: string }) {
     <div className="mx-auto grid w-full max-w-[1080px] items-center gap-10 py-14 md:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-14">
       <div className="rounded-[30px] border border-black/[0.06] bg-[#fdfaf3] p-7 shadow-[0_44px_90px_-60px_rgba(60,45,20,0.55)] md:p-10">
         <span className="grid h-14 w-14 place-items-center rounded-[20px] bg-[color:var(--rita-green-soft,rgba(122,160,44,0.14))]">
-          <img
-            src={ritaMark.url}
-            alt=""
-            aria-hidden="true"
-            width={512}
-            height={512}
-            className="h-9 w-9 object-contain"
-          />
+          <RitaFace size={40} />
         </span>
 
         <h1 className="mt-5 font-display text-[30px] font-black leading-[1.1] tracking-tight md:text-[38px]">
