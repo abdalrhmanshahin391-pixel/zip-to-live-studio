@@ -1731,3 +1731,40 @@ hairline borders and generous radii.
     transition: none;
   }
 }
+
+/* Full-width black band used by the home feature cards. The cream mapping
+   rules deliberately do not reach inside it. */
+.rita-band-dark {
+  position: relative;
+  background: #0d0d0f;
+}
+.rita-band-dark::before,
+.rita-band-dark::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 90px;
+  pointer-events: none;
+}
+.rita-band-dark::before {
+  top: -90px;
+  background: linear-gradient(180deg, rgba(13, 13, 15, 0) 0%, #0d0d0f 100%);
+}
+.rita-band-dark::after {
+  bottom: -90px;
+  background: linear-gradient(180deg, #0d0d0f 0%, rgba(13, 13, 15, 0) 100%);
+}
+.rita-band-dark .rita-band-text { color: rgba(255, 255, 255, 0.62); }
+.rita-band-dark .rita-band-strong { color: #8fce3e; }
+.rita-band-dark .rita-band-tile { background: #17171a; }
+
+/* Sign-in window opening */
+.rita-dialog-pop { animation: rita-dialog-pop 220ms ease-out both; }
+@keyframes rita-dialog-pop {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rita-dialog-pop { animation: none; }
+}
