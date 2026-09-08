@@ -11,3 +11,8 @@
 - [x] Add asymmetric Classrooms & groups and Flashcards feature boxes to the home page
 - [x] Make the existing Plans and Toolkit cards 30% taller
 - [x] Verify the four-box home section on desktop and phone
+- [x] Return the three study-mode cards to a spacious cream editorial section
+- [x] Redesign pricing choices and plan cards in the RitaJet Toolkit style
+- [x] Add premium green artwork for monthly plans and credit packs
+- [x] Simplify the desktop and mobile account menus into clean lists
+- [x] Verify the home, pricing, mobile, and authenticated admin-menu states
