@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ProHeader } from "./ProHeader";
 import { IpadStage } from "./IpadStage";
+import { ShareBand } from "./ShareBand";
 
 /** Black, single-screen home page. */
 export function ProHome() {
