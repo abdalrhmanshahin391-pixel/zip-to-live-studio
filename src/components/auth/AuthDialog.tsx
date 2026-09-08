@@ -120,7 +120,7 @@ function AuthWindow({ mode, next }: { mode: AuthMode; next?: string }) {
         </div>
 
         {mode === "signin" && <SignInPanel next={next} />}
-        {mode === "signup" && <SignUpPanel next={next} />}
+        {mode === "signup" && <SignUpPanel />}
         {mode === "forgot" && <ForgotPanel />}
       </div>
     </div>
@@ -353,7 +353,7 @@ const signupSchema = z
   })
   .strip();
 
-function SignUpPanel({ next }: { next?: string }) {
+function SignUpPanel() {
   const [form, setForm] = useState({
     full_name: "",
     username: "",

@@ -32,7 +32,7 @@ export const GOOGLE_OPENAI_URL =
   "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 export const GOOGLE_DEFAULT_MODEL = "gemini-flash-latest";
 
-export type KeySource = "secret" | "gateway";
+export type KeySource = "own" | "shared" | "secret" | "gateway";
 
 export type AiTarget = {
   url: string;

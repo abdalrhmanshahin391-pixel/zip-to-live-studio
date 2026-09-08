@@ -118,31 +118,17 @@ async function extractPairs(
   const hintLine = hint ? `Hint: ${hint}\n\n` : "";
   const userText = `${hintLine}Extract every German→English pair (vocabulary words with articles+plural, or full sentences with translations). Return JSON only.`;
 
-  let raw = "";
-  if (provider === "lovable") {
-    const parts: any[] = [{ type: "text", text: userText }];
-    if (source.kind === "pdf") {
-      parts.push({ type: "file", file: { filename: "source.pdf", file_data: `data:application/pdf;base64,${source.pdfBase64}` } });
-    } else if (source.kind === "photos") {
-      for (const img of source.images) {
-        parts.push({ type: "image_url", image_url: { url: `data:${img.mimeType};base64,${img.base64}` } });
-      }
-    } else {
-      parts[0] = { type: "text", text: `${userText}\n\nSource text:\n---\n${source.text.slice(0, 60000)}` };
-    }
-    raw = await callLovableJSON(PAIRS_SYSTEM, parts);
+  void provider;
+  const pool = await getPool(supabase);
+  const parts: any[] = [{ text: userText }];
+  if (source.kind === "pdf") {
+    parts.push({ inline_data: { mime_type: "application/pdf", data: source.pdfBase64 } });
+  } else if (source.kind === "photos") {
+    for (const img of source.images) parts.push({ inline_data: { mime_type: img.mimeType, data: img.base64 } });
   } else {
-    const pool = await getPool(supabase);
-    const parts: any[] = [{ text: userText }];
-    if (source.kind === "pdf") {
-      parts.push({ inline_data: { mime_type: "application/pdf", data: source.pdfBase64 } });
-    } else if (source.kind === "photos") {
-      for (const img of source.images) parts.push({ inline_data: { mime_type: img.mimeType, data: img.base64 } });
-    } else {
-      parts[0] = { text: `${userText}\n\nSource text:\n---\n${source.text.slice(0, 60000)}` };
-    }
-    raw = await callGeminiJSON(pool, PAIRS_SYSTEM, parts, source.kind === "text");
+    parts[0] = { text: `${userText}\n\nSource text:\n---\n${source.text.slice(0, 60000)}` };
   }
+  const raw = await callGeminiJSON(pool, PAIRS_SYSTEM, parts, source.kind === "text");
   const parsed = tryParseJson(raw);
   const list = Array.isArray(parsed?.pairs) ? parsed.pairs : [];
     if (!list.length) {
@@ -161,13 +147,9 @@ async function generateDistractors(
   english: string,
 ): Promise<string[]> {
   const userText = `German: ${german}\nCorrect English: ${english}\n\nWrite 3 wrong English translations as JSON {"wrong":[...]}`;
-  let raw = "";
-  if (provider === "lovable") {
-    raw = await callLovableJSON(DISTRACTORS_SYSTEM, [{ type: "text", text: userText }]);
-  } else {
-    const pool = await getPool(supabase);
-    raw = await callGeminiJSON(pool, DISTRACTORS_SYSTEM, [{ text: userText }], true);
-  }
+  void provider;
+  const pool = await getPool(supabase);
+  const raw = await callGeminiJSON(pool, DISTRACTORS_SYSTEM, [{ text: userText }], true);
   const parsed = tryParseJson(raw);
   const list = Array.isArray(parsed?.wrong) ? parsed.wrong : [];
   const cleaned = list

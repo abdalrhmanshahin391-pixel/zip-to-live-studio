@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/legacy-auth-middleware";
 import { z } from "zod";
+import { getGeminiPool, callGeminiJSON } from "@/lib/gemini-pool";
 
 
 const Input = z.object({
@@ -23,33 +24,21 @@ export const generateEnglishDistractors = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => Input.parse(d))
 
-  .handler(async ({ data }) => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("LOVABLE_API_KEY is not configured");
-
+  .handler(async ({ data, context }) => {
     const userPrompt = `Existing German→English pairs (do NOT reuse the English values as distractors):
 ${data.pairs.map((p) => `- ${p.german} = ${p.english}`).join("\n")}
 
 Produce exactly ${data.count} wrong-but-plausible English distractor words/phrases.`;
 
-    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: SYSTEM },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-      }),
+    const pool = await getGeminiPool(context.supabase);
+    const raw = await callGeminiJSON({
+      pool,
+      systemPrompt: SYSTEM,
+      userParts: [{ text: userPrompt }],
+      allowTextOnly: true,
+      timeoutMs: 60_000,
+      generationConfig: { temperature: 0.3 },
     });
-    if (!r.ok) {
-      const txt = await r.text();
-      throw new Error(`Lovable AI ${r.status}: ${txt.slice(0, 200)}`);
-    }
-    const j = await r.json();
-    const raw: string = j.choices?.[0]?.message?.content ?? "{}";
     let parsed: any = {};
     try {
       parsed = JSON.parse(raw);
