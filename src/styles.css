@@ -145,6 +145,11 @@
 .rita-classic .bg-white\/10 { background-color: color-mix(in oklab, var(--pro-ink) 8%, transparent) !important; }.rita-classic.bg-white\/15,
 .rita-classic .bg-white\/15 { background-color: color-mix(in oklab, var(--pro-ink) 11%, transparent) !important; }.rita-classic.bg-white\/20,
 .rita-classic .bg-white\/20 { background-color: color-mix(in oklab, var(--pro-ink) 16%, transparent) !important; }.rita-classic.rita-btn-primary,
+
+/* Catch-all for any remaining white-on-dark utilities inside classic pages. */
+.rita-classic [class*="text-white/"] { color: color-mix(in oklab, var(--pro-ink) 70%, transparent) !important; }
+.rita-classic [class*="border-white/"] { border-color: color-mix(in oklab, var(--pro-ink) 14%, transparent) !important; }
+.rita-classic [class*="bg-white/"] { background-color: color-mix(in oklab, var(--pro-ink) 7%, transparent) !important; }
 .rita-classic .rita-btn-primary {
   background-color: var(--rita-green);
   color: var(--rita-green-ink);
