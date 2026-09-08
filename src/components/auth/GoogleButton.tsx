@@ -1,0 +1,93 @@
+import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { lovable } from "@/integrations/lovable/index";
+
+function GoogleMark({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden>
+      <path
+        fill="#EA4335"
+        d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.2 17.6 9.5 24 9.5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M10.4 28.7a14.6 14.6 0 0 1 0-9.4l-7.8-6.1a24 24 0 0 0 0 21.6l7.8-6.1z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.4 0-11.7-3.7-13.6-9.1l-7.8 6.1C6.5 42.6 14.6 48 24 48z"
+      />
+    </svg>
+  );
+}
+
+/**
+ * "Continue with Google" — the OAuth round-trip lands on /auth/callback,
+ * which finishes onboarding (or sends the user to `next`).
+ */
+export function GoogleButton({
+  label = "Continue with Google",
+  next,
+  onError,
+}: {
+  label?: string;
+  next?: string;
+  onError?: (message: string) => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  async function handleClick() {
+    setLoading(true);
+    try {
+      if (next && next.startsWith("/") && !next.startsWith("//")) {
+        sessionStorage.setItem("aqua-auth-next", next);
+      } else {
+        sessionStorage.removeItem("aqua-auth-next");
+      }
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: `${window.location.origin}/auth/callback`,
+      });
+      if (result.error) {
+        onError?.("Google sign-in didn't complete. Please try again.");
+        setLoading(false);
+        return;
+      }
+      if (result.redirected) return;
+      // Tokens came back in-page (popup flow): the session is already set, so
+      // hand off inside the app instead of reloading the whole bundle.
+      void navigate({ to: "/auth/callback", replace: true });
+    } catch {
+      onError?.("Google sign-in didn't complete. Please try again.");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={loading}
+      className="flex h-14 w-full items-center justify-center gap-3 rounded-full border-2 border-black/[0.08] bg-white px-4 text-[16px] font-black text-foreground shadow-[0_14px_28px_-22px_rgba(35,32,29,0.9)] transition-all hover:-translate-y-0.5 hover:bg-[#fbf7ef] disabled:translate-y-0 disabled:opacity-60"
+    >
+      <GoogleMark />
+      {loading ? "Opening Google…" : label}
+    </button>
+  );
+}
+
+export function AuthDivider({ label = "or continue with email" }: { label?: string }) {
+  return (
+    <div className="my-6 flex items-center gap-3">
+      <span className="h-px flex-1 bg-border" />
+      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </span>
+      <span className="h-px flex-1 bg-border" />
+    </div>
+  );
+}

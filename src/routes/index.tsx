@@ -1,24 +1,46 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ProHome } from "@/components/home/procreate/ProHome";
+import { InstallAppBanner } from "@/components/InstallAppButton";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "RitaJet — Learn. Recall. Pass." },
+      {
+        name: "description",
+        content:
+          "RitaJet turns your notes and lecture PDFs into smart flashcards, clean one-page summaries and AI-written practice questions.",
+      },
+      { property: "og:title", content: "RitaJet — Learn. Recall. Pass." },
+      {
+        property: "og:description",
+        content:
+          "Flashcards, PDF summaries and AI practice questions from your own study material.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://ritajet.com/" },
+      { name: "twitter:card", content: "summary_large_image" },
+      {
+        property: "og:image",
+        content:
+          "https://ritajet.com/__l5e/assets-v1/d79e87a3-84a5-47e3-aafe-db3d8230e0b1/rita-ipad-screen.jpg",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://ritajet.com/__l5e/assets-v1/d79e87a3-84a5-47e3-aafe-db3d8230e0b1/rita-ipad-screen.jpg",
+      },
+    ],
+    links: [{ rel: "canonical", href: "https://ritajet.com/" }],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-black text-white">
+      <ProHome />
+      <InstallAppBanner />
     </div>
   );
 }
