@@ -162,8 +162,8 @@ function LectureLabPage() {
   }, [subtopics, subjects, byTopic, stats]);
 
   // A tick picks a whole sub-subject; the round runs every lecture inside it.
-  const [pickedTopics, setPickedTopics] = useState<Set<string>>(new Set());
   const selected = useMemo(() => {
+
     const ids = new Set<string>();
     for (const l of lectures) if (pickedTopics.has(l.subtopic_id) && l.question_count > 0) ids.add(l.id);
     return ids;
