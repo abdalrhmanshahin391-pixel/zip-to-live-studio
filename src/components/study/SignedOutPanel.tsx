@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Lock, Sparkles, Smartphone, Layers, CalendarCheck, ListChecks } from "lucide-react";
 import { openAuth } from "@/lib/auth-dialog";
-import ritaMark from "@/assets/rita-mark.png.asset.json";
+import { RitaFace } from "@/components/brand/RitaBrand";
 
 const ASSURANCES = [
   { icon: Lock, text: "Your subjects and cards stay private to you." },
