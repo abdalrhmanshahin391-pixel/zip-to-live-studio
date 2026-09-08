@@ -56,6 +56,7 @@ export function IpadStage() {
               style={{ boxShadow: "0 0 0 1px rgba(255,255,255,.10) inset" }}
             />
           </div>
+          </div>
         </div>
       </div>
     </div>
