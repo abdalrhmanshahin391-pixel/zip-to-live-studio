@@ -1,33 +1,18 @@
 // Rita AI Model 3.8 — server-only helpers.
-// The pipeline: 4 pages of text -> Gemini 2.5 Flash Lite finds question
+// The pipeline: 4 pages of text -> Gemini Flash finds question
 // borders -> we CUT each question out locally -> the cut questions go to the
 // Gemini batch endpoint (50% price) -> answers + long explanations come back
 // and are written into the chosen sub-subject.
 
-export const RITA_MODEL = "gemini-2.5-flash-lite";
+export const RITA_MODEL = "gemini-2.5-flash";
 export const RITA_CHUNK_PAGES = 4;
 
-/** The key Rita uses. Project secret first, then any key saved by an admin. */
+/** Rita uses the same protected Gemini key as the other study tools. */
 export async function resolveRitaKey(supabase: any): Promise<string> {
-  const fromEnv = (process.env['RITA_AI_GEMINI_KEY'] ?? "").trim();
-  if (fromEnv.length > 10) return fromEnv;
-  const fallback = (process.env['GEMINI_API_KEY'] ?? "").trim();
-  if (fallback.length > 10) return fallback;
-  try {
-    // The key saved for Rita's own box wins, then any shared key.
-    const { data } = await supabase
-      .from("admin_ai_keys")
-      .select("api_key, slot, purpose")
-      .eq("provider", "gemini")
-      .order("slot", { ascending: true })
-      .limit(10);
-    const rows = (data ?? []).filter((r: any) => String(r?.api_key ?? "").trim().length > 10);
-    const row = rows.find((r: any) => r.purpose === "rita") ?? rows.find((r: any) => r.purpose === "shared") ?? rows[0];
-    if (row) return String(row.api_key).trim();
-  } catch {
-    /* ignore */
-  }
-  throw new Error("Rita AI 3.8 has no Gemini key yet. Ask the site owner to add one.");
+  void supabase;
+  const key = (process.env['GEMINI_API_KEY'] ?? "").trim();
+  if (key.length > 10) return key;
+  throw new Error("Rita AI 3.8 is not connected yet. Ask the site owner to add the Gemini key.");
 }
 
 export function ritaKeyError(status: number, body: string): string {
