@@ -97,14 +97,14 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
           solid ? "" : "rita-onart"
         } relative mx-auto flex h-[72px] max-w-[1120px] items-center justify-between gap-4 px-6 md:px-10`}
       >
-        <Link to="/" className="shrink-0 text-white [&_*]:!text-white">
+        <Link to="/" className={solid ? "shrink-0" : "shrink-0 text-white [&_*]:!text-white"}>
           <ProWordmark size={30} />
         </Link>
 
         <nav className="hidden items-center gap-8 lg:flex">
           <Link
             to="/learn"
-            className="text-[16px] font-semibold !text-white transition-opacity hover:opacity-75"
+            className={`text-[16px] font-semibold transition-opacity hover:opacity-75 ${solid ? "" : "!text-white"}`}
             style={{ fontFamily: "var(--font-grotesk)" }}
           >
             Start learning
@@ -116,7 +116,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
             <Link
               key={l.to}
               to={l.to as never}
-              className="text-[16px] font-semibold !text-white/90 transition-opacity hover:opacity-75"
+              className={`text-[16px] font-semibold transition-opacity hover:opacity-75 ${solid ? "" : "!text-white/90"}`}
               style={{ fontFamily: "var(--font-grotesk)" }}
             >
               {l.label}
