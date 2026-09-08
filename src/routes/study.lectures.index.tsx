@@ -325,36 +325,25 @@ function LectureLabPage() {
                 accent={ACCENT}
                 loading={busy}
                 groups={groups}
-                selected={[...selected]}
+                selected={[...pickedTopics]}
                 onToggle={toggle}
-                itemNoun="lecture"
+                itemNoun="sub-subject"
                 newItemLabel="Sub-subject"
 
                 unitNoun="questions"
-                searchPlaceholder="Search subjects and lectures…"
+                searchPlaceholder="Search subjects and sub-subjects…"
                 onNewGroup={() => setSubjectOpen(true)}
                 onNewItem={(g) => {
-                  if (g.id.startsWith("subject:")) {
-                    const s = subjects.find((x) => x.id === g.id.slice(8));
-                    if (s) setSubtopicFor(s);
-                    return;
-                  }
-                  const sub = subtopics.find((t) => t.id === g.id);
-                  const parent = subjects.find((s) => s.id === sub?.subject_id);
-                  if (parent) setSubtopicFor(parent);
+                  const s = subjects.find((x) => x.id === g.id);
+                  if (s) setSubtopicFor(s);
                 }}
                 onAddToGroup={() => void navigate({ to: "/study/lectures/new" })}
                 addLabel="Add a lecture"
                 emptyItemLabel="Add a sub-subject here"
-                onDeleteGroup={(g) =>
-                  setPendingDelete(
-                    g.id.startsWith("subject:")
-                      ? { kind: "subject", id: g.id.slice(8), label: g.name }
-                      : { kind: "subtopic", id: g.id, label: g.name },
-                  )
-                }
-                onDeleteItem={(t) => setPendingDelete({ kind: "lecture", id: t.id, label: t.name })}
+                onDeleteGroup={(g) => setPendingDelete({ kind: "subject", id: g.id, label: g.name })}
+                onDeleteItem={(t) => setPendingDelete({ kind: "subtopic", id: t.id, label: t.name })}
                 emptyHint="No lectures yet — upload one to get started."
+
               />
 
             )}
