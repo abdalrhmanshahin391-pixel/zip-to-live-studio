@@ -71,7 +71,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
   }
 
   const menuLink =
-    "flex items-center gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold text-white/85 transition-colors hover:text-[#5f9227]";
+    "flex items-center gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold text-white/85 transition-opacity hover:opacity-65";
 
   return (
     <header
@@ -216,7 +216,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                         role="switch"
                         aria-checked={adminMode}
                         onClick={toggleAdminMode}
-                        className="flex w-full items-center justify-between gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold text-white/85 transition-colors hover:text-[#5f9227]"
+                        className="flex w-full items-center justify-between gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold text-white/85 transition-opacity hover:opacity-65"
                       >
                         <span className="inline-flex items-center gap-3">
                           <ShieldCheck size={16} className={adminMode ? "rita-accent" : "text-white/40"} />
@@ -241,7 +241,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                         role="switch"
                         aria-checked={imageEdit}
                         onClick={() => setImageEditMode(!imageEdit)}
-                        className="flex w-full items-center justify-between gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold text-white/85 transition-colors hover:text-[#5f9227]"
+                        className="flex w-full items-center justify-between gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold text-white/85 transition-opacity hover:opacity-65"
                       >
                         <span className="inline-flex items-center gap-3">
                           <ImageUp size={16} className={imageEdit ? "rita-accent" : "text-white/40"} />
