@@ -26,22 +26,11 @@ import { avatarTone, useAvatarUrl } from "@/lib/avatars";
 import { setImageEditMode, useImageEditMode } from "@/lib/image-edit-mode";
 import { ProWordmark } from "./ProWordmark";
 
-const MENUS: { label: string; items: { to: string; label: string }[] }[] = [
-  {
-    label: "Study",
-    items: [
-      { to: "/learn/study-space", label: "My Study Space" },
-      { to: "/learn/study-room", label: "Study Room" },
-      { to: "/learn/german", label: "German" },
-    ],
-  },
-  {
-    label: "Learning",
-    items: [
-      { to: "/tour", label: "How it works" },
-      { to: "/learn", label: "Start learning" },
-    ],
-  },
+import { NAV_GROUPS } from "@/components/SiteHeader";
+
+const SIMPLE_LINKS: { to: string; label: string }[] = [
+  { to: "/learn", label: "Rooms" },
+  { to: "/tour", label: "How it works" },
 ];
 
 /** Transparent, white-only top bar that floats over the artwork. */
