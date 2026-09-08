@@ -4,6 +4,7 @@ export type SettingsRow = Record<string, string | number | boolean | null>;
 
 export type BootstrapPayload = {
   settings: SettingsRow | null;
+  siteImages: Record<string, string>;
 };
 
 /**
@@ -16,7 +17,7 @@ export const getSiteBootstrap = createServerFn({ method: "GET" }).handler(
       const { loadSiteBootstrap } = await import("./site-bootstrap.server");
       return (await loadSiteBootstrap()) as BootstrapPayload;
     } catch {
-      return { settings: null };
+      return { settings: null, siteImages: {} };
     }
   },
 );

@@ -4,12 +4,14 @@ export type BootstrapSettings = Record<string, string | number | boolean | null>
 
 export type BootstrapData = {
   settings: BootstrapSettings | null;
+  /** key -> ready-to-use URL for admin-replaced artwork. */
+  siteImages: Record<string, string>;
 };
 
 const SETTINGS_COLUMNS =
   "id,site_name,tagline,logo_url,updated_at,theme,show_signature,protect_enabled,protect_watermark_opacity,protect_blur_on_blur,protect_block_print,protect_block_copy,protect_consent_required,protect_devtools_guard,protect_auto_lock_threshold,protect_terms_en,protect_terms_ar,committee_default_storage,brand_style,header_style,study_plan_path,study_plan_title,study_plan_subtitle,terms_en,terms_ar,privacy_en,privacy_ar,refund_en,refund_ar,study_hub_title,study_hub_title_ar,study_hub_subtitle,study_hub_subtitle_ar,committee_qr_path,committee_qr_link,home_video_url,home_video_poster_url";
 
-const EMPTY: BootstrapData = { settings: null };
+const EMPTY: BootstrapData = { settings: null, siteImages: {} };
 
 /**
  * This row is tiny, identical for every visitor, and were being
@@ -40,12 +42,29 @@ async function load(): Promise<BootstrapData> {
     },
   });
 
-  const settingsRes = await (client.from as any)("site_settings")
-    .select(SETTINGS_COLUMNS)
-    .eq("id", true)
-    .maybeSingle();
+  const [settingsRes, imagesRes] = await Promise.all([
+    (client.from as any)("site_settings").select(SETTINGS_COLUMNS).eq("id", true).maybeSingle(),
+    (client.from as any)("site_images").select("key,path"),
+  ]);
 
-  return { settings: (settingsRes.data as BootstrapSettings | null) ?? null };
+  // Sign the replaced artwork here so the very first HTML frame already points
+  // at the right picture — otherwise the page paints the built-in art and then
+  // visibly swaps it a moment later.
+  const rows = (imagesRes?.data ?? []) as { key: string; path: string }[];
+  const siteImages: Record<string, string> = {};
+  if (rows.length) {
+    const paths = rows.map((r) => r.path);
+    const { data: signed } = await client.storage
+      .from("site-media")
+      .createSignedUrls(paths, 60 * 60 * 6);
+    const byPath = new Map((signed ?? []).map((s: any) => [s.path as string, s.signedUrl as string]));
+    for (const row of rows) {
+      const url = /^https?:\/\//i.test(row.path) ? row.path : byPath.get(row.path);
+      if (url) siteImages[row.key] = url;
+    }
+  }
+
+  return { settings: (settingsRes?.data as BootstrapSettings | null) ?? null, siteImages };
 }
 
 /** Drop the cache so the very next render sees a just-saved settings change. */
