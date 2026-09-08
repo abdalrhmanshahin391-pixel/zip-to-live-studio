@@ -9,7 +9,7 @@ import {
   clearRememberedLogin,
 } from "@/lib/remember-login";
 import { GoogleButton } from "@/components/auth/GoogleButton";
-import ritaAsset from "@/assets/rita-cutout.png.asset.json";
+import ritaAsset from "@/assets/rita-mark.png.asset.json";
 import {
   closeAuth,
   getAuthDialogState,
@@ -94,7 +94,7 @@ function AuthWindow({ mode, next }: { mode: AuthMode; next?: string }) {
         role="dialog"
         aria-modal="true"
         aria-label="Sign in to RitaJet"
-        className="relative w-full max-w-[26rem] rounded-[28px] border border-white/70 bg-[#fdfaf3] p-6 shadow-[0_50px_100px_-40px_rgba(35,32,29,0.75)] sm:p-8"
+        className="rita-dialog-pop relative w-full max-w-[27rem] rounded-[30px] border border-black/[0.06] bg-[#fdfaf3] p-6 shadow-[0_60px_120px_-45px_rgba(35,32,29,0.8)] sm:p-9"
       >
         <button
           type="button"
@@ -105,20 +105,31 @@ function AuthWindow({ mode, next }: { mode: AuthMode; next?: string }) {
           <X size={18} />
         </button>
 
-        <div className="mb-5 flex flex-col items-center text-center">
-          <img
-            src={ritaAsset.url}
-            alt=""
-            aria-hidden="true"
-            className="h-16 w-16 select-none object-contain"
-          />
-          <h2 className="mt-2 font-display text-[22px] font-black leading-tight tracking-tight text-foreground">
+        <div className="mb-6 flex flex-col items-center text-center">
+          <span className="grid h-16 w-16 place-items-center rounded-[22px] bg-[color:var(--rita-green-soft,rgba(122,160,44,0.14))]">
+            <img
+              src={ritaAsset.url}
+              alt=""
+              aria-hidden="true"
+              width={512}
+              height={512}
+              className="h-11 w-11 select-none object-contain"
+            />
+          </span>
+          <h2 className="mt-3 font-display text-[24px] font-black leading-tight tracking-tight text-foreground">
             {mode === "signup"
               ? "Create your RitaJet account"
               : mode === "forgot"
                 ? "Reset your password"
-                : "Log in to RitaJet"}
+                : "Welcome back"}
           </h2>
+          <p className="mt-1.5 max-w-[19rem] text-[14px] leading-relaxed text-[#6b655c]">
+            {mode === "signup"
+              ? "Your flashcards, summaries and to-dos, saved to one account."
+              : mode === "forgot"
+                ? "We'll email you a link to choose a new password."
+                : "Pick up your cards, decks and study streak where you left them."}
+          </p>
         </div>
 
         {mode === "signin" && <SignInPanel next={next} />}
@@ -245,7 +256,7 @@ function SignInPanel({ next }: { next?: string }) {
     <div>
       {error && <Err message={error} />}
 
-      <label className="mb-4 flex cursor-pointer select-none items-start gap-2 rounded-2xl bg-[#f6f1e5] p-3 text-xs font-bold text-foreground">
+      <label className="mb-5 flex cursor-pointer select-none items-start gap-3 rounded-2xl border border-black/[0.05] bg-[#f6f1e5] px-4 py-3.5 text-[13px] font-semibold leading-relaxed text-[#4b463f]">
         <input
           type="checkbox"
           checked={agree}

@@ -77,7 +77,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
     <header
       className={
         solid
-          ? "rita-panel sticky top-0 z-50 border-b border-black/[0.06]"
+          ? "rita-cream rita-panel sticky top-0 z-50 border-b border-black/[0.06]"
           : "absolute inset-x-0 top-0 z-50"
       }
     >

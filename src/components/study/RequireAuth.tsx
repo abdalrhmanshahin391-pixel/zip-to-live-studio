@@ -33,14 +33,15 @@ export function RequireAuth({
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
+      <div className="rita-cream min-h-screen bg-[color:var(--pro-page,#fdf8ef)] text-foreground">
         <SiteHeader />
-        <div className="mx-auto max-w-5xl px-4 md:px-8">
+        <div className="mx-auto max-w-[1180px] px-4 md:px-8">
           <SignedOutPanel what={what} />
         </div>
       </div>
     );
   }
+
 
   return <>{children}</>;
 }
