@@ -138,7 +138,7 @@ function PricingPage() {
       className="rita-cream min-h-screen bg-black text-white"
       style={{ fontFamily: "var(--font-grotesk)" }}
     >
-      <ProHeader />
+      <ProHeader variant="solid" />
 
       <section className="relative pt-24 md:pt-28">
         <div className="relative mx-auto flex max-w-[1120px] flex-col items-center px-6 pt-10 text-center md:px-10 md:pt-14">
