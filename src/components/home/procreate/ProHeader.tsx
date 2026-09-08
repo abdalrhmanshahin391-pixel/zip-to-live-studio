@@ -71,7 +71,9 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
   }
 
   const menuLink =
-    "flex items-center gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold text-white/85 transition-opacity hover:opacity-65";
+    "rita-ink flex items-center gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold transition-opacity hover:opacity-65";
+  const headerText = solid ? "rita-ink" : "text-white";
+  const headerTextSoft = solid ? "rita-ink-soft" : "text-white/80";
 
   return (
     <header
@@ -103,7 +105,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
 
         <nav className="hidden items-center gap-8 lg:flex">
           <StartLearningLink
-            className={`text-[16px] font-semibold transition-opacity hover:opacity-75 ${solid ? "" : "!text-white"}`}
+            className={`text-[16px] font-semibold transition-opacity hover:opacity-75 ${headerText}`}
           >
             Start learning
           </StartLearningLink>
@@ -114,7 +116,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
             <Link
               key={l.to}
               to={l.to as never}
-              className={`text-[16px] font-semibold transition-opacity hover:opacity-75 ${solid ? "" : "!text-white/90"}`}
+              className={`text-[16px] font-semibold transition-opacity hover:opacity-75 ${headerText}`}
               style={{ fontFamily: "var(--font-grotesk)" }}
             >
               {l.label}
@@ -127,7 +129,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
         <div className="hidden items-center gap-2.5 lg:flex">
           <Link
             to="/pricing"
-            className="px-2 py-2 text-[14px] font-semibold text-white/80 transition-colors hover:text-white"
+            className={`px-2 py-2 text-[14px] font-semibold transition-opacity hover:opacity-70 ${headerTextSoft}`}
             style={{ fontFamily: "var(--font-grotesk)" }}
           >
             Pricing
@@ -141,7 +143,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
               Special offers
             </Link>
           )}
-          {user && <CreditsMeter dark />}
+          {user && <CreditsMeter dark={!solid} />}
 
           {authLoading ? (
             <div aria-hidden="true" className="h-9 w-9 animate-pulse rounded-full bg-white/10" />
@@ -149,7 +151,11 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
             <button
               type="button"
               onClick={() => openAuth("signin")}
-              className="inline-flex h-10 items-center rounded-full border border-white/15 bg-white/[0.06] px-5 text-[14px] font-semibold text-white/90 backdrop-blur-xl transition-colors hover:bg-white/[0.12] hover:text-white"
+              className={`inline-flex h-10 items-center rounded-full px-5 text-[14px] font-semibold transition-colors ${
+                solid
+                  ? "rita-ink border border-black/[0.08] bg-black/[0.03] hover:bg-black/[0.07]"
+                  : "border border-white/15 bg-white/[0.06] text-white/90 backdrop-blur-xl hover:bg-white/[0.12] hover:text-white"
+              }`}
               style={{ fontFamily: "var(--font-grotesk)" }}
             >
               Sign in
@@ -162,7 +168,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                 aria-label="Account menu"
                 aria-expanded={accountOpen}
                 data-open={accountOpen ? "true" : "false"}
-                className="rita-ghost ps-1 pe-2"
+                className={`rita-ghost ps-1 pe-2 ${solid ? "rita-ghost-solid" : ""}`}
               >
                 <span
                   className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-sm font-black text-white ring-2 ring-white/35"
@@ -175,11 +181,11 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                   )}
                 </span>
                 {isRealAdmin && (
-                  <span className="rita-accent text-[11px] font-black uppercase tracking-[0.14em] !text-white/85">
+                  <span className={`rita-accent text-[11px] font-black uppercase tracking-[0.14em] ${solid ? "" : "!text-white/85"}`}>
                     Admin
                   </span>
                 )}
-                <ChevronDown size={14} className="text-white/70" />
+                <ChevronDown size={14} className={solid ? "rita-ink-soft" : "text-white/70"} />
               </button>
 
               {accountOpen && (
@@ -197,10 +203,10 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                         )}
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate text-[14.5px] font-extrabold text-white">
+                        <p className="rita-ink truncate text-[14.5px] font-extrabold">
                           {profile?.full_name || displayName}
                         </p>
-                        <p className="mt-0.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-white/60">
+                        <p className="rita-ink-soft mt-0.5 text-[10.5px] font-bold uppercase tracking-[0.14em]">
                           {isAdmin ? t("cms.header.roleAdmin") : isGolden ? "Golden member" : t("cms.header.roleUser")}
                         </p>
                       </div>
@@ -214,7 +220,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                         role="switch"
                         aria-checked={adminMode}
                         onClick={toggleAdminMode}
-                        className="flex w-full items-center justify-between gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold text-white/85 transition-opacity hover:opacity-65"
+                        className="rita-ink flex w-full items-center justify-between gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold transition-opacity hover:opacity-65"
                       >
                         <span className="inline-flex items-center gap-3">
                           <ShieldCheck size={16} className={adminMode ? "rita-accent" : "text-white/40"} />
@@ -239,7 +245,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                         role="switch"
                         aria-checked={imageEdit}
                         onClick={() => setImageEditMode(!imageEdit)}
-                        className="flex w-full items-center justify-between gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold text-white/85 transition-opacity hover:opacity-65"
+                        className="rita-ink flex w-full items-center justify-between gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold transition-opacity hover:opacity-65"
                       >
                         <span className="inline-flex items-center gap-3">
                           <ImageUp size={16} className={imageEdit ? "rita-accent" : "text-white/40"} />
@@ -310,7 +316,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
           type="button"
           aria-label="Menu"
           onClick={() => setSheet((s) => !s)}
-          className="text-white lg:hidden"
+          className={`${headerText} lg:hidden`}
         >
           {sheet ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -320,7 +326,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
         <div className="rita-panel relative mx-4 max-h-[80vh] overflow-y-auto rounded-2xl border border-black/[0.07] p-3 shadow-[0_28px_70px_-30px_rgba(60,45,20,0.45)] lg:hidden">
           <StartLearningLink
             onOpen={() => setSheet(false)}
-            className="block w-full border-b border-black/[0.06] px-3 py-3 text-left text-[16px] font-semibold text-white/90"
+            className="rita-ink block w-full border-b border-black/[0.06] px-3 py-3 text-left text-[16px] font-semibold"
           >
             Start learning
           </StartLearningLink>
@@ -330,7 +336,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
               to={i.to as never}
               params={i.params as never}
               onClick={() => setSheet(false)}
-              className="flex items-center gap-3 border-b border-black/[0.06] px-3 py-3 text-[15px] text-white/90"
+              className="rita-ink flex items-center gap-3 border-b border-black/[0.06] px-3 py-3 text-[15px]"
               style={{ fontFamily: "var(--font-grotesk)" }}
             >
               <span
@@ -348,7 +354,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
               key={l.to}
               to={l.to as never}
               onClick={() => setSheet(false)}
-               className="block border-b border-black/[0.06] px-3 py-3 text-[16px] text-white/90"
+                className="rita-ink block border-b border-black/[0.06] px-3 py-3 text-[16px]"
               style={{ fontFamily: "var(--font-grotesk)" }}
             >
               {l.label}
@@ -358,7 +364,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
           <Link
             to="/pricing"
             onClick={() => setSheet(false)}
-            className="block border-b border-black/[0.06] px-3 py-3 text-[16px] text-white/90"
+            className="rita-ink block border-b border-black/[0.06] px-3 py-3 text-[16px]"
             style={{ fontFamily: "var(--font-grotesk)" }}
           >
             Pricing
@@ -389,16 +395,16 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                   {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : initial}
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-[14px] font-bold text-white">{profile?.full_name || displayName}</p>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50">
+                   <p className="rita-ink truncate text-[14px] font-bold">{profile?.full_name || displayName}</p>
+                   <p className="rita-ink-soft text-[11px] font-semibold uppercase tracking-wider">
                     {isAdmin ? "Admin" : isGolden ? "Golden member" : "Student"}
                   </p>
                 </div>
               </div>
-              <Link to="/profile" onClick={() => setSheet(false)} className="block border-t border-black/[0.06] px-3 py-3 text-[16px] text-white/90" style={{ fontFamily: "var(--font-grotesk)" }}>
+              <Link to="/profile" onClick={() => setSheet(false)} className="rita-ink block border-t border-black/[0.06] px-3 py-3 text-[16px]" style={{ fontFamily: "var(--font-grotesk)" }}>
                 Profile settings
               </Link>
-              <Link to="/my-plan" onClick={() => setSheet(false)} className="block border-t border-black/[0.06] px-3 py-3 text-[16px] text-white/90" style={{ fontFamily: "var(--font-grotesk)" }}>
+              <Link to="/my-plan" onClick={() => setSheet(false)} className="rita-ink block border-t border-black/[0.06] px-3 py-3 text-[16px]" style={{ fontFamily: "var(--font-grotesk)" }}>
                 My plan
               </Link>
               {isAdmin && (
@@ -423,7 +429,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                   setSheet(false);
                   openAuth("signin");
                 }}
-                className="block w-full px-3 py-3 text-left text-[16px] text-white/90"
+                  className="rita-ink block w-full px-3 py-3 text-left text-[16px]"
                 style={{ fontFamily: "var(--font-grotesk)" }}
               >
                 Sign in

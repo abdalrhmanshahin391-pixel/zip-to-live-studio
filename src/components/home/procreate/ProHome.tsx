@@ -3,6 +3,7 @@ import { IpadStage } from "./IpadStage";
 import { ShareBand } from "./ShareBand";
 import { ProductShowcase } from "./ProductShowcase";
 import { FeatureTriptych } from "./FeatureTriptych";
+import { GermanLabFeature } from "./GermanLabFeature";
 import { StartLearningLink } from "@/components/StartLearningLink";
 
 /** Black, single-screen home page. */
@@ -40,6 +41,7 @@ export function ProHome() {
 
       <ProductShowcase />
       <FeatureTriptych />
+      <GermanLabFeature />
       <ShareBand />
     </main>
   );

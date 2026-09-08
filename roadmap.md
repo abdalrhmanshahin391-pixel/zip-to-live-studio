@@ -20,3 +20,5 @@
 - [x] Replace requested old Rita marks with the new green-background face
 - [x] Remove pricing introduction text and the decorative pricing-menu sparkle
 - [x] Verify the signed-out desktop and phone flows and pricing layout
+- [x] Fix signed-in account-name contrast across transparent and cream headers
+- [x] Add the spacious animated German Lab iPad feature after the three study cards
