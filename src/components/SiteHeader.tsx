@@ -59,7 +59,7 @@ const GROUP_SECTION: Record<string, SectionId> = {
  * appearance: the bar is the same on every page (white, 1px border, navy ink),
  * for a calmer, more authoritative feel.
  */
-type NavItem = {
+export type NavItem = {
   to: string;
   params?: Record<string, string>;
   label: string;
@@ -68,9 +68,9 @@ type NavItem = {
   soft: string;
   ink: string;
 };
-type NavGroup = { id: string; label: string; columns: { label: string; items: NavItem[] }[] };
+export type NavGroup = { id: string; label: string; columns: { label: string; items: NavItem[] }[] };
 
-const NAV_GROUPS: NavGroup[] = [
+export const NAV_GROUPS: NavGroup[] = [
 
 
   {

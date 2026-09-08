@@ -1672,3 +1672,16 @@ hairline borders and generous radii.
   transition: opacity 0.7s ease-out, transform 0.7s ease-out;
 }.rita-reveal.is-in { opacity: 1; transform: none; }@media (prefers-reduced-motion: reduce) {.rita-float { animation: none !important; }.rita-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
 }
+
+/* Floating header over artwork: white words even on the cream page. */
+.rita-onart .text-white { color: #fff !important; }
+.rita-onart [class*="text-white/"] { color: rgba(255, 255, 255, 0.88) !important; }
+.rita-onart [class*="border-white/"] { border-color: rgba(255, 255, 255, 0.24) !important; }
+.rita-onart [class*="bg-white/"] { background-color: rgba(255, 255, 255, 0.12) !important; }
+
+/* Panels that stay dark inside a cream page (account menu, mobile sheet). */
+.rita-ondark { background-color: #0c0c0e !important; }
+.rita-ondark .text-white { color: #fff !important; }
+.rita-ondark [class*="text-white/"] { color: rgba(255, 255, 255, 0.82) !important; }
+.rita-ondark [class*="border-white/"] { border-color: rgba(255, 255, 255, 0.12) !important; }
+.rita-ondark [class*="bg-white/"] { background-color: rgba(255, 255, 255, 0.08) !important; }

@@ -28,13 +28,13 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/admin/devices")({
   head: () => ({
     meta: [
-      { title: "Device Security — AquaQBank" },
+      { title: "Device Security — RitaJet" },
       {
         name: "description",
         content: "Control device limits, lock shared accounts and issue reactivation codes.",
       },
       { name: "robots", content: "noindex" },
-      { property: "og:title", content: "Device Security — AquaQBank" },
+      { property: "og:title", content: "Device Security — RitaJet" },
       { property: "og:description", content: "Device limits, account locks and reactivation codes." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

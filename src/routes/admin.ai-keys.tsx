@@ -18,7 +18,7 @@ import {
 } from "@/lib/jarvis.functions";
 
 export const Route = createFileRoute("/admin/ai-keys")({
-  head: () => ({ meta: [{ title: "AI keys — AquaQBank" }] }),
+  head: () => ({ meta: [{ title: "AI keys — RitaJet" }] }),
   component: AiKeysPage,
 });
 
