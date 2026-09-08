@@ -86,7 +86,7 @@ export function ProHeader() {
             "linear-gradient(180deg,rgba(0,0,0,.34) 0%,rgba(0,0,0,.14) 55%,rgba(0,0,0,0) 100%)",
         }}
       />
-      <div className="relative mx-auto flex h-[72px] max-w-[1120px] items-center justify-between gap-4 px-6 md:px-10">
+      <div className="rita-onart relative mx-auto flex h-[72px] max-w-[1120px] items-center justify-between gap-4 px-6 md:px-10">
         <Link to="/" className="shrink-0 text-white [&_*]:!text-white">
           <ProWordmark size={30} />
         </Link>
@@ -226,7 +226,7 @@ export function ProHeader() {
               </button>
 
               {accountOpen && (
-                <div className="absolute right-0 z-50 mt-3 flex max-h-[calc(100vh-8rem)] w-72 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[22px] border border-white/10 bg-[#0c0c0e] shadow-[0_28px_70px_-30px_rgba(43,39,33,0.35)] backdrop-blur-xl">
+                <div className="rita-ondark absolute right-0 z-50 mt-3 flex max-h-[calc(100vh-8rem)] w-72 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[22px] border border-white/10 bg-[#0c0c0e] shadow-[0_28px_70px_-30px_rgba(43,39,33,0.35)] backdrop-blur-xl">
                   <div className="shrink-0 px-4 pb-3 pt-4">
                     <div className="flex items-center gap-3 rounded-2xl bg-white/[0.06] px-3.5 py-3">
                       <span
@@ -361,7 +361,7 @@ export function ProHeader() {
       </div>
 
       {sheet && (
-        <div className="relative mx-4 max-h-[80vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-3 backdrop-blur-xl lg:hidden">
+        <div className="rita-ondark relative mx-4 max-h-[80vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-3 backdrop-blur-xl lg:hidden">
           {NAV_GROUPS.flatMap((g) => g.columns.flatMap((c) => c.items)).map((i) => (
             <Link
               key={i.to + i.label}
