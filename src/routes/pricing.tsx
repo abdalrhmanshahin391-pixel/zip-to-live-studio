@@ -12,7 +12,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { updateSiteSettings } from "@/lib/site-settings.functions";
 import { useQueryClient } from "@tanstack/react-query";
 import { EditableImage } from "@/components/site/EditableImage";
-import monthlyArt from "@/assets/pricing-monthly-green.jpg.asset.json";
+import monthlyArt from "@/assets/pricing-monthly-objects.jpg.asset.json";
 import packsArt from "@/assets/pricing-packs-green.jpg.asset.json";
 import packStarter from "@/assets/pack-starter-dark.jpg.asset.json";
 import packStudy from "@/assets/pack-study-dark.jpg.asset.json";
@@ -217,7 +217,7 @@ function PricingPage() {
                     <EditableImage
                       imageKey={`pricing.${b.k}`}
                       fallback={b.art}
-                      alt={b.k === "monthly" ? "A student using RitaJet flashcards at a focused study desk" : "An organized collection of reusable RitaJet study credits"}
+                      alt={b.k === "monthly" ? "A study desk with a calendar, flashcards, a clock and a pencil" : "An organized collection of reusable RitaJet study credits"}
                       width={1536}
                       height={1024}
                       loading="eager"
