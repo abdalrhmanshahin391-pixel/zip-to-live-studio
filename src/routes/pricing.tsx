@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, ArrowRight, Check, Minus, Sparkles } from "lucide-react";
-import { SiteHeader } from "@/components/SiteHeader";
+import { ProHeader } from "@/components/home/procreate/ProHeader";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import { OfferRibbon, discountPercent, offerLive } from "@/components/pricing/offer";
 import { myPlanUsage, type PlanRow } from "@/lib/plans.functions";
@@ -11,11 +11,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { updateSiteSettings } from "@/lib/site-settings.functions";
 import { useQueryClient } from "@tanstack/react-query";
-import monthlyArt from "@/assets/pricing-monthly.jpg";
-import packsArt from "@/assets/pricing-packs.jpg";
-import packStarter from "@/assets/pack-starter.jpg";
-import packStudy from "@/assets/pack-study.jpg";
-import packExam from "@/assets/pack-exam.jpg";
+import monthlyArt from "@/assets/pricing-monthly-dark.jpg.asset.json";
+import packsArt from "@/assets/pricing-packs-dark.jpg.asset.json";
+import packStarter from "@/assets/pack-starter-dark.jpg.asset.json";
+import packStudy from "@/assets/pack-study-dark.jpg.asset.json";
+import packExam from "@/assets/pack-exam-dark.jpg.asset.json";
 
 
 export const Route = createFileRoute("/pricing")({
@@ -75,10 +75,7 @@ function cap(n: number | null | undefined, unit: string) {
   return n === null || n === undefined ? `Unlimited ${unit}` : `${n.toLocaleString()} ${unit}`;
 }
 
-/** Colour accents cycle so any number of plans still looks designed. */
-const TINTS = ["#eef4fb", "#f6f0e4", "#eef7ef", "#f8eef3", "#f0eefb", "#fbf1e8"];
-
-const PACK_ART = [packStarter, packStudy, packExam];
+const PACK_ART = [packStarter.url, packStudy.url, packExam.url];
 
 function PricingPage() {
   const { user } = useAuth();
@@ -136,21 +133,21 @@ function PricingPage() {
   const cols = Math.min(live.length || 1, 5);
 
   return (
-    <div className="min-h-screen bg-[#fbf5e9] text-[#23201d]">
-      <SiteHeader />
+    <div className="min-h-screen bg-black text-white" style={{ fontFamily: "var(--font-grotesk)" }}>
+      <ProHeader />
 
-      <section className="relative">
-        <div className="relative mx-auto flex max-w-6xl flex-col items-center px-4 pt-10 text-center md:pt-12">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-[11.5px] font-black uppercase tracking-[0.2em] text-[#7a736a] shadow-[0_10px_24px_-18px_rgba(35,32,29,0.8)]">
+      <section className="relative pt-24 md:pt-28">
+        <div className="relative mx-auto flex max-w-[1120px] flex-col items-center px-6 pt-10 text-center md:px-10 md:pt-14">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.07] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/55">
             <Sparkles size={13} /> Plans
           </span>
           <h1
-            className="mt-4 font-display font-black leading-[1.08] tracking-tight"
-            style={{ fontSize: "clamp(2rem, 4.6vw, 3.2rem)" }}
+            className="mt-5 max-w-[820px] font-bold leading-[1.04]"
+            style={{ fontSize: "clamp(2.5rem, 5.4vw, 4.6rem)" }}
           >
-            Study smarter for less than a coffee a week
+            Choose how you want to study.
           </h1>
-          <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-[#5c554b]">
+          <p className="mt-6 max-w-2xl text-[17px] font-normal leading-[1.55] text-white/55 md:text-[19px]">
             Every plan includes the flashcard workspace, the to-do board and spaced repetition.
             Every allowance is a lifetime balance — it counts down as you use it and never
             expires at the end of the month. The bigger plans simply give you more AI.
@@ -160,7 +157,7 @@ function PricingPage() {
             <button
               type="button"
               onClick={() => setKind(null)}
-              className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-[13.5px] font-black text-[#7a736a] shadow-[0_14px_34px_-26px_rgba(35,32,29,0.9)] hover:text-[#23201d]"
+              className="rita-btn rita-btn-secondary mt-8 gap-2"
             >
               <ArrowLeft size={15} />
               {kind === "monthly" ? "Monthly plans" : "One-time packs"} · change
@@ -168,7 +165,7 @@ function PricingPage() {
           )}
 
           {kind === "monthly" && (
-            <div className="mt-4 inline-flex rounded-full bg-white p-1 shadow-[0_14px_34px_-26px_rgba(35,32,29,0.9)]">
+            <div className="mt-5 inline-flex rounded-full border border-white/10 bg-white/[0.06] p-1">
               {[
                 { k: false, label: "Monthly" },
                 { k: true, label: "Yearly · save more" },
@@ -177,8 +174,8 @@ function PricingPage() {
                   key={String(o.k)}
                   type="button"
                   onClick={() => setYearly(o.k)}
-                  className={`rounded-full px-5 py-2 text-[13.5px] font-black transition-all ${
-                    yearly === o.k ? "bg-[#23201d] text-white" : "text-[#8a8378]"
+                  className={`rounded-full px-5 py-2 text-[13.5px] font-semibold transition-colors ${
+                    yearly === o.k ? "bg-white text-black" : "text-white/55 hover:text-white"
                   }`}
                 >
                   {o.label}
@@ -188,7 +185,7 @@ function PricingPage() {
           )}
 
           {kind === "lifetime" && (
-            <p className="mt-4 max-w-xl text-[14.5px] font-semibold text-[#7a736a]">
+            <p className="mt-5 max-w-xl text-[14.5px] font-medium text-white/50">
               Yours for life — use them at your own pace. When a pack runs out, buy it again and
               the credits add on top.
             </p>
@@ -197,18 +194,18 @@ function PricingPage() {
       </section>
 
       {!kind && (
-        <section className="mx-auto grid max-w-5xl gap-6 px-4 pb-24 pt-10 md:grid-cols-2 md:px-8">
+        <section className="mx-auto grid max-w-[1120px] gap-5 px-6 pb-24 pt-12 md:grid-cols-2 md:px-10 md:pt-16">
           {[
             {
               k: "monthly" as const,
-              art: monthlyArt,
+               art: monthlyArt.url,
               title: "Monthly plans",
               copy: "A steady allowance every month for cards, summaries and AI questions. Cancel any time.",
               cta: "See monthly plans",
             },
             {
               k: "lifetime" as const,
-              art: packsArt,
+               art: packsArt.url,
               title: "Credit packs — pay once",
               copy: "200 flashcards, 100 questions and more. Use them whenever you like, they never expire.",
               cta: "See packs",
@@ -220,7 +217,7 @@ function PricingPage() {
               key={b.k}
               type="button"
               onClick={() => setKind(b.k)}
-              className="group overflow-hidden rounded-[28px] border border-black/[0.07] bg-white text-left shadow-[0_30px_60px_-50px_rgba(35,32,29,0.9)] transition-transform hover:-translate-y-1"
+               className="group overflow-hidden rounded-[24px] border border-white/10 bg-[#131313] text-left transition-transform hover:-translate-y-1"
             >
               <img
                 src={b.art}
@@ -228,12 +225,12 @@ function PricingPage() {
                 loading="lazy"
                 width={1024}
                 height={640}
-                className="h-48 w-full object-cover md:h-56"
+                 className="h-52 w-full object-cover opacity-90 transition-opacity group-hover:opacity-100 md:h-64"
               />
-              <div className="p-7">
-                <h2 className="font-display text-[26px] font-black">{b.title}</h2>
-                <p className="mt-2 text-[15px] leading-relaxed text-[#5c554b]">{b.copy}</p>
-                <span className="mt-5 inline-flex items-center gap-2 text-[15px] font-black text-[#23201d]">
+               <div className="p-7 md:p-8">
+                 <h2 className="text-[26px] font-bold">{b.title}</h2>
+                 <p className="mt-3 text-[15px] leading-relaxed text-white/50">{b.copy}</p>
+                 <span className="mt-6 inline-flex items-center gap-2 text-[15px] font-semibold text-[#0a84ff]">
                   {b.cta} <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
                 </span>
               </div>
@@ -243,17 +240,17 @@ function PricingPage() {
       )}
 
       {!kind && isAdmin && (
-        <section className="mx-auto -mt-16 max-w-5xl px-4 pb-16 md:px-8">
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-black/[0.07] bg-white p-5 shadow-[0_24px_50px_-46px_rgba(35,32,29,0.9)]">
+        <section className="mx-auto -mt-16 max-w-[1120px] px-6 pb-16 md:px-10">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-[20px] border border-white/10 bg-[#131313] p-5">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#a29a8e]">Admin only</p>
-              <p className="mt-1 text-[15px] font-black">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">Admin only</p>
+              <p className="mt-1 text-[15px] font-bold text-white">
                 Credit packs — pay once:{" "}
                 <span className={settings.credit_packs_enabled ? "text-[#1f7a4d]" : "text-[#a4321f]"}>
                   {settings.credit_packs_enabled ? "visible to everyone" : "hidden from students"}
                 </span>
               </p>
-              <p className="mt-1 text-[13.5px] text-[#7a736a]">
+              <p className="mt-1 text-[13.5px] text-white/45">
                 You always see the packs. This switch decides whether students can.
               </p>
             </div>
@@ -261,7 +258,7 @@ function PricingPage() {
               type="button"
               onClick={togglePacks}
               disabled={savingPacks}
-              className="rounded-full bg-[#23201d] px-5 py-2.5 text-[13.5px] font-black text-white disabled:opacity-60"
+              className="rita-btn rita-btn-secondary disabled:opacity-60"
             >
               {savingPacks
                 ? "Saving…"
@@ -273,20 +270,20 @@ function PricingPage() {
         </section>
       )}
 
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-12 md:px-8">
+      <main className="mx-auto max-w-[1120px] px-6 pb-24 pt-12 md:px-10">
         {kind && (
         <>
         {isLoading && (
 
           <div className="grid gap-6 md:grid-cols-3">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="h-[30rem] animate-pulse rounded-[28px] bg-white/70" />
+              <div key={i} className="h-[30rem] animate-pulse rounded-[20px] bg-white/[0.07]" />
             ))}
           </div>
         )}
 
         {!isLoading && live.length === 0 && (
-          <p className="rounded-3xl border border-dashed border-black/15 bg-white/70 p-10 text-center font-bold text-[#7a736a]">
+          <p className="rounded-[20px] border border-dashed border-white/15 bg-white/[0.05] p-10 text-center font-semibold text-white/50">
             No plans are published yet.
           </p>
         )}
@@ -314,19 +311,18 @@ function PricingPage() {
             return (
               <article
                 key={p.slug}
-                className={`relative flex flex-col overflow-hidden rounded-[28px] border bg-white p-7 transition-transform hover:-translate-y-1 ${
-                  best ? "border-[#23201d]/15 shadow-[0_40px_70px_-45px_rgba(35,32,29,0.9)]" : "border-black/[0.07] shadow-[0_24px_50px_-45px_rgba(35,32,29,0.8)]"
+                 className={`relative flex flex-col overflow-hidden rounded-[20px] border bg-[#131313] p-7 transition-transform hover:-translate-y-1 ${
+                   best ? "border-[#0a84ff]/70 shadow-[0_28px_70px_-42px_rgba(10,132,255,0.75)]" : "border-white/10"
                 }`}
-                style={best ? { outline: "2px solid #8ec63f", outlineOffset: "-2px" } : undefined}
               >
                 <OfferRibbon label={p.ribbon_label} color={p.ribbon_color} endsAt={p.offer_ends_at} />
                 {best && !p.ribbon_label && (
-                  <span className="absolute right-0 top-0 rounded-bl-2xl bg-[#8ec63f] px-3.5 py-1.5 text-[10.5px] font-black uppercase tracking-[0.16em] text-white">
+                   <span className="absolute right-0 top-0 rounded-bl-xl bg-[#0071e3] px-3.5 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-white">
                     Most popular
                   </span>
                 )}
                 {isMine && (
-                  <span className="absolute left-0 top-0 rounded-br-2xl bg-[#23201d] px-3.5 py-1.5 text-[10.5px] font-black uppercase tracking-[0.16em] text-white">
+                   <span className="absolute left-0 top-0 rounded-br-xl bg-white px-3.5 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-black">
                     Your plan
                   </span>
                 )}
@@ -342,29 +338,26 @@ function PricingPage() {
                   />
                 )}
 
-                <span
-                  className="inline-flex w-fit rounded-full px-3.5 py-1.5 text-[11.5px] font-black uppercase tracking-[0.16em] text-[#5c554b]"
-                  style={{ background: TINTS[i % TINTS.length] }}
-                >
+                 <span className="inline-flex w-fit rounded-full border border-white/10 bg-white/[0.07] px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white/65">
                   {p.name}
                 </span>
 
                 {p.tagline && (
-                  <p className="mt-3 text-[15px] font-semibold leading-snug text-[#5c554b]">
+                   <p className="mt-3 text-[15px] font-medium leading-snug text-white/50">
                     {p.tagline}
                   </p>
                 )}
 
                 <div className="mt-5 flex flex-wrap items-end gap-x-2 gap-y-1">
-                  <span className="font-display text-[44px] font-black leading-none">
+                   <span className="text-[44px] font-bold leading-none">
                     {money(priceCents, p.currency)}
                   </span>
-                  <span className="pb-1.5 text-[14px] font-bold text-[#a29a8d]">
+                   <span className="pb-1.5 text-[14px] font-medium text-white/35">
                     {priceCents === 0 ? "free" : lifetime ? "once" : yearly ? "/ year" : "/ month"}
                   </span>
                   {off > 0 && (
                     <span className="mb-1.5 inline-flex items-center gap-1.5">
-                      <span className="text-[15px] font-bold text-[#b6ada0] line-through">
+                       <span className="text-[15px] font-semibold text-white/30 line-through">
                         {money(p.compare_cents ?? 0, p.currency)}
                       </span>
                       <span
@@ -383,7 +376,7 @@ function PricingPage() {
                 </div>
 
 
-                <ul className="mt-6 grid gap-2.5 border-t border-dashed border-black/10 pt-6">
+                 <ul className="mt-6 grid gap-2.5 border-t border-white/10 pt-6">
                   {[
                     { on: p.max_flashcards !== 0, text: cap(p.max_flashcards, "flashcards") },
                     { on: p.max_summaries !== 0, text: cap(p.max_summaries, "PDF summaries") },
@@ -422,9 +415,7 @@ function PricingPage() {
                 {!lifetime && priceCents === 0 ? (
                   <Link
                     to={user ? "/study" : "/register"}
-                    className={`mt-7 inline-flex h-13 items-center justify-center rounded-full px-6 py-3.5 text-[16px] font-black transition-transform hover:-translate-y-0.5 ${
-                      best ? "rita-pill" : "border border-black/10 bg-[#fbf5e9] text-[#23201d]"
-                    }`}
+                     className={`rita-btn mt-7 ${best ? "rita-btn-primary" : "rita-btn-secondary"}`}
                   >
                     {p.cta_label || "Start free"}
                   </Link>
@@ -432,9 +423,7 @@ function PricingPage() {
                   <button
                     type="button"
                     onClick={() => buy(p)}
-                    className={`mt-7 inline-flex h-13 items-center justify-center rounded-full px-6 py-3.5 text-[16px] font-black transition-transform hover:-translate-y-0.5 disabled:opacity-60 ${
-                      best ? "rita-pill" : "border border-black/10 bg-[#fbf5e9] text-[#23201d]"
-                    }`}
+                     className={`rita-btn mt-7 disabled:opacity-60 ${best ? "rita-btn-primary" : "rita-btn-secondary"}`}
                   >
                     {p.cta_label ||
                       (lifetime
@@ -454,16 +443,16 @@ function PricingPage() {
 
 
         {mine && (
-          <section className="mt-14 flex flex-wrap items-center gap-4 rounded-[28px] border border-black/[0.07] bg-white p-7">
+          <section className="mt-14 flex flex-wrap items-center gap-4 rounded-[20px] border border-white/10 bg-[#131313] p-7">
             <div className="min-w-0">
-              <h2 className="text-[18px] font-black">You are on {mine.plan?.name}</h2>
-              <p className="mt-1 text-[14px] font-semibold text-[#6b655c]">
+              <h2 className="text-[18px] font-bold">You are on {mine.plan?.name}</h2>
+              <p className="mt-1 text-[14px] font-medium text-white/45">
                 Your balance, allowances and any offer countdown now live on their own page.
               </p>
             </div>
             <Link
               to="/my-plan"
-              className="ms-auto inline-flex items-center gap-2 rounded-full bg-[#23201d] px-6 py-3 text-[14px] font-black text-white"
+              className="rita-btn rita-btn-primary ms-auto"
             >
               Open my plan
             </Link>
@@ -476,12 +465,11 @@ function PricingPage() {
 
 function Line({ on, text }: { on?: boolean; text: string }) {
   return (
-    <li className={`flex items-start gap-2.5 text-[15px] ${on ? "font-semibold text-[#3f3a33]" : "text-[#b6ada0] line-through"}`}>
+    <li className={`flex items-start gap-2.5 text-[15px] ${on ? "font-medium text-white/75" : "text-white/30 line-through"}`}>
       <span
-        className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full"
-        style={{ background: on ? "#e7f3d6" : "#f1eee8" }}
+        className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full ${on ? "bg-[#0a84ff]/15" : "bg-white/[0.06]"}`}
       >
-        {on ? <Check size={12} strokeWidth={3.5} color="#5f9227" /> : <Minus size={12} color="#b6ada0" />}
+        {on ? <Check size={12} strokeWidth={3.5} className="text-[#0a84ff]" /> : <Minus size={12} className="text-white/30" />}
       </span>
       {text}
     </li>
