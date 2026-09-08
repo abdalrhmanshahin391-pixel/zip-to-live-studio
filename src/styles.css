@@ -1713,3 +1713,21 @@ hairline borders and generous radii.
   .rita-ghost { transition: none; }
 }
 
+
+/* Gentle fade-up used by the home feature cards when they scroll into view. */
+.rita-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 500ms ease-out, transform 500ms ease-out;
+}
+.rita-reveal-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rita-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
