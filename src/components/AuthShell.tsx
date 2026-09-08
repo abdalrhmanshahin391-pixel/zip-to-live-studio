@@ -101,24 +101,14 @@ export function AuthShell({
                 ))}
               </ul>
 
-              <img
-                src={ritaAsset.url}
-                alt=""
-                aria-hidden="true"
-                className="pointer-events-none mt-auto max-h-[18rem] w-full max-w-[19rem] select-none self-center object-contain object-bottom drop-shadow-[0_18px_28px_rgba(35,32,29,0.18)]"
-              />
+              <RitaFace size={220} />
             </div>
           </aside>
 
           {/* Form side */}
           <div className="bg-white/85 p-6 sm:p-10">
             <div className="mb-6 flex items-center gap-3 lg:hidden">
-              <img
-                src={ritaAsset.url}
-                alt=""
-                aria-hidden="true"
-                className="h-14 w-14 shrink-0 select-none rounded-2xl bg-[#fbf5e9] object-contain"
-              />
+              <RitaFace size={56} />
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground">
                 {eyebrow}
               </p>
