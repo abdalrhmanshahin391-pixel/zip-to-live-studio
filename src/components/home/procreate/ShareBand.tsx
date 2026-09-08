@@ -52,6 +52,7 @@ export function ShareBand() {
             </Link>
             <Link
               to="/share/new"
+              search={{ space: undefined }}
               className="inline-flex h-[46px] items-center justify-center rounded-full px-6 text-[15px] font-semibold text-white transition-opacity hover:opacity-90"
               style={{ background: "var(--rita-blue)" }}
             >
