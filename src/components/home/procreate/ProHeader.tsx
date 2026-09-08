@@ -19,8 +19,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { CreditsMeter } from "@/components/CreditsMeter";
-import { GoldenBadge } from "@/components/GoldenBadge";
-import { AdminBadge, StudentBadge } from "@/components/RoleBadge";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { avatarTone, useAvatarUrl } from "@/lib/avatars";
 import { setImageEditMode, useImageEditMode } from "@/lib/image-edit-mode";
@@ -107,7 +105,7 @@ export function ProHeader() {
             </button>
             {open === "learn" && (
               <div className="absolute left-1/2 top-full w-[46rem] max-w-[90vw] -translate-x-1/2 pt-3">
-                <div className="space-y-4 rounded-[26px] border border-black/[0.07] bg-[#fffdf7] p-4 shadow-[0_28px_70px_-30px_rgba(60,45,20,0.45)]">
+                <div className="rita-panel space-y-4 rounded-[26px] border border-black/[0.07] p-4 shadow-[0_28px_70px_-30px_rgba(60,45,20,0.45)]">
                   {NAV_GROUPS.map((group) => (
                     <div key={group.id}>
                       <div className="flex items-center gap-3 px-1">
@@ -209,10 +207,11 @@ export function ProHeader() {
                 onClick={() => setAccountOpen((v) => !v)}
                 aria-label="Account menu"
                 aria-expanded={accountOpen}
-                className="flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] pe-3 ps-1 backdrop-blur-xl transition-colors hover:bg-white/[0.12]"
+                data-open={accountOpen ? "true" : "false"}
+                className="rita-ghost ps-1 pe-2"
               >
                 <span
-                  className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-sm font-black text-white"
+                  className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-sm font-black text-white ring-2 ring-white/35"
                   style={{ background: tone }}
                 >
                   {avatar ? (
@@ -221,12 +220,16 @@ export function ProHeader() {
                     initial
                   )}
                 </span>
-                {isRealAdmin ? <AdminBadge /> : isGolden ? <GoldenBadge /> : <StudentBadge />}
-                <ChevronDown size={14} className="text-white/60" />
+                {isRealAdmin && (
+                  <span className="rita-accent text-[11px] font-black uppercase tracking-[0.14em] !text-white/85">
+                    Admin
+                  </span>
+                )}
+                <ChevronDown size={14} className="text-white/70" />
               </button>
 
               {accountOpen && (
-                <div className="rita-ondark absolute right-0 z-50 mt-3 flex max-h-[calc(100vh-8rem)] w-72 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[22px] border border-white/10 bg-[#0c0c0e] shadow-[0_28px_70px_-30px_rgba(43,39,33,0.35)] backdrop-blur-xl">
+                <div className="rita-panel absolute right-0 z-50 mt-3 flex max-h-[calc(100vh-8rem)] w-72 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[22px] border border-black/[0.07] shadow-[0_28px_70px_-30px_rgba(60,45,20,0.45)]">
                   <div className="shrink-0 px-4 pb-3 pt-4">
                     <div className="flex items-center gap-3 rounded-2xl bg-white/[0.06] px-3.5 py-3">
                       <span
@@ -361,7 +364,7 @@ export function ProHeader() {
       </div>
 
       {sheet && (
-        <div className="rita-ondark relative mx-4 max-h-[80vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-3 backdrop-blur-xl lg:hidden">
+        <div className="rita-panel relative mx-4 max-h-[80vh] overflow-y-auto rounded-2xl border border-black/[0.07] p-3 shadow-[0_28px_70px_-30px_rgba(60,45,20,0.45)] lg:hidden">
           {NAV_GROUPS.flatMap((g) => g.columns.flatMap((c) => c.items)).map((i) => (
             <Link
               key={i.to + i.label}

@@ -30,7 +30,7 @@ export function IpadStage() {
           />
 
           {/* Screen — landscape tablet panel; artwork fills the visible band */}
-          <div className="relative aspect-[16/10] overflow-hidden rounded-[1.8rem] bg-black md:rounded-[2.3rem]">
+          <div className="relative aspect-[16/11.6] overflow-hidden rounded-[1.8rem] bg-black md:rounded-[2.3rem]">
             <EditableImage
               imageKey="home.ipad"
               fallback={screenAsset.url}

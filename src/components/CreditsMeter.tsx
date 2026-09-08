@@ -61,27 +61,27 @@ export function CreditsMeter({ compact, dark }: { compact?: boolean; dark?: bool
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className={`inline-flex items-center gap-2 rounded-full border font-extrabold transition-colors ${
+        data-open={open ? "true" : "false"}
+        className={
           dark
-            ? "border-white/15 bg-white/[0.06] text-white/90 hover:bg-white/[0.12]"
-            : "border-black/10 bg-white text-[#3c372f] hover:bg-black/[0.03]"
-        } ${compact ? "px-3 py-1.5 text-[12.5px]" : "px-3.5 py-2 text-[13.5px]"}`}
+            ? `rita-ghost font-semibold text-white/90 ${compact ? "text-[13px]" : "text-[14px]"}`
+            : `inline-flex items-center gap-2 rounded-full border border-black/10 bg-white font-extrabold text-[#3c372f] transition-colors hover:bg-black/[0.03] ${
+                compact ? "px-3 py-1.5 text-[12.5px]" : "px-3.5 py-2 text-[13.5px]"
+              }`
+        }
       >
-        <Gauge size={15} className="text-[#6fce4d]" />
+        <Gauge size={15} className="rita-accent" />
         Credits
-        <span className={dark ? "text-white/50" : "text-[#a29a8d]"}>· {short}</span>
+        <span className={dark ? "text-white/60" : "text-[#a29a8d]"}>· {short}</span>
       </button>
 
       {open && (
-        <div
-          className={`absolute right-0 z-50 mt-2 w-[19rem] rounded-2xl border p-4 shadow-[0_30px_60px_-40px_rgba(35,32,29,0.9)] ${
-            dark ? "border-white/10 bg-[#0c0c0e]/95 text-white backdrop-blur-xl" : "border-black/[0.07] bg-white"
-          }`}
-        >
-          <p className={`text-[11px] font-black uppercase tracking-[0.16em] ${dark ? "text-white/45" : "text-[#a29a8d]"}`}>
+        <div className="rita-panel absolute right-0 z-50 mt-2 w-[19rem] rounded-2xl border border-black/[0.07] p-4 shadow-[0_30px_60px_-40px_rgba(35,32,29,0.9)]">
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#a29a8d]">
             Right now
           </p>
           <p className="mt-1 text-[16px] font-black">{plan.planName} plan</p>
+
 
           {offerName && (
             <div className="mt-2 rounded-xl bg-[#fdeceb] px-3 py-2">
@@ -104,19 +104,19 @@ export function CreditsMeter({ compact, dark }: { compact?: boolean; dark?: bool
               return (
                 <div key={l.label}>
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className={`text-[13.5px] font-extrabold ${dark ? "text-white/90" : "text-[#3c372f]"}`}>{l.label}</span>
+                    <span className="text-[13.5px] font-extrabold text-[#3c372f]">{l.label}</span>
                     {unlimited ? (
-                      <span className="inline-flex items-center gap-1 text-[12.5px] font-black text-[#6fce4d]">
+                      <span className="rita-accent inline-flex items-center gap-1 text-[12.5px] font-black">
                         <InfinityIcon size={13} /> Unlimited
                       </span>
                     ) : (
-                      <span className={`text-[12.5px] font-black tabular-nums ${dark ? "text-white/55" : "text-[#8a7f6c]"}`}>
+                      <span className="text-[12.5px] font-black tabular-nums text-[#8a7f6c]">
                         {left.toLocaleString()} of {limit.toLocaleString()} left
                       </span>
                     )}
                   </div>
                   {!unlimited && (
-                    <div className={`mt-1.5 h-1.5 overflow-hidden rounded-full ${dark ? "bg-white/10" : "bg-[#f1eee8]"}`}>
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#f1eee8]">
                       <div
                         className="h-full rounded-full transition-[width]"
                         style={{ width: `${pct}%`, background: l.tint }}
