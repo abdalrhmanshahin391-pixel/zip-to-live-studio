@@ -4,6 +4,7 @@ import {
   Bell,
   ChevronDown,
   Gauge,
+  ImageUp,
   LayoutGrid,
   LogOut,
   Menu,
@@ -22,6 +23,7 @@ import { GoldenBadge } from "@/components/GoldenBadge";
 import { AdminBadge, StudentBadge } from "@/components/RoleBadge";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { avatarTone, useAvatarUrl } from "@/lib/avatars";
+import { setImageEditMode, useImageEditMode } from "@/lib/image-edit-mode";
 import { ProWordmark } from "./ProWordmark";
 
 const MENUS: { label: string; items: { to: string; label: string }[] }[] = [
@@ -51,6 +53,7 @@ export function ProHeader() {
   const [open, setOpen] = useState<string | null>(null);
   const [accountOpen, setAccountOpen] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const imageEdit = useImageEditMode();
 
   const displayName = profile?.username ?? user?.email ?? "";
   const avatar = useAvatarUrl((profile as any)?.avatar_url ?? null);
@@ -226,6 +229,31 @@ export function ProHeader() {
                           <span
                             className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
                               adminMode ? "left-6" : "left-1"
+                            }`}
+                          />
+                        </span>
+                      </button>
+                    )}
+                    {isRealAdmin && (
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={imageEdit}
+                        onClick={() => setImageEditMode(!imageEdit)}
+                        className="mx-2 flex w-[calc(100%-1rem)] items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold text-white/85 transition-colors hover:bg-white/10"
+                      >
+                        <span className="inline-flex items-center gap-3">
+                          <ImageUp size={16} className={imageEdit ? "text-sky-400" : "text-white/40"} />
+                          Image edit mode
+                        </span>
+                        <span
+                          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                            imageEdit ? "bg-[#0071e3]" : "bg-white/20"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
+                              imageEdit ? "left-6" : "left-1"
                             }`}
                           />
                         </span>

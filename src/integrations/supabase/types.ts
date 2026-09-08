@@ -2926,6 +2926,27 @@ export type Database = {
         }
         Relationships: []
       }
+      site_images: {
+        Row: {
+          created_at: string
+          key: string
+          path: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          path: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       site_secrets: {
         Row: {
           created_at: string

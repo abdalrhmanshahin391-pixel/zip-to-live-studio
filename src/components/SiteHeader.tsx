@@ -27,9 +27,12 @@ import {
   Gauge,
   Flame,
   Share2,
+  ImageUp,
+
 
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { setImageEditMode, useImageEditMode } from "@/lib/image-edit-mode";
 import { useAuth } from "@/hooks/useAuth";
 import { GoldenBadge } from "@/components/GoldenBadge";
 import { CommitteeBadge } from "@/components/CommitteeBadge";
@@ -160,6 +163,7 @@ export function SiteHeader(_props: { variant?: "dark" | "light" } = {}) {
   const { user, profile, isAdmin, isRealAdmin, isGolden, isCommittee, isCommitteeHead, adminMode, setAdminMode, loading: authLoading } = useAuth();
   const settings = useSiteSettings();
   const skin = resolveHeaderSkin(settings.header_style);
+  const imageEdit = useImageEditMode();
 
   
   const navigate = useNavigate();
@@ -307,6 +311,31 @@ export function SiteHeader(_props: { variant?: "dark" | "light" } = {}) {
                     <span
                       className={`absolute top-1 h-4 w-4 rounded-full bg-card shadow-sm transition-all ${
                         adminMode ? "left-6" : "left-1"
+                      }`}
+                    />
+                  </span>
+                </button>
+              )}
+              {isRealAdmin && (
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={imageEdit}
+                  onClick={() => setImageEditMode(!imageEdit)}
+                  className="mx-2 flex w-[calc(100%-1rem)] items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-[14px] font-semibold text-[#3a352e] transition-colors hover:bg-white"
+                >
+                  <span className="inline-flex items-center gap-3">
+                    <ImageUp size={16} className={imageEdit ? "text-sky-600" : "text-muted-foreground"} />
+                    Image edit mode
+                  </span>
+                  <span
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                      imageEdit ? "bg-[#0071e3]" : "bg-muted-foreground/40"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-1 h-4 w-4 rounded-full bg-card shadow-sm transition-all ${
+                        imageEdit ? "left-6" : "left-1"
                       }`}
                     />
                   </span>

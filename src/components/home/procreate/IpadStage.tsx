@@ -1,4 +1,5 @@
 import screenAsset from "@/assets/rita-girl-ipad.jpg.asset.json";
+import { EditableImage } from "@/components/site/EditableImage";
 
 /**
  * A photoreal horizontal iPad Pro shell, deliberately cropped by the top
@@ -36,12 +37,14 @@ export function IpadStage() {
 
           {/* Screen — 4:3 tablet panel (less horizontal), artwork covers it completely */}
           <div className="relative aspect-[4/3] overflow-hidden rounded-[1.8rem] bg-black md:rounded-[2.3rem]">
-            <img
-              src={screenAsset.url}
+            <EditableImage
+              imageKey="home.ipad"
+              fallback={screenAsset.url}
               alt="A student studying on a tablet at night on a balcony under a starry sky, shown on an iPad screen"
               className="absolute inset-0 h-full w-full object-cover object-center"
               width={1280}
               height={800}
+              loading="eager"
             />
             {/* Glass sheen across the panel */}
             <span

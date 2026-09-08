@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { EditableImage } from "@/components/site/EditableImage";
 import face1 from "@/assets/student-face-1.jpg.asset.json";
 import face2 from "@/assets/student-face-2.jpg.asset.json";
 import face3 from "@/assets/student-face-3.jpg.asset.json";
@@ -23,13 +24,13 @@ export function ShareBand() {
               {FACES.map((url, i) => (
                 <span
                   key={url}
-                  className="h-[74px] w-[74px] overflow-hidden rounded-full ring-[3px] ring-[#131313]"
+                  className="relative h-[74px] w-[74px] overflow-hidden rounded-full ring-[3px] ring-[#131313]"
                   style={{ marginLeft: i === 0 ? 0 : -14 }}
                 >
-                  <img
-                    src={url}
+                  <EditableImage
+                    imageKey={`home.share.face${i + 1}`}
+                    fallback={url}
                     alt=""
-                    loading="lazy"
                     width={816}
                     height={816}
                     className="h-full w-full object-cover"
