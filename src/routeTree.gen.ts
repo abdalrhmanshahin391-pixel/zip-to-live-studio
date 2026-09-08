@@ -46,7 +46,6 @@ import { Route as AdminRolesRouteImport } from './routes/admin.roles'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AdminToolkitRouteImport } from './routes/admin.toolkit'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
-import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as CheckoutIndexRouteImport } from './routes/checkout.index'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CoursesCourseIdRouteImport } from './routes/courses.$courseId'
@@ -294,11 +293,6 @@ const AdminToolkitRoute = AdminToolkitRouteImport.update({
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/auth/callback',
-  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutIndexRoute = CheckoutIndexRouteImport.update({
@@ -648,7 +642,6 @@ export interface FileRoutesByFullPath {
   '/admin/support': typeof AdminSupportRoute
   '/admin/toolkit': typeof AdminToolkitRoute
   '/admin/users': typeof AdminUsersRoute
-  '/auth/callback': typeof AuthCallbackRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/courses/$courseId': typeof CoursesCourseIdRouteWithChildren
   '/german/add': typeof GermanAddRoute
@@ -746,7 +739,6 @@ export interface FileRoutesByTo {
   '/admin/support': typeof AdminSupportRoute
   '/admin/toolkit': typeof AdminToolkitRoute
   '/admin/users': typeof AdminUsersRoute
-  '/auth/callback': typeof AuthCallbackRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/german/add': typeof GermanAddRoute
   '/german/articles': typeof GermanArticlesRoute
@@ -846,7 +838,6 @@ export interface FileRoutesById {
   '/admin/support': typeof AdminSupportRoute
   '/admin/toolkit': typeof AdminToolkitRoute
   '/admin/users': typeof AdminUsersRoute
-  '/auth/callback': typeof AuthCallbackRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/courses/$courseId': typeof CoursesCourseIdRouteWithChildren
   '/german/add': typeof GermanAddRoute
@@ -949,7 +940,6 @@ export interface FileRouteTypes {
     | '/admin/support'
     | '/admin/toolkit'
     | '/admin/users'
-    | '/auth/callback'
     | '/checkout/success'
     | '/courses/$courseId'
     | '/german/add'
@@ -1047,7 +1037,6 @@ export interface FileRouteTypes {
     | '/admin/support'
     | '/admin/toolkit'
     | '/admin/users'
-    | '/auth/callback'
     | '/checkout/success'
     | '/german/add'
     | '/german/articles'
@@ -1146,7 +1135,6 @@ export interface FileRouteTypes {
     | '/admin/support'
     | '/admin/toolkit'
     | '/admin/users'
-    | '/auth/callback'
     | '/checkout/success'
     | '/courses/$courseId'
     | '/german/add'
@@ -1248,7 +1236,6 @@ export interface RootRouteChildren {
   AdminSupportRoute: typeof AdminSupportRoute
   AdminToolkitRoute: typeof AdminToolkitRoute
   AdminUsersRoute: typeof AdminUsersRoute
-  AuthCallbackRoute: typeof AuthCallbackRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   JoinCodeRoute: typeof JoinCodeRoute
   LearnGermanRoute: typeof LearnGermanRoute
@@ -1538,13 +1525,6 @@ declare module '@tanstack/react-router' {
       path: '/admin/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/callback': {
-      id: '/auth/callback'
-      path: '/auth/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout/': {
@@ -2147,7 +2127,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSupportRoute: AdminSupportRoute,
   AdminToolkitRoute: AdminToolkitRoute,
   AdminUsersRoute: AdminUsersRoute,
-  AuthCallbackRoute: AuthCallbackRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   JoinCodeRoute: JoinCodeRoute,
   LearnGermanRoute: LearnGermanRoute,

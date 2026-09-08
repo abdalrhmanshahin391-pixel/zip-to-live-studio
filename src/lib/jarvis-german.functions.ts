@@ -121,24 +121,10 @@ export const extractGermanPairsFromImage = createServerFn({ method: "POST" })
 
     const hint = data.kind === "words" ? "the German vocabulary words with their English translations" : "the German sentences with their English translations";
 
-    let raw: string;
-    let providerUsed: "lovable" | "gemini" = data.provider;
-    if (data.provider === "gemini") {
-      const pool = await getGeminiPoolSafe(context.supabase);
-      if (pool) {
-        try {
-          raw = await callGemini(pool, data.imageBase64, data.mimeType, hint);
-        } catch {
-          providerUsed = "lovable";
-          raw = await callLovable(data.imageBase64, data.mimeType, hint);
-        }
-      } else {
-        providerUsed = "lovable";
-        raw = await callLovable(data.imageBase64, data.mimeType, hint);
-      }
-    } else {
-      raw = await callLovable(data.imageBase64, data.mimeType, hint);
-    }
+    const pool = await getGeminiPoolSafe(context.supabase);
+    if (!pool) throw new Error("Gemini is not connected yet.");
+    const raw = await callGemini(pool, data.imageBase64, data.mimeType, hint);
+    const providerUsed = "gemini" as const;
 
     const pairs = parsePairs(raw);
     if (!pairs.length) throw new Error("No vocabulary rows detected in the image.");

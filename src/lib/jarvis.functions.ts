@@ -209,9 +209,7 @@ async function callAndParseQuestion(
   data: z.infer<typeof InputSchema>,
 ): Promise<z.infer<typeof ResultSchema>> {
   let raw = "";
-  if (data.provider === "lovable") {
-    raw = await callLovable(data.imageBase64, data.mimeType, data.hint);
-  } else if (data.provider === "gemini") {
+  if (data.provider === "lovable" || data.provider === "gemini") {
     const pool = await getGeminiPool(supabase);
     raw = await callGemini(pool, data.imageBase64, data.mimeType, data.hint);
   } else {

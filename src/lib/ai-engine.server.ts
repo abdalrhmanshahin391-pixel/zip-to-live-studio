@@ -1,10 +1,6 @@
 // Server-only: the single place that decides which AI key every tool uses.
 //
-// Order for each tool:
-//   1. a key saved for that tool                (admin_ai_keys.purpose = tool)
-//   2. the shared Gemini pool key               (admin_ai_keys.purpose = 'shared')
-//   3. the project secret GEMINI_API_KEY
-//   4. the shared RitaJet AI gateway            (LOVABLE_API_KEY)
+// Every text/vision study tool uses the same protected project Gemini key.
 
 export const AI_TOOL_IDS = [
   "aio",
@@ -31,7 +27,7 @@ export const AI_TOOLS: { id: AiToolId; name: string; blurb: string }[] = [
 ];
 
 export const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-export const GATEWAY_MODEL = "google/gemini-3.6-flash";
+export const GATEWAY_MODEL = "openai/gpt-6-astra";
 export const GOOGLE_OPENAI_URL =
   "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 export const GOOGLE_DEFAULT_MODEL = "gemini-flash-latest";
@@ -65,21 +61,6 @@ async function readRows(supabase: any, tool: AiToolId): Promise<Row[]> {
 
 /** Where one tool should send its request right now. */
 export async function resolveAiTarget(supabase: any, tool: AiToolId): Promise<AiTarget> {
-  const rows = await readRows(supabase, tool);
-  const own = rows.find((r) => r.purpose === tool);
-  const shared = rows.find((r) => r.purpose === "shared");
-  const picked = own ?? shared;
-
-  if (picked) {
-    return {
-      url: GOOGLE_OPENAI_URL,
-      key: String(picked.api_key).trim(),
-      model: picked.preferred_model?.trim() || GOOGLE_DEFAULT_MODEL,
-      source: own ? "own" : "shared",
-      google: true,
-    };
-  }
-
   const secret = (process.env["GEMINI_API_KEY"] ?? "").trim();
   if (secret.length > 10) {
     return {
@@ -103,9 +84,6 @@ export async function resolveGeminiKeyForTool(
   supabase: any,
   tool: AiToolId,
 ): Promise<{ key: string; model: string | null }> {
-  const rows = await readRows(supabase, tool);
-  const picked = rows.find((r) => r.purpose === tool) ?? rows.find((r) => r.purpose === "shared");
-  if (picked) return { key: String(picked.api_key).trim(), model: picked.preferred_model ?? null };
   const secret = (process.env["GEMINI_API_KEY"] ?? "").trim();
   if (secret.length > 10) return { key: secret, model: null };
   throw new Error(

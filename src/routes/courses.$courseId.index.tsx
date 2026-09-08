@@ -461,9 +461,9 @@ function CourseDetailPage() {
       <div className="min-h-screen bg-background text-foreground">
         <SiteHeader variant="light" />
         <div className="mx-auto max-w-md px-4 pt-32 text-center">
-          <h1 className="font-display text-2xl font-black">This bank has moved</h1>
+          <h1 className="font-display text-2xl font-black">Question bank unavailable</h1>
           <p className="mt-2 text-[14px] text-muted-foreground">
-            We could not find that question bank. Here is everything that is open to you.
+            This question bank does not exist or is not published yet. Browse the available banks instead.
           </p>
           <Link
             to="/courses"

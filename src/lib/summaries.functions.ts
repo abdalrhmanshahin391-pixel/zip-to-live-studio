@@ -358,12 +358,8 @@ export const generateSummary = createServerFn({ method: "POST" })
     let sourceText = "";
     const sourceRef: Record<string, unknown> = { kind: data.kind };
 
-    let provider: Provider = data.provider === "gemini" ? "gemini" : "lovable";
-    let geminiKey: GeminiPool | null = null;
-    if (provider === "gemini") {
-      try { geminiKey = await getGeminiKey(context.supabase); }
-      catch { provider = "lovable"; geminiKey = null; }
-    }
+    const provider: Provider = "gemini";
+    const geminiKey = await getGeminiKey(context.supabase);
     sourceRef.provider = provider;
 
 

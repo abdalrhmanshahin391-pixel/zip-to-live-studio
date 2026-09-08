@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
-import { Eye, EyeOff, Mail, MailCheck, X, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, MailCheck, X, ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import {
@@ -8,7 +8,6 @@ import {
   saveRememberedLogin,
   clearRememberedLogin,
 } from "@/lib/remember-login";
-import { GoogleButton } from "@/components/auth/GoogleButton";
 import { RitaFace } from "@/components/brand/RitaBrand";
 import {
   closeAuth,
@@ -23,9 +22,6 @@ import {
 
 const field =
   "w-full rounded-2xl border-2 border-black/[0.07] bg-[#fbf7ef] px-4 py-3.5 text-[15px] font-medium text-foreground placeholder:font-normal placeholder:text-muted-foreground outline-none transition-all focus:border-[var(--rita-green)] focus:bg-white focus:ring-4 focus:ring-[var(--rita-green-soft)]";
-
-const bigOutline =
-  "flex h-14 w-full items-center justify-center gap-3 rounded-full border-2 border-black/[0.08] bg-white px-4 text-[16px] font-black text-foreground shadow-[0_14px_28px_-22px_rgba(35,32,29,0.9)] transition-all hover:-translate-y-0.5 hover:bg-[#fbf7ef] disabled:translate-y-0 disabled:opacity-60";
 
 const primaryBtn =
   "inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--rita-green)] px-8 py-4 text-[16px] font-black text-[color:var(--rita-green-ink)] shadow-[0_16px_30px_-16px_rgba(122,160,44,0.9)] transition-all hover:-translate-y-0.5 hover:bg-[var(--rita-green-deep)] active:translate-y-0 disabled:translate-y-0 disabled:opacity-60";
@@ -124,7 +120,7 @@ function AuthWindow({ mode, next }: { mode: AuthMode; next?: string }) {
         </div>
 
         {mode === "signin" && <SignInPanel next={next} />}
-        {mode === "signup" && <SignUpPanel next={next} />}
+        {mode === "signup" && <SignUpPanel />}
         {mode === "forgot" && <ForgotPanel />}
       </div>
     </div>
@@ -135,7 +131,6 @@ function AuthWindow({ mode, next }: { mode: AuthMode; next?: string }) {
 
 function SignInPanel({ next }: { next?: string }) {
   const router = useRouter();
-  const [emailOpen, setEmailOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -257,19 +252,7 @@ function SignInPanel({ next }: { next?: string }) {
         <span>I accept RitaJet's terms of use, privacy practices and refund rules.</span>
       </label>
 
-      <div className={agree ? "space-y-3" : "pointer-events-none space-y-3 opacity-50"}>
-        <GoogleButton next={next} onError={setError} />
-        {!emailOpen && (
-          <button type="button" onClick={() => setEmailOpen(true)} className={bigOutline}>
-            <Mail size={18} />
-            Continue with email
-          </button>
-        )}
-      </div>
-
-
-      {emailOpen && (
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block">
             <Label>email</Label>
             <input
@@ -331,8 +314,7 @@ function SignInPanel({ next }: { next?: string }) {
 
             {loading ? "Signing in…" : "Sign in"}
           </button>
-        </form>
-      )}
+      </form>
 
       <p className="mt-6 border-t border-black/[0.07] pt-4 text-center text-sm font-medium text-muted-foreground">
         New to Rita?{" "}
@@ -371,8 +353,7 @@ const signupSchema = z
   })
   .strip();
 
-function SignUpPanel({ next }: { next?: string }) {
-  const [emailOpen, setEmailOpen] = useState(false);
+function SignUpPanel() {
   const [form, setForm] = useState({
     full_name: "",
     username: "",
@@ -481,18 +462,7 @@ function SignUpPanel({ next }: { next?: string }) {
     <div>
       {error && <Err message={error} />}
 
-      <div className="space-y-3">
-        <GoogleButton label="Sign up with Google" next={next} onError={setError} />
-        {!emailOpen && (
-          <button type="button" onClick={() => setEmailOpen(true)} className={bigOutline}>
-            <Mail size={18} />
-            Sign up with email
-          </button>
-        )}
-      </div>
-
-      {emailOpen && (
-        <form onSubmit={handleSubmit} className="mt-4 space-y-3.5">
+      <form onSubmit={handleSubmit} className="space-y-3.5">
           <label className="block">
             <Label>full name</Label>
             <input
@@ -575,8 +545,7 @@ function SignUpPanel({ next }: { next?: string }) {
           <button type="submit" disabled={loading || !accepted} className={primaryBtn}>
             {loading ? "Creating your account…" : "Create account"}
           </button>
-        </form>
-      )}
+      </form>
 
       <p className="mt-6 border-t border-black/[0.07] pt-4 text-center text-sm font-medium text-muted-foreground">
         Already have an account?{" "}

@@ -22,3 +22,7 @@
 - [x] Verify the signed-out desktop and phone flows and pricing layout
 - [x] Fix signed-in account-name contrast across transparent and cream headers
 - [x] Add the spacious animated German Lab iPad feature after the three study cards
+- [x] Remove Google access from sign-in and registration
+- [x] Connect Rita and shared study AI to one protected Gemini key
+- [x] Make published question-bank outlines visible while keeping questions protected
+- [ ] Import the original courses, subjects, questions, and answers (waiting for old-data upload)

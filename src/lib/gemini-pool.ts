@@ -73,11 +73,10 @@ export async function getGeminiPool(supabase: any): Promise<GeminiPool> {
     .order("slot", { ascending: true });
   if (error) throw error;
   const rows = (data ?? []) as { api_key: string; slot: number; preferred_model: string | null }[];
-  const keys = rows.map((r) => r.api_key).filter((k) => !!k && k.length > 8);
-  // Keys saved by the admin win; the project-secret key is only a fallback so a
-  // stale secret can never shadow a freshly-saved working key.
+  const keys: string[] = [];
+  // All study features use the same protected project key.
   const envKey = (process.env['GEMINI_API_KEY'] ?? "").trim();
-  if (envKey.length > 10 && !keys.includes(envKey)) keys.push(envKey);
+  if (envKey.length > 10) keys.push(envKey);
   const limits = await loadModelLimits(supabase);
   const preferredFromDb = rows.find((r) => r.preferred_model)?.preferred_model;
   const enabledIds = Object.entries(limits).filter(([, l]) => l.enabled).map(([id]) => id);
