@@ -44,14 +44,22 @@ function ProductCard({ imageKey, label, title, note, image, imageAlt, side }: Pr
           }}
         >
           <div className="relative h-full w-full overflow-hidden rounded-[23px] bg-black md:rounded-[28px]">
-            <EditableImage
-              imageKey={imageKey}
-              fallback={image}
-              alt={imageAlt}
-              width={1920}
-              height={1072}
-              className="h-full w-full object-cover"
-            />
+            {/* The tablet deliberately runs off the card, so the picture is
+                fitted to the part of the screen that stays visible. */}
+            <div
+              className="absolute inset-y-0 w-[77%]"
+              style={left ? { right: 0 } : { left: 0 }}
+            >
+              <EditableImage
+                imageKey={imageKey}
+                fallback={image}
+                alt={imageAlt}
+                width={1920}
+                height={1072}
+                className="h-full w-full object-cover"
+              />
+            </div>
+
             <span
               aria-hidden
               className="pointer-events-none absolute inset-0"
