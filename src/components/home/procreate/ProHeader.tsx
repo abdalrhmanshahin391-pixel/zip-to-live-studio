@@ -110,8 +110,7 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
             Start learning
           </Link>
 
-            )}
-          </div>
+
 
           {SIMPLE_LINKS.map((l) => (
             <Link
