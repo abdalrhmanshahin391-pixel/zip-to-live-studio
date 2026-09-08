@@ -162,8 +162,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               "@id": "https://ritajet.com/#organization",
               name: "RitaJet",
               alternateName: ["RitaJet", "Rita Study", "RitaJet study tools"],
-              url: "https://ritajet.com/",
-              logo: "https://ritajet.com/favicon.png",
+              url: "https://zip-to-live-studio.lovable.app/",
+              logo: "https://zip-to-live-studio.lovable.app/favicon.png",
               description:
                 "Rita is a study workspace with flashcards, PDF summaries, AI practice questions and a study planner.",
             },
