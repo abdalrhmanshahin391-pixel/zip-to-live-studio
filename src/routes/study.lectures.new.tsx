@@ -380,18 +380,22 @@ function NewLectureQuizPage() {
 
           <div className="mt-3 text-[12px] font-black uppercase tracking-[0.14em] text-[#7a4b16]">Questions</div>
           <div className="mt-2 flex flex-wrap gap-2">
-            {[10, 15, 20, 30].map((n) => (
+            {[5, 10, 15, 20, 30].map((n) => (
               <button
                 key={n}
                 onClick={() => setCount(n)}
                 className={`rounded-full border px-4 py-2 text-[13px] font-extrabold ${
-                  count === n ? "border-[#3f2c73] bg-[#f2edfb] text-[#3f2c73]" : "border-black/10"
+                  count === n ? "border-[#4b9b2e] bg-[#eef7e8] text-[#2f6b1c]" : "border-black/10"
                 }`}
               >
                 {n}
               </button>
             ))}
           </div>
+          <p className="mt-2 text-[12px] text-[#6b6357]">
+            On the free plan you can make 10 AI questions at a time — pick 10 or fewer if you see a limit message.
+          </p>
+
 
           <div className="mt-4 text-[12px] font-black uppercase tracking-[0.14em] text-[#7a4b16]">Difficulty</div>
           <div className="mt-2 flex flex-wrap gap-2">
