@@ -13,7 +13,11 @@ export function needsOnboarding(userId: string, profile: OnboardingProfile): boo
   if (!profile) return true;
   const username = (profile.username ?? "").trim();
   const fullName = (profile.full_name ?? "").trim();
+  const phone = (profile.phone ?? "").trim();
   if (!username || username === userId) return true;
   if (fullName.length < 2) return true;
+  // Google accounts arrive without a phone number — ask for it once here
+  // rather than letting a half-finished profile through.
+  if (phone.length < 6) return true;
   return false;
 }
