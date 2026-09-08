@@ -38,8 +38,8 @@ export function ProHome() {
         <p className="mt-5 text-[15px] text-white/45">Free to start. No card needed.</p>
       </div>
 
-      <ShareBand />
       <ProductShowcase />
+      <ShareBand />
     </main>
   );
 }
