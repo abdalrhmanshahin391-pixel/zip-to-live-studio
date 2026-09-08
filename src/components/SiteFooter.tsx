@@ -55,7 +55,7 @@ export function SiteFooter() {
 
   return (
     <footer
-      className="mt-auto bg-black text-white"
+      className="rita-cream mt-auto border-t border-white/10 bg-black text-white"
       style={{ fontFamily: "var(--font-grotesk)" }}
     >
       <div className="mx-auto max-w-[1240px] px-6 py-16 md:px-10 md:py-20">
@@ -64,12 +64,12 @@ export function SiteFooter() {
             <p className="text-[30px] font-bold tracking-[-0.03em] text-white md:text-[34px]">
               {settings.site_name || "RitaJet"}
             </p>
-            <p className="mt-1 text-[24px] font-bold tracking-[-0.02em] text-white/40 md:text-[28px]">
+            <p className="rita-accent mt-1 text-[24px] font-bold tracking-[-0.02em] md:text-[28px]">
               {ar ? "الدراسة للجميع." : "Study is for everyone."}
             </p>
             <a
               href={`mailto:${SUPPORT_EMAIL}`}
-              className="mt-6 inline-block text-[15px] text-white/50 transition-colors hover:text-white"
+              className="mt-6 inline-block text-[15px] text-white/50 transition-colors hover:!text-[color:var(--rita-green-deep)]"
             >
               {SUPPORT_EMAIL}
             </a>
@@ -86,7 +86,7 @@ export function SiteFooter() {
                     <li key={l.to + l.label}>
                       <Link
                         to={l.to as any}
-                        className="text-[15px] text-white/45 transition-colors hover:text-white"
+                        className="text-[15px] text-white/45 transition-colors hover:!text-[color:var(--rita-green-deep)]"
                       >
                         {l.label}
                       </Link>

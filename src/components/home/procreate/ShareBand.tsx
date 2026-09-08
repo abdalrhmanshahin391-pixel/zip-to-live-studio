@@ -15,7 +15,7 @@ export function ShareBand() {
           className="font-bold leading-[1.03] tracking-[-0.035em] text-white"
           style={{ fontSize: "clamp(2.1rem,5.4vw,4.1rem)" }}
         >
-          Share your flashcards.
+          Share your <span className="rita-accent">flashcards.</span>
         </h2>
 
         <div className="mt-12 flex flex-col gap-8 md:mt-20 md:flex-row md:items-end md:justify-between">
@@ -24,7 +24,7 @@ export function ShareBand() {
               {FACES.map((url, i) => (
                 <span
                   key={url}
-                  className="relative h-[74px] w-[74px] overflow-hidden rounded-full ring-[3px] ring-[#131313]"
+                  className="relative h-[74px] w-[74px] overflow-hidden rounded-full ring-[3px] ring-[color:var(--pro-card)]"
                   style={{ marginLeft: i === 0 ? 0 : -14 }}
                 >
                   <EditableImage

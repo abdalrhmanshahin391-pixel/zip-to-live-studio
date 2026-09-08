@@ -18,7 +18,7 @@ function ProductCard({ imageKey, label, title, note, image, imageAlt, side }: Pr
 
   return (
     <article className="relative min-h-[590px] overflow-hidden rounded-[28px] border border-white/10 bg-[#121212] px-6 pt-12 text-center md:min-h-[650px] md:rounded-[34px] md:px-10 md:pt-14">
-      <p className="text-[20px] font-bold text-white md:text-[22px]">RitaJet <span className="font-normal text-white/55">{label}</span></p>
+      <p className="text-[20px] font-bold text-white md:text-[22px]">RitaJet <span className="rita-accent font-normal">{label}</span></p>
       <h2 className="mt-6 text-[36px] font-bold leading-[1.05] text-white md:text-[44px]">{title}</h2>
 
       <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
@@ -36,7 +36,7 @@ function ProductCard({ imageKey, label, title, note, image, imageAlt, side }: Pr
           className="relative aspect-[16/10] rounded-[28px] p-[7px] md:rounded-[34px] md:p-[9px]"
           style={{
             background: "linear-gradient(145deg,#9ca2a8 0%,#444a50 8%,#1b1e21 28%,#111315 72%,#555b61 94%,#a8adb2 100%)",
-            boxShadow: "0 1px 0 rgba(255,255,255,.22) inset, 0 30px 80px -24px rgba(0,0,0,.95)",
+            boxShadow: "0 1px 0 rgba(255,255,255,.22) inset, 0 18px 44px -32px rgba(43,39,33,.35)",
             transform: left ? "perspective(1400px) rotateY(4deg)" : "perspective(1400px) rotateY(-4deg)",
           }}
         >
