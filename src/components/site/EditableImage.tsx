@@ -15,6 +15,7 @@ type Props = {
   width?: number;
   height?: number;
   loading?: "lazy" | "eager";
+  fetchPriority?: "high" | "low" | "auto";
   /** Extra classes for the positioning wrapper. */
   wrapperClassName?: string;
 };
@@ -31,6 +32,7 @@ export function EditableImage({
   width,
   height,
   loading = "lazy",
+  fetchPriority = "auto",
   wrapperClassName,
 }: Props) {
   const { isRealAdmin } = useAuth();
@@ -81,6 +83,8 @@ export function EditableImage({
       {...(width ? { width } : {})}
       {...(height ? { height } : {})}
       loading={loading}
+      decoding="async"
+      fetchPriority={fetchPriority}
     />
   );
 

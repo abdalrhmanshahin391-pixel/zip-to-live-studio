@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import toolkitArt from "@/assets/toolkit-girl-study.jpeg.asset.json";
+import toolkitArt from "@/assets/toolkit-girl-study.webp.asset.json";
 import plansArt from "@/assets/pricing-monthly-dark.jpg.asset.json";
 import classroomArt from "@/assets/classroom-study-group.jpg.asset.json";
-import flashcardsArt from "@/assets/rita-flashcards-feature.jpg.asset.json";
+import flashcardsArt from "@/assets/rita-flashcards-feature.webp.asset.json";
 import { EditableImage } from "@/components/site/EditableImage";
 
 type ProductCardProps = {
@@ -56,6 +56,8 @@ function ProductCard({ imageKey, label, title, note, image, imageAlt, side }: Pr
                 alt={imageAlt}
                 width={1920}
                 height={1072}
+                loading="lazy"
+                fetchPriority="low"
                 className="h-full w-full object-cover"
               />
             </div>
@@ -130,6 +132,7 @@ function FlashcardsFeatureCard() {
         width={1536}
         height={1024}
         loading="eager"
+        fetchPriority="auto"
         className="absolute inset-0 h-full w-full object-cover object-[62%_center] md:object-center"
       />
       <span

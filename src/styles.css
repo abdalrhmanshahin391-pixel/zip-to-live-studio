@@ -1737,11 +1737,27 @@ hairline borders and generous radii.
   background: linear-gradient(145deg, var(--ipad-edge), var(--ipad-edge-dark) 48%, var(--ipad-edge));
   box-shadow: 0 1px 0 color-mix(in oklab, white 35%, transparent) inset;
 }
+.rita-ipad-shell-premium {
+  background: linear-gradient(148deg, var(--ipad-edge) 0%, var(--ipad-edge-highlight) 9%, var(--ipad-edge-dark) 30%, var(--ipad-edge-deep) 68%, var(--ipad-edge) 100%);
+  box-shadow:
+    0 1px 0 color-mix(in oklab, white 48%, transparent) inset,
+    0 -1px 0 color-mix(in oklab, black 42%, transparent) inset,
+    0 24px 48px -38px color-mix(in oklab, var(--pro-ink) 46%, transparent);
+}
+.rita-ipad-camera-cluster { background-color: color-mix(in oklab, black 82%, transparent); }
+.rita-ipad-side-button { background: linear-gradient(90deg, var(--ipad-edge-dark), var(--ipad-edge-highlight)); }
 .rita-ipad-camera { background-color: color-mix(in oklab, black 72%, transparent); }
 .rita-ipad-glass {
   border-radius: inherit;
   box-shadow: 0 0 0 1px color-mix(in oklab, white 16%, transparent) inset;
   background: linear-gradient(118deg, color-mix(in oklab, white 8%, transparent), transparent 32%);
+}
+
+.rita-install-banner,
+.rita-install-sheet {
+  border-color: color-mix(in oklab, var(--pro-ink) 10%, transparent);
+  background: color-mix(in oklab, var(--pro-card) 94%, white);
+  box-shadow: 0 20px 55px -30px color-mix(in oklab, var(--pro-ink) 48%, transparent);
 }
 @media (prefers-reduced-motion: reduce) {
   .rita-reveal {
