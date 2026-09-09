@@ -78,6 +78,8 @@ function AllInOneUpload() {
   const list = useServerFn(aioList);
   const start = useServerFn(aioStart);
   const buildSummary = useServerFn(aioSummary);
+  const buildSheet = useServerFn(generateSummary);
+  const linkSheet = useServerFn(aioLinkSummary);
   const buildCards = useServerFn(aioCards);
   const readPages = useServerFn(aioReadPages);
   const generate = useServerFn(lqGenerate);
