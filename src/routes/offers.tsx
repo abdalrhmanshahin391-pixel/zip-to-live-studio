@@ -7,7 +7,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import toolkitArt from "@/assets/offers-toolkit.jpg.asset.json";
+import toolkitArt from "@/assets/toolkit-girl-study.webp.asset.json";
 
 export const Route = createFileRoute("/offers")({
   head: () => ({

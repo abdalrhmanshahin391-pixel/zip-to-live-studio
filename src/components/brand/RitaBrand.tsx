@@ -1,4 +1,5 @@
-import ritaFace from "@/assets/rita-face-green.jpeg.asset.json";
+// The original Rita face (the icon Google still shows) — restored on request.
+const ritaFace = { url: "/brand-rita.png" };
 
 export function RitaFace({ size = 40 }: { size?: number }) {
   return (
