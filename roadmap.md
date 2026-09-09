@@ -41,3 +41,10 @@
 - [x] Repair registration, move agreement above account creation, and require email verification
 - [x] Remove obsolete AquaQBank branding while preserving the intentional toolkit code
 - [x] Add working Terms, Privacy, and Refund pages and verify account screens on desktop and phone
+- [x] Move the flashcard Smart review button below Study mode and Shuffle
+- [x] Remove "Ask this lecture" from All-in-one and its backend helper
+- [x] Keep only the RitaJet example lectures and add the Tuberculosis sample for everyone
+- [x] Fix the account password change and remove the reset/verification controls from settings
+- [x] Require email verification for new email sign-ups
+- [x] Share lecture questions separately from flashcards, publicly and inside classrooms
+- [x] Page shared questions and sets so very large collections stay fast
