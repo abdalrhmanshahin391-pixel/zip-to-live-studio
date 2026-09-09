@@ -89,6 +89,7 @@ import { Route as ApiPublicArchiveSolverRouteImport } from './routes/api/public/
 import { Route as ApiPublicPushDispatchRouteImport } from './routes/api/public/push-dispatch'
 import { Route as ApiPublicRitaWorkerRouteImport } from './routes/api/public/rita-worker'
 import { Route as CoursesCourseIdIndexRouteImport } from './routes/courses.$courseId.index'
+import { Route as CoursesCourseIdAddQuestionsRouteImport } from './routes/courses.$courseId.add-questions'
 import { Route as CoursesCourseIdRunRouteImport } from './routes/courses.$courseId.run'
 import { Route as GermanCourseIdIndexRouteImport } from './routes/german.$courseId.index'
 import { Route as GermanCourseIdExamRouteImport } from './routes/german.$courseId.exam'
@@ -512,6 +513,12 @@ const CoursesCourseIdIndexRoute = CoursesCourseIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => CoursesCourseIdRoute,
 } as any)
+const CoursesCourseIdAddQuestionsRoute =
+  CoursesCourseIdAddQuestionsRouteImport.update({
+    id: '/add-questions',
+    path: '/add-questions',
+    getParentRoute: () => CoursesCourseIdRoute,
+  } as any)
 const CoursesCourseIdRunRoute = CoursesCourseIdRunRouteImport.update({
   id: '/run',
   path: '/run',
@@ -689,6 +696,7 @@ export interface FileRoutesByFullPath {
   '/api/public/archive-solver': typeof ApiPublicArchiveSolverRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
+  '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
   '/courses/$courseId/run': typeof CoursesCourseIdRunRoute
   '/german/$courseId/exam': typeof GermanCourseIdExamRoute
   '/german/$courseId/match': typeof GermanCourseIdMatchRoute
@@ -786,6 +794,7 @@ export interface FileRoutesByTo {
   '/api/public/archive-solver': typeof ApiPublicArchiveSolverRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
+  '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
   '/courses/$courseId/run': typeof CoursesCourseIdRunRoute
   '/german/$courseId/exam': typeof GermanCourseIdExamRoute
   '/german/$courseId/match': typeof GermanCourseIdMatchRoute
@@ -887,6 +896,7 @@ export interface FileRoutesById {
   '/api/public/archive-solver': typeof ApiPublicArchiveSolverRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
+  '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
   '/courses/$courseId/run': typeof CoursesCourseIdRunRoute
   '/german/$courseId/exam': typeof GermanCourseIdExamRoute
   '/german/$courseId/match': typeof GermanCourseIdMatchRoute
@@ -990,6 +1000,7 @@ export interface FileRouteTypes {
     | '/api/public/archive-solver'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
+    | '/courses/$courseId/add-questions'
     | '/courses/$courseId/run'
     | '/german/$courseId/exam'
     | '/german/$courseId/match'
@@ -1087,6 +1098,7 @@ export interface FileRouteTypes {
     | '/api/public/archive-solver'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
+    | '/courses/$courseId/add-questions'
     | '/courses/$courseId/run'
     | '/german/$courseId/exam'
     | '/german/$courseId/match'
@@ -1187,6 +1199,7 @@ export interface FileRouteTypes {
     | '/api/public/archive-solver'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
+    | '/courses/$courseId/add-questions'
     | '/courses/$courseId/run'
     | '/german/$courseId/exam'
     | '/german/$courseId/match'
@@ -1841,6 +1854,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoursesCourseIdIndexRouteImport
       parentRoute: typeof CoursesCourseIdRoute
     }
+    '/courses/$courseId/add-questions': {
+      id: '/courses/$courseId/add-questions'
+      path: '/add-questions'
+      fullPath: '/courses/$courseId/add-questions'
+      preLoaderRoute: typeof CoursesCourseIdAddQuestionsRouteImport
+      parentRoute: typeof CoursesCourseIdRoute
+    }
     '/courses/$courseId/run': {
       id: '/courses/$courseId/run'
       path: '/run'
@@ -1978,11 +1998,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface CoursesCourseIdRouteChildren {
+  CoursesCourseIdAddQuestionsRoute: typeof CoursesCourseIdAddQuestionsRoute
   CoursesCourseIdRunRoute: typeof CoursesCourseIdRunRoute
   CoursesCourseIdIndexRoute: typeof CoursesCourseIdIndexRoute
 }
 
 const CoursesCourseIdRouteChildren: CoursesCourseIdRouteChildren = {
+  CoursesCourseIdAddQuestionsRoute: CoursesCourseIdAddQuestionsRoute,
   CoursesCourseIdRunRoute: CoursesCourseIdRunRoute,
   CoursesCourseIdIndexRoute: CoursesCourseIdIndexRoute,
 }
