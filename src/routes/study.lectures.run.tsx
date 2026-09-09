@@ -463,8 +463,8 @@ function QuestionMap({
   return (
     <aside className="self-start lg:sticky lg:top-24">
       <div className="medical-card overflow-hidden">
-        <div className="border-b border-border px-4 py-3 text-sm font-bold">Question map</div>
-        <div className="grid grid-cols-5 gap-2 p-3">
+        <div className="border-b border-border px-4 py-3.5 text-[15px] font-bold">Question map</div>
+        <div className="grid grid-cols-5 gap-2.5 p-3.5">
           {questions.map((question, index) => {
             const answered = !!answers[question.id];
             const revealed = mode === "study" || !!submitted[question.id];
@@ -479,7 +479,7 @@ function QuestionMap({
                 size="icon"
                 onClick={() => onJump(index)}
                 aria-label={`Question ${index + 1}${flags[question.id] ? ", flagged" : ""}`}
-                className={`relative rounded-lg text-xs font-bold ${
+                className={`relative h-11 w-11 rounded-full text-[14px] font-bold ${
                   index === current
                     ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
                     : correct
@@ -497,13 +497,13 @@ function QuestionMap({
             );
           })}
         </div>
-        <div className="space-y-2 border-t border-border p-3">
-          <Button type="button" onClick={onFinish} className="w-full rounded-xl">
+        <div className="space-y-2.5 border-t border-border p-3.5">
+          <button type="button" onClick={onFinish} className="rita-btn rita-btn-primary w-full">
             Finish {mode === "study" ? "Study" : mode === "session" ? "Session" : "Exam"}
-          </Button>
-          <Button asChild variant="outline" className="w-full rounded-xl">
-            <Link to="/study/lectures">End & exit</Link>
-          </Button>
+          </button>
+          <Link to="/study/lectures" className="rita-btn rita-btn-secondary w-full">
+            End &amp; exit
+          </Link>
         </div>
       </div>
     </aside>
