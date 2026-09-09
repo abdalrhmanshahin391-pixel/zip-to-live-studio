@@ -21,13 +21,21 @@ export function GoogleButton({ label = "Continue with Google" }: { label?: strin
       });
       if (result.redirected) return;
       if (result.error) {
-        setError("Google sign-in isn't available yet. Use your email and password for now.");
+        setError(
+          result.error.message
+            ? `Google couldn't sign you in: ${result.error.message}`
+            : "Google couldn't sign you in. Please try again or use your email and password.",
+        );
         setBusy(false);
         return;
       }
       window.location.assign("/");
-    } catch {
-      setError("Google sign-in isn't available yet. Use your email and password for now.");
+    } catch (reason) {
+      setError(
+        reason instanceof Error && reason.message
+          ? `Google couldn't sign you in: ${reason.message}`
+          : "Google couldn't sign you in. Please try again or use your email and password.",
+      );
       setBusy(false);
     }
   }

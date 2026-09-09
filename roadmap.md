@@ -29,3 +29,8 @@
 - [x] Redesign the RitaJet home-screen install prompt
 - [x] Refine and reduce the German Lab iPad with camera details
 - [x] Optimize priority and file weight for home-page pictures
+- [x] Fix the sample question-bank card so it opens the real public course
+- [x] Verify the public sample hierarchy and complete question-session path
+- [ ] Import the original full question bank (blocked until the old export is uploaded)
+- [x] Surface the real Google sign-in error instead of hiding provider failures
+- [ ] Confirm RitaJet branding on Google's external consent screen (blocked by the active Google OAuth client settings)
