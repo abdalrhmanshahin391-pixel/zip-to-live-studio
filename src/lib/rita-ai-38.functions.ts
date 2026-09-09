@@ -299,6 +299,128 @@ export const ritaCreateTextJob = createServerFn({ method: "POST" })
     return { jobId: job.id as string, chunkCount: 1 };
   });
 
+/**
+ * Photographed / scanned paper mode.
+ *
+ * The browser sends already-upscaled page pictures. We read each one with
+ * Gemini vision (OCR), then feed the typed-out text into exactly the same
+ * borders -> cut -> solve -> save pipeline as a text PDF.
+ */
+export const ritaCreateImageJob = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      subjectId: z.string().uuid(),
+      name: z.string().min(1).max(200),
+      images: z.array(z.string().min(100).max(6_000_000)).min(1).max(12),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = (context as any).supabase;
+    const userId = (context as any).userId as string;
+    const { assertFeature, assertQuota } = await import("@/lib/quota.server");
+    await assertFeature(userId, "feature_rita38");
+    await assertQuota(userId, "rita_questions", 1);
+    const { courseId, groupId } = await assertOwnsSubject(supabase, userId, data.subjectId);
+
+    const { RITA_MODEL, OCR_SYSTEM, resolveRitaKey, ritaKeyError } = await import(
+      "@/lib/rita-ai-38.server"
+    );
+    const apiKey = await resolveRitaKey(supabase);
+
+    async function readPage(b64: string): Promise<string> {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${RITA_MODEL}:generateContent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: OCR_SYSTEM }] },
+            contents: [{
+              role: "user",
+              parts: [
+                { inlineData: { mimeType: "image/jpeg", data: b64 } },
+                { text: "Type out this page exactly as printed." },
+              ],
+            }],
+            generationConfig: { temperature: 0, maxOutputTokens: 8192 },
+          }),
+        },
+      );
+      const raw = await res.text();
+      if (!res.ok) throw new Error(ritaKeyError(res.status, raw));
+      try {
+        return String(JSON.parse(raw)?.candidates?.[0]?.content?.parts?.[0]?.text ?? "").trim();
+      } catch {
+        return "";
+      }
+    }
+
+    // Read pages a few at a time so one big paper does not stall the request.
+    const pages: string[] = new Array(data.images.length).fill("");
+    const LANES = 3;
+    let cursor = 0;
+    await Promise.all(
+      Array.from({ length: Math.min(LANES, data.images.length) }, async () => {
+        while (cursor < data.images.length) {
+          const i = cursor++;
+          try {
+            pages[i] = await readPage(data.images[i]!);
+          } catch (e: any) {
+            if (i === 0) throw e;
+            pages[i] = "";
+          }
+        }
+      }),
+    );
+
+    const readable = pages.filter((p) => p.trim().length > 20);
+    if (!readable.length) {
+      throw new Error("We could not read any writing on those pages. Try a sharper, straighter photo.");
+    }
+
+    const totalPages = pages.length;
+    const chunks: { from: number; to: number; text: string }[] = [];
+    for (let i = 0; i < totalPages; i += PAGES_PER_CHUNK) {
+      const text = pages.slice(i, i + PAGES_PER_CHUNK).join("\n\n").trim();
+      if (text.length < 40) continue;
+      chunks.push({ from: i + 1, to: Math.min(i + PAGES_PER_CHUNK, totalPages), text: text.slice(0, 60_000) });
+    }
+    if (!chunks.length) throw new Error("Those pages did not contain enough writing to work with.");
+
+    const { data: job, error } = await supabase.from(JOBS).insert({
+      user_id: userId,
+      course_id: courseId,
+      group_id: groupId,
+      subject_id: data.subjectId,
+      pdf_name: data.name,
+      total_pages: totalPages,
+      pages_per_chunk: PAGES_PER_CHUNK,
+      chunks_total: chunks.length,
+      status: "queued",
+      log: [{
+        at: new Date().toISOString(),
+        text: `Read ${readable.length} of ${totalPages} page${totalPages === 1 ? "" : "s"} from ${data.name}.`,
+      }],
+    }).select("id").single();
+    if (error) throw error;
+
+    const { error: cErr } = await supabase.from(CHUNKS).insert(
+      chunks.map((c, i) => ({
+        job_id: job.id,
+        chunk_index: i,
+        page_from: c.from,
+        page_to: c.to,
+        chunk_text: c.text,
+        status: "pending",
+      })),
+    );
+    if (cErr) throw cErr;
+
+    return { jobId: job.id as string, totalPages, chunkCount: chunks.length, readPages: readable.length };
+  });
+
+
 /** Nudges the server worker so a fresh run starts without waiting for the schedule. */
 export const ritaKickWorker = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
