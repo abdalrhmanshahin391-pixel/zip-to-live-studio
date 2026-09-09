@@ -97,7 +97,7 @@ async function submitChunk(admin: Admin, apiKey: string, chunk: any, log: RitaLo
         role: "user",
         parts: [{ text: `Solve this question and return JSON per the system prompt.\n\n--- QUESTION ---\n${qb}\n--- END ---` }],
       }],
-      generationConfig: { temperature: 0.2, maxOutputTokens: 4096, responseMimeType: "application/json" },
+      generationConfig: { temperature: 0.2, maxOutputTokens: 8192, responseMimeType: "application/json" },
     },
     metadata: { key: `q-${i}` },
   }));
