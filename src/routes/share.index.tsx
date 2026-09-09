@@ -75,6 +75,18 @@ function SharePage() {
           </Link>
         </div>
 
+        <div className="mt-8 inline-flex rounded-full border border-black/[0.08] bg-white p-1">
+          <span className="rounded-full bg-[#23201d] px-4 py-2 text-[13px] font-black text-white">
+            Flashcards
+          </span>
+          <Link
+            to="/share/questions"
+            className="rounded-full px-4 py-2 text-[13px] font-black text-[#6b655c] hover:bg-black/[0.05]"
+          >
+            Questions
+          </Link>
+        </div>
+
         <div className="mt-10 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 rounded-full border border-black/[0.08] bg-white px-4 py-2.5">
             <Search size={15} className="text-[#a29a8d]" />
