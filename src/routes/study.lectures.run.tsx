@@ -342,34 +342,35 @@ function QuestionCard({
         </Button>
       </div>
 
-      <div className="px-5 py-6 md:px-6">
-        <h1 className="text-lg font-semibold leading-relaxed text-foreground">{question.stem}</h1>
+      <div className="px-5 py-7 md:px-7">
+        <h1 className="font-display text-[21px] font-black leading-[1.35] text-foreground md:text-[25px]">
+          {question.stem}
+        </h1>
       </div>
 
-      <div className="space-y-3 px-5 pb-6 md:px-6">
+      <div className="space-y-3.5 px-5 pb-7 md:px-7">
         {question.options.map((option) => {
           const picked = selected === option.letter;
           const correct = revealed && option.is_correct;
           const wrong = revealed && picked && !option.is_correct;
           return (
-            <Button
+            <button
               key={option.letter}
               type="button"
-              variant="outline"
               disabled={mode === "study" || revealed}
               onClick={() => onChoose(option.letter)}
-              className={`h-auto min-h-14 w-full justify-start whitespace-normal rounded-xl px-4 py-3.5 text-left text-sm font-medium transition-transform ${
+              className={`flex w-full items-center gap-4 rounded-[20px] border px-4 py-4 text-left transition md:px-5 md:py-[18px] ${
                 correct
                   ? "border-emerald-300 bg-emerald-50 text-emerald-950"
                   : wrong
                     ? "border-rose-300 bg-rose-50 text-rose-950"
                     : picked
                       ? "border-primary/60 bg-primary/10 text-foreground"
-                      : "border-border bg-card text-foreground hover:-translate-y-0.5 hover:border-primary/50 hover:bg-card"
-              } disabled:opacity-100`}
+                      : "border-border bg-card text-foreground hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_18px_34px_-28px_rgba(0,0,0,0.5)]"
+              } disabled:cursor-default disabled:opacity-100`}
             >
               <span
-                className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border text-sm font-bold ${
+                className={`grid h-11 w-11 shrink-0 place-items-center rounded-full border text-[16px] font-black ${
                   correct
                     ? "border-emerald-500 bg-emerald-500 text-white"
                     : wrong
@@ -381,28 +382,30 @@ function QuestionCard({
               >
                 {option.letter}
               </span>
-              <span className="flex-1 leading-relaxed">{option.body}</span>
-              {correct && <CheckCircle2 className="text-emerald-600" />}
-              {wrong && <XCircle className="text-rose-600" />}
-            </Button>
+              <span className="flex-1 text-[16.5px] font-semibold leading-[1.5] md:text-[17.5px]">
+                {option.body}
+              </span>
+              {correct && <CheckCircle2 className="shrink-0 text-emerald-600" />}
+              {wrong && <XCircle className="shrink-0 text-rose-600" />}
+            </button>
           );
         })}
       </div>
 
       {revealed && question.explanation && (
-        <div className="mx-5 mb-6 overflow-hidden rounded-2xl border border-rose-900/15 bg-card md:mx-6">
-          <div className="border-b border-rose-900/10 bg-rose-50/60 px-5 py-3 text-sm font-bold text-rose-900">
+        <div className="mx-5 mb-7 overflow-hidden rounded-2xl border border-rose-900/15 bg-card md:mx-7">
+          <div className="border-b border-rose-900/10 bg-rose-50/60 px-5 py-3.5 text-[15px] font-bold text-rose-900">
             Explanation
           </div>
           <div className="px-5 py-5">
-            <div className="flex items-center gap-2 text-sm font-extrabold text-amber-800">
+            <div className="flex items-center gap-2 text-[15px] font-extrabold text-amber-800">
               <Lightbulb className="text-amber-600" /> Concept
             </div>
-            <p className="mt-2 whitespace-pre-line text-[15px] leading-relaxed text-foreground">
+            <p className="mt-2 whitespace-pre-line text-[16.5px] leading-[1.65] text-foreground">
               {question.explanation}
             </p>
             {question.point_ref && (
-              <p className="mt-3 text-xs font-semibold text-muted-foreground">
+              <p className="mt-3 text-[13px] font-semibold text-muted-foreground">
                 From the lecture: {question.point_ref}
               </p>
             )}
@@ -410,18 +413,28 @@ function QuestionCard({
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3 px-5 pb-6 md:px-6">
-        <Button type="button" variant="outline" onClick={onPrevious} disabled={isFirst} className="rounded-xl">
-          <ArrowLeft /> Previous
-        </Button>
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-7 md:px-7">
+        <button
+          type="button"
+          onClick={onPrevious}
+          disabled={isFirst}
+          className="rita-btn rita-btn-secondary gap-2 disabled:opacity-40"
+        >
+          <ArrowLeft size={17} /> Previous
+        </button>
         {mode === "session" && !revealed ? (
-          <Button type="button" onClick={onSubmit} disabled={!selected} className="rounded-xl px-6">
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={!selected}
+            className="rita-btn rita-btn-primary disabled:opacity-40"
+          >
             Submit answer
-          </Button>
+          </button>
         ) : (
-          <Button type="button" onClick={onNext} className="rounded-xl px-6">
-            {isLast ? "Finish & see results" : "Next question"} <ArrowRight />
-          </Button>
+          <button type="button" onClick={onNext} className="rita-btn rita-btn-primary gap-2">
+            {isLast ? "Finish & see results" : "Next question"} <ArrowRight size={17} />
+          </button>
         )}
       </div>
     </article>
@@ -450,8 +463,8 @@ function QuestionMap({
   return (
     <aside className="self-start lg:sticky lg:top-24">
       <div className="medical-card overflow-hidden">
-        <div className="border-b border-border px-4 py-3 text-sm font-bold">Question map</div>
-        <div className="grid grid-cols-5 gap-2 p-3">
+        <div className="border-b border-border px-4 py-3.5 text-[15px] font-bold">Question map</div>
+        <div className="grid grid-cols-5 gap-2.5 p-3.5">
           {questions.map((question, index) => {
             const answered = !!answers[question.id];
             const revealed = mode === "study" || !!submitted[question.id];
@@ -466,7 +479,7 @@ function QuestionMap({
                 size="icon"
                 onClick={() => onJump(index)}
                 aria-label={`Question ${index + 1}${flags[question.id] ? ", flagged" : ""}`}
-                className={`relative rounded-lg text-xs font-bold ${
+                className={`relative h-11 w-11 rounded-full text-[14px] font-bold ${
                   index === current
                     ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
                     : correct
@@ -484,13 +497,13 @@ function QuestionMap({
             );
           })}
         </div>
-        <div className="space-y-2 border-t border-border p-3">
-          <Button type="button" onClick={onFinish} className="w-full rounded-xl">
+        <div className="space-y-2.5 border-t border-border p-3.5">
+          <button type="button" onClick={onFinish} className="rita-btn rita-btn-primary !w-full">
             Finish {mode === "study" ? "Study" : mode === "session" ? "Session" : "Exam"}
-          </Button>
-          <Button asChild variant="outline" className="w-full rounded-xl">
-            <Link to="/study/lectures">End & exit</Link>
-          </Button>
+          </button>
+          <Link to="/study/lectures" className="rita-btn rita-btn-secondary !w-full">
+            End &amp; exit
+          </Link>
         </div>
       </div>
     </aside>

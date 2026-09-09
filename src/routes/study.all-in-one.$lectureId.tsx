@@ -4,10 +4,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   ArrowLeft,
+  FolderPlus,
   Layers,
   ListChecks,
   Loader2,
   MessageCircle,
+  Play,
+  Printer,
   RotateCcw,
   ScrollText,
   Send,
@@ -15,9 +18,14 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useAuth } from "@/hooks/useAuth";
-import { aioAsk, aioLoad } from "@/lib/all-in-one.functions";
+import { aioAsk, aioFileQuestions, aioLoad } from "@/lib/all-in-one.functions";
+import { lqAddSubject, lqAddSubtopic, lqBoard } from "@/lib/lecture-lab.functions";
 import { friendlyError } from "@/lib/pdf-text";
 import { GuideDoc } from "@/components/study/GuideDoc";
+import { SummaryView } from "@/components/summary/SummaryView";
+import { StudyPlayer } from "@/components/study/StudyPlayer";
+import { readBoard, writeBoard } from "@/lib/local-board";
+import { readCards, writeCards, type FlashCardItem } from "@/lib/use-flashcards";
 
 export const Route = createFileRoute("/study/all-in-one/$lectureId")({
   component: AllInOneWorkspace,
@@ -47,7 +55,39 @@ const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: "ask", label: "Ask this lecture", icon: <MessageCircle size={16} /> },
 ];
 
-/** Organised guide/summary reader lives in GuideDoc. */
+/** Small cream dialog used by both "save" flows. */
+function SaveSheet({
+  open,
+  title,
+  onClose,
+  children,
+}: {
+  open: boolean;
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4 print:hidden">
+      <div className="w-full max-w-[460px] rounded-[24px] border border-black/[0.07] bg-[#fbf8f2] p-6">
+        <h2 className="font-display text-[22px] font-black text-[#23201d]">{title}</h2>
+        <div className="mt-4 grid gap-3">{children}</div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-4 text-[13px] font-extrabold text-[#a29a8d] hover:text-[#23201d]"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const FIELD =
+  "h-12 w-full rounded-xl border border-black/10 bg-white px-4 text-[14.5px] font-semibold text-[#23201d]";
+
 
 
 function AllInOneWorkspace() {
@@ -56,6 +96,10 @@ function AllInOneWorkspace() {
   const navigate = useNavigate();
   const load = useServerFn(aioLoad);
   const ask = useServerFn(aioAsk);
+  const board = useServerFn(lqBoard);
+  const addSubject = useServerFn(lqAddSubject);
+  const addSubtopic = useServerFn(lqAddSubtopic);
+  const fileQuestions = useServerFn(aioFileQuestions);
 
   const [tab, setTab] = useState<Tab>("guide");
   const [busy, setBusy] = useState(true);
@@ -65,6 +109,21 @@ function AllInOneWorkspace() {
   const [q, setQ] = useState("");
   const [chat, setChat] = useState<{ me: string; rita: string }[]>([]);
   const [asking, setAsking] = useState(false);
+
+  // Play + save flashcards
+  const [playing, setPlaying] = useState(false);
+  const [saveCards, setSaveCards] = useState(false);
+  const [cardSubject, setCardSubject] = useState("");
+  const [newCardSubject, setNewCardSubject] = useState("");
+  const [cardSub, setCardSub] = useState("");
+
+  // Save questions into Lecture Lab
+  const [saveQs, setSaveQs] = useState(false);
+  const [lqData, setLqData] = useState<any>(null);
+  const [qSubject, setQSubject] = useState("");
+  const [newQSubject, setNewQSubject] = useState("");
+  const [qSub, setQSub] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -97,6 +156,80 @@ function AllInOneWorkspace() {
       setAsking(false);
     }
   }
+
+  const playCards: FlashCardItem[] = useMemo(
+    () =>
+      ((data?.cards ?? []) as any[]).map((c) => ({ id: c.id, front: c.front, back: c.back })),
+    [data],
+  );
+
+  const boardSubjects = useMemo(() => readBoard(), [saveCards]);
+
+  function openSaveCards() {
+    setCardSubject(boardSubjects[0]?.name ?? "");
+    setNewCardSubject("");
+    setCardSub(data?.lecture?.title?.slice(0, 60) ?? "All in one");
+    setSaveCards(true);
+  }
+
+  function doSaveCards() {
+    const subjectName = (newCardSubject.trim() || cardSubject).trim();
+    const subName = cardSub.trim();
+    if (!subjectName || !subName) return toast.error("Pick a subject and name the sub-subject.");
+    const list = readBoard();
+    let subject = list.find((s) => s.name === subjectName);
+    if (!subject) {
+      subject = { name: subjectName, subs: [] };
+      list.push(subject);
+    }
+    if (!subject.subs.some((s) => s.name === subName)) subject.subs.push({ name: subName });
+    writeBoard(list);
+    const existing = readCards(subjectName, subName);
+    writeCards(subjectName, subName, [
+      ...existing,
+      ...playCards.map((c, i) => ({ id: `${Date.now().toString(36)}-${i}`, front: c.front, back: c.back })),
+    ]);
+    setSaveCards(false);
+    toast.success(`Saved to ${subjectName} · ${subName}.`);
+  }
+
+  async function openSaveQs() {
+    setSaveQs(true);
+    setQSub(data?.lecture?.title?.slice(0, 60) ?? "All in one");
+    setNewQSubject("");
+    try {
+      const r: any = await board({ data: undefined } as any);
+      setLqData(r);
+      const mine = (r.subjects ?? []).filter((s: any) => !s.is_example);
+      setQSubject(mine[0]?.id ?? "");
+    } catch (e) {
+      toast.error(friendlyError(e));
+    }
+  }
+
+  async function doSaveQs() {
+    const subName = qSub.trim();
+    if (!subName) return toast.error("Name the sub-subject.");
+    setSaving(true);
+    try {
+      let subjectId = qSubject;
+      if (newQSubject.trim()) {
+        const made: any = await addSubject({ data: { name: newQSubject.trim() } });
+        subjectId = made.id;
+      }
+      if (!subjectId) throw new Error("Pick a subject, or type a new one.");
+      const made: any = await addSubtopic({ data: { subjectId, name: subName } });
+      await fileQuestions({ data: { lectureId, subtopicId: made.id as string } });
+      setSaveQs(false);
+      toast.success("Saved to Lecture Lab.");
+    } catch (e) {
+      toast.error(friendlyError(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+
 
   if (busy) {
     return (
@@ -198,12 +331,43 @@ function AllInOneWorkspace() {
 
             {tab === "summary" && (
               <div>
-                {data.short ? <GuideDoc text={data.short} /> : <p className="text-[15px] text-[#6b6357]">No summary yet.</p>}
+                {data.sheet ? (
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2 print:hidden">
+                      <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="rita-btn rita-btn-primary gap-2"
+                      >
+                        <Printer size={16} /> Download PDF
+                      </button>
+                      <Link
+                        to="/summaries/$summaryId"
+                        params={{ summaryId: data.sheet.id }}
+                        className="rita-btn rita-btn-secondary"
+                      >
+                        Open full summary
+                      </Link>
+                    </div>
+                    <div className="mt-4 overflow-hidden rounded-[26px] bg-[#fbf5e9]">
+                      <SummaryView
+                        content={data.sheet.content}
+                        siteName="Rita"
+                        authorName={data.sheet.author_name ?? undefined}
+                        createdAt={data.sheet.created_at}
+                      />
+                    </div>
+                  </div>
+                ) : data.short ? (
+                  <GuideDoc text={data.short} />
+                ) : (
+                  <p className="text-[15px] text-[#6b6357]">No summary yet.</p>
+                )}
                 {points.length > 0 && (
-                  <div className="mt-6 rounded-2xl bg-[#faf6ee] p-4">
+                  <div className="mt-6 rounded-2xl bg-[#faf6ee] p-4 print:hidden">
                     <div className="text-[11px] font-black uppercase tracking-[0.16em] text-[#a89e90]">Key points</div>
                     <ul className="mt-2 space-y-1.5">
-                      {points.map((p, i) => (
+                      {points.map((p: string, i: number) => (
                         <li key={i} className="flex gap-2 text-[14.5px] leading-[1.6]">
                           <span className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: ACCENT }} />
                           {p}
@@ -217,26 +381,36 @@ function AllInOneWorkspace() {
 
             {tab === "cards" &&
               (data.cards.length ? (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {data.cards.map((c: any) => {
-                    const on = !!flip[c.id];
-                    return (
-                      <button
-                        key={c.id}
-                        onClick={() => setFlip((f) => ({ ...f, [c.id]: !f[c.id] }))}
-                        className="min-h-[132px] rounded-2xl border border-black/[0.08] p-4 text-left transition hover:-translate-y-0.5"
-                        style={{ background: on ? "#faf6ee" : "#fff" }}
-                      >
-                        <div className="text-[11px] font-black uppercase tracking-[0.16em] text-[#a89e90]">
-                          {on ? "Answer" : "Card"}
-                        </div>
-                        <div className="mt-2 text-[15px] font-bold leading-[1.5]">{on ? c.back : c.front}</div>
-                        <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-extrabold text-[#a29a8d]">
-                          <RotateCcw size={13} /> Tap to flip
-                        </div>
-                      </button>
-                    );
-                  })}
+                <div>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={() => setPlaying(true)} className="rita-btn rita-btn-primary gap-2">
+                      <Play size={16} /> Play these cards
+                    </button>
+                    <button type="button" onClick={openSaveCards} className="rita-btn rita-btn-secondary gap-2">
+                      <FolderPlus size={16} /> Save to flashcards
+                    </button>
+                  </div>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {data.cards.map((c: any) => {
+                      const on = !!flip[c.id];
+                      return (
+                        <button
+                          key={c.id}
+                          onClick={() => setFlip((f) => ({ ...f, [c.id]: !f[c.id] }))}
+                          className="min-h-[132px] rounded-2xl border border-black/[0.08] p-4 text-left transition hover:-translate-y-0.5"
+                          style={{ background: on ? "#faf6ee" : "#fff" }}
+                        >
+                          <div className="text-[11px] font-black uppercase tracking-[0.16em] text-[#a89e90]">
+                            {on ? "Answer" : "Card"}
+                          </div>
+                          <div className="mt-2 text-[15px] font-bold leading-[1.5]">{on ? c.back : c.front}</div>
+                          <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-extrabold text-[#a29a8d]">
+                            <RotateCcw size={13} /> Tap to flip
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : (
                 <p className="text-[15px] text-[#6b6357]">No flashcards for this lecture.</p>
@@ -271,6 +445,16 @@ function AllInOneWorkspace() {
                       {m === "study" ? "Study mode" : m === "session" ? "Session mode" : "Timed exam"}
                     </button>
                   ))}
+                </div>
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    disabled={!data.questions.length}
+                    onClick={() => void openSaveQs()}
+                    className="rita-btn rita-btn-secondary gap-2 disabled:opacity-40"
+                  >
+                    <FolderPlus size={16} /> Save to Lecture Lab
+                  </button>
                 </div>
                 <div className="mt-6 space-y-3">
                   {data.questions.slice(0, 5).map((qq: any, i: number) => (
@@ -331,6 +515,94 @@ function AllInOneWorkspace() {
           </section>
         </div>
       </main>
+
+      <StudyPlayer
+        open={playing}
+        title={data.lecture.title}
+        cards={playCards}
+        onClose={() => setPlaying(false)}
+      />
+
+      <SaveSheet open={saveCards} title="Save these flashcards" onClose={() => setSaveCards(false)}>
+        {boardSubjects.length > 0 && (
+          <label className="grid gap-1.5">
+            <span className="text-[12px] font-black uppercase tracking-[0.14em] text-[#a89e90]">Subject</span>
+            <select value={cardSubject} onChange={(e) => setCardSubject(e.target.value)} className={FIELD}>
+              {boardSubjects.map((s) => (
+                <option key={s.name} value={s.name}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <label className="grid gap-1.5">
+          <span className="text-[12px] font-black uppercase tracking-[0.14em] text-[#a89e90]">
+            {boardSubjects.length ? "…or a new subject" : "New subject"}
+          </span>
+          <input
+            value={newCardSubject}
+            onChange={(e) => setNewCardSubject(e.target.value)}
+            placeholder="e.g. Physiology"
+            className={FIELD}
+          />
+        </label>
+        <label className="grid gap-1.5">
+          <span className="text-[12px] font-black uppercase tracking-[0.14em] text-[#a89e90]">Sub-subject</span>
+          <input value={cardSub} onChange={(e) => setCardSub(e.target.value)} className={FIELD} />
+        </label>
+        <button type="button" onClick={doSaveCards} className="rita-btn rita-btn-primary !w-full">
+          Save {playCards.length} cards
+        </button>
+      </SaveSheet>
+
+      <SaveSheet open={saveQs} title="Save these questions" onClose={() => setSaveQs(false)}>
+        {!lqData ? (
+          <div className="flex items-center gap-2 text-[14px] font-bold text-[#a29a8d]">
+            <Loader2 size={15} className="animate-spin" /> Loading your subjects…
+          </div>
+        ) : (
+          <>
+            {(lqData.subjects ?? []).filter((s: any) => !s.is_example).length > 0 && (
+              <label className="grid gap-1.5">
+                <span className="text-[12px] font-black uppercase tracking-[0.14em] text-[#a89e90]">Subject</span>
+                <select value={qSubject} onChange={(e) => setQSubject(e.target.value)} className={FIELD}>
+                  {(lqData.subjects ?? [])
+                    .filter((s: any) => !s.is_example)
+                    .map((s: any) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            )}
+            <label className="grid gap-1.5">
+              <span className="text-[12px] font-black uppercase tracking-[0.14em] text-[#a89e90]">
+                …or a new subject
+              </span>
+              <input
+                value={newQSubject}
+                onChange={(e) => setNewQSubject(e.target.value)}
+                placeholder="e.g. Cardiology"
+                className={FIELD}
+              />
+            </label>
+            <label className="grid gap-1.5">
+              <span className="text-[12px] font-black uppercase tracking-[0.14em] text-[#a89e90]">Sub-subject</span>
+              <input value={qSub} onChange={(e) => setQSub(e.target.value)} className={FIELD} />
+            </label>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => void doSaveQs()}
+              className="rita-btn rita-btn-primary !w-full disabled:opacity-40"
+            >
+              {saving ? "Saving…" : "Save to Lecture Lab"}
+            </button>
+          </>
+        )}
+      </SaveSheet>
     </div>
   );
 }
