@@ -4,7 +4,7 @@ import { z } from "zod";
 
 const JOBS = "rita_ai_jobs";
 const CHUNKS = "rita_ai_chunks";
-const PAGES_PER_CHUNK = 4;
+const PAGES_PER_CHUNK = 2;
 
 async function isAdmin(supabase: any, userId: string) {
   try {
