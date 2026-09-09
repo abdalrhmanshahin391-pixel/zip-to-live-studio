@@ -418,7 +418,7 @@ function QuestionCard({
           type="button"
           onClick={onPrevious}
           disabled={isFirst}
-          className="rita-btn rita-btn-secondary disabled:opacity-40"
+          className="rita-btn rita-btn-secondary gap-2 disabled:opacity-40"
         >
           <ArrowLeft size={17} /> Previous
         </button>
@@ -432,7 +432,7 @@ function QuestionCard({
             Submit answer
           </button>
         ) : (
-          <button type="button" onClick={onNext} className="rita-btn rita-btn-primary">
+          <button type="button" onClick={onNext} className="rita-btn rita-btn-primary gap-2">
             {isLast ? "Finish & see results" : "Next question"} <ArrowRight size={17} />
           </button>
         )}
