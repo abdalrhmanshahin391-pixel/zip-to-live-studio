@@ -13,9 +13,11 @@ type ProductCardProps = {
   image: string;
   imageAlt: string;
   side: "left" | "right";
+  learnLabel: string;
+  buyLabel: string;
 };
 
-function ProductCard({ imageKey, label, title, note, image, imageAlt, side }: ProductCardProps) {
+function ProductCard({ imageKey, label, title, note, image, imageAlt, side, learnLabel, buyLabel }: ProductCardProps) {
   const left = side === "left";
 
   return (
