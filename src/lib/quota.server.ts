@@ -128,7 +128,6 @@ async function mergeClaimedOffer(userId: string, plan: PlanRow | null): Promise<
     "feature_lecture_qgen",
     "feature_archive_qgen",
     "feature_all_in_one",
-    "feature_rita38",
   ]) {
     out[flag] = Boolean((plan as any)[flag]) || Boolean((offerPlan as any)[flag]);
   }

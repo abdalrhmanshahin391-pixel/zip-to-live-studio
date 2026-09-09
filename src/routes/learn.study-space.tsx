@@ -9,7 +9,7 @@ export const Route = createFileRoute("/learn/study-space")({
       {
         name: "description",
         content:
-          "Your own flashcards, memory lab, PDF summaries, to-do list, exam schedule and Rita AI study tools.",
+          "Your own flashcards, memory lab, PDF summaries, to-do list, exam schedule and AI study tools.",
       },
       { property: "og:title", content: "My Study Space — RitaJet" },
       {

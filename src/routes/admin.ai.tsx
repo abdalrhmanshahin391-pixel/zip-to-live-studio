@@ -9,12 +9,12 @@ import { AiEnginePanel } from "@/components/admin/AiEnginePanel";
 export const Route = createFileRoute("/admin/ai")({
   head: () => ({
     meta: [
-      { title: "Rita AI Engine — RitaJet admin" },
+      { title: "AI engine — RitaJet admin" },
       {
         name: "description",
         content: "One page to give every RitaJet AI tool its Gemini key, model and live test.",
       },
-      { property: "og:title", content: "Rita AI Engine — RitaJet admin" },
+      { property: "og:title", content: "AI engine — RitaJet admin" },
       {
         property: "og:description",
         content: "Keys, models and live tests for every RitaJet AI tool.",
@@ -54,7 +54,7 @@ function AiEnginePage() {
             <Sparkles className="h-6 w-6 text-black" />
           </div>
           <div>
-            <h1 className="text-2xl font-black">Rita AI Engine</h1>
+            <h1 className="text-2xl font-black">AI engine</h1>
             <p className="text-sm text-white/55">
               Every AI tool on the site and the key it uses right now.
             </p>

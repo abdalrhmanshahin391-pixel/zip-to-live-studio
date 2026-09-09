@@ -57,9 +57,9 @@ export const DEFAULT_LAYOUT: HubLayout = {
     },
     {
       id: "ai",
-      label: "Rita AI",
+      label: "AI engine",
       labelAr: "ذكاء ريتا",
-      tiles: [t("/admin/ai", "Rita AI Engine", "Sparkles")],
+      tiles: [t("/admin/ai", "AI engine", "Sparkles")],
     },
     {
       id: "people",
