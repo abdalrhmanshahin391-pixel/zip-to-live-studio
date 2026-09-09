@@ -1,6 +1,4 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ToolTutorialLauncher } from "@/components/tutorials/HowItWorksButton";
-import { WelcomeTour } from "@/components/tutorials/WelcomeTour";
 import {
   Outlet,
   Link,
@@ -17,18 +15,15 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { getSiteBootstrap, type BootstrapPayload } from "@/lib/site-bootstrap.functions";
 import { normalizeSettings } from "@/hooks/useSiteSettings";
 import { usePresence } from "@/hooks/usePresence";
-import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { LanguageProvider } from "@/components/LanguageProvider";
 import { GoldenTheme } from "@/components/GoldenTheme";
-import { AnnouncementBar } from "@/components/AnnouncementBar";
-import { RitaXAnnouncements } from "@/components/RitaXAnnouncements";
 import { SiteFooter } from "@/components/SiteFooter";
 import { useAuth } from "@/hooks/useAuth";
 import { needsOnboarding } from "@/lib/onboarding";
 import "@/i18n";
-import { Toaster } from "@/components/ui/sonner";
-import { AuthDialogHost } from "@/components/auth/AuthDialog";
+import { DeferredOverlays } from "@/components/DeferredOverlays";
+
 
 // Language only — the seasonal theme comes from the server-rendered head script
 // so it can never flash a stale value from localStorage.
@@ -135,8 +130,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "dns-prefetch", href: "https://drive.google.com" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Manrope:wght@400;500;600;700&family=Inter+Tight:wght@300;400;500;600;700&family=Tajawal:wght@400;500;700;800;900&family=Reem+Kufi:wght@500;600;700&family=Aref+Ruqaa:wght@400;700&family=Cinzel+Decorative:wght@700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap",
       },
+
       { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
       { rel: "icon", type: "image/png", sizes: "96x96", href: "/favicon.png" },
       { rel: "icon", type: "image/png", sizes: "512x512", href: "/favicon-512.png" },
@@ -260,16 +256,11 @@ function RootComponent() {
           <PresenceTracker />
           <DeviceTracker />
           <OnboardingGate />
-          <PaymentTestModeBanner />
-          <AnnouncementBar />
-          <RitaXAnnouncements />
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
-          <ToolTutorialLauncher />
-          <WelcomeTour />
           <GlobalFooter />
-          <AuthDialogHost />
-          <Toaster richColors position="top-right" />
+          <DeferredOverlays />
+
         </LanguageProvider>
       </ThemeProvider>
     </QueryClientProvider>
