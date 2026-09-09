@@ -161,9 +161,22 @@ function AllInOneUpload() {
         }
       };
 
-      await step("guide", "Study guide & summary", "Writing your study guide…", () =>
+      await step("guide", "Study guide", "Writing your study guide…", () =>
         buildSummary({ data: { lectureId, title: name, text } }),
       );
+      await step("sheet", "Summary sheet", "Writing your full summary…", async () => {
+        const res: any = await buildSheet({
+          data: {
+            kind: "text",
+            text: text.slice(0, 200_000),
+            length: "comprehensive",
+            tone: "concept",
+            titleOverride: name,
+            provider: "gemini",
+          },
+        } as any);
+        if (res?.id) await linkSheet({ data: { lectureId, summaryId: res.id as string } });
+      });
       await step("cards", "Flashcards", "Cutting your flashcards…", () =>
         buildCards({ data: { lectureId, title: name, text, count: 16 } }),
       );
