@@ -6,7 +6,7 @@ import {
   Copy,
   FolderPlus,
   Link2,
-  ListChecks,
+  
   MessageCircle,
   Pin,
   Plus,
@@ -21,7 +21,6 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { MemberAvatar, MemberRow } from "@/components/spaces/MemberRow";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchMyDecks } from "@/lib/share-decks";
-import { fetchSpaceQuestionSets, removeQuestionSetFromSpace } from "@/lib/share-questions";
 import { DeckRating } from "@/components/share/DeckRating";
 import {
   KIND_LABEL,
@@ -70,7 +69,7 @@ export const Route = createFileRoute("/spaces/$spaceId")({
   component: SpacePage,
 });
 
-type Tab = "decks" | "questions" | "members" | "news" | "chat" | "settings";
+type Tab = "decks" | "members" | "news" | "chat" | "settings";
 
 function SpacePage() {
   const { spaceId } = Route.useParams();
@@ -126,7 +125,7 @@ function SpacePage() {
 
   const tabs: [Tab, string, React.ReactNode][] = [
     ["decks", "Flashcards", <Plus key="d" size={14} />],
-    ["questions", "Questions", <ListChecks key="q" size={14} />],
+    
     ["members", `Members (${members.data?.length ?? 0})`, <Users key="m" size={14} />],
     ["news", "Announcements", <Bell key="n" size={14} />],
     ...(s.chat_enabled ? ([["chat", "Chat", <MessageCircle key="c" size={14} />]] as [Tab, string, React.ReactNode][]) : []),
@@ -182,14 +181,6 @@ function SpacePage() {
               }
             />
           )}
-          {tab === "questions" && (
-            <SpaceQuestionsTab
-              spaceId={spaceId}
-              canAdd={canAddDecks}
-              canManage={canManage}
-              onChanged={() => refresh("space-question-sets")}
-            />
-          )}
           {tab === "members" && (
             <MembersTab
               spaceId={spaceId}
@@ -226,89 +217,6 @@ function SpacePage() {
           )}
         </div>
       </main>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------- questions */
-
-/** Lecture question sets shared inside this classroom or study group. */
-function SpaceQuestionsTab({
-  spaceId,
-  canAdd,
-  canManage,
-  onChanged,
-}: {
-  spaceId: string;
-  canAdd: boolean;
-  canManage: boolean;
-  onChanged: () => void;
-}) {
-  const sets = useQuery({
-    queryKey: ["space-question-sets", spaceId],
-    queryFn: () => fetchSpaceQuestionSets(spaceId),
-  });
-
-  return (
-    <div>
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 className="font-display text-xl font-black">Question sets</h2>
-        {canAdd && (
-          <Link
-            to="/share/questions/new"
-            search={{ space: spaceId }}
-            className="ms-auto inline-flex items-center gap-2 rounded-full bg-[#8ec63f] px-5 py-2.5 text-[13px] font-black text-white"
-          >
-            <Plus size={15} /> Share questions here
-          </Link>
-        )}
-      </div>
-
-      {sets.isLoading ? (
-        <p className="mt-6 text-[#6b655c]">Loading question sets…</p>
-      ) : (sets.data?.length ?? 0) === 0 ? (
-        <div className="mt-6 rounded-[24px] border border-dashed border-black/15 bg-white/60 px-6 py-14 text-center">
-          <span className="text-3xl">❓</span>
-          <p className="mt-3 font-display text-lg font-black">No question sets yet</p>
-          <p className="mt-1 text-sm text-[#6b655c]">
-            Share questions from your Lecture Lab and everyone here can study them.
-          </p>
-        </div>
-      ) : (
-        <div className="mt-6 space-y-3">
-          {sets.data!.map((q) => (
-            <div
-              key={q.id}
-              className="flex flex-wrap items-center gap-3 rounded-2xl border border-black/[0.07] bg-white px-5 py-4"
-            >
-              <span className="text-2xl">{q.emoji || "❓"}</span>
-              <Link
-                to="/share/questions/$setId"
-                params={{ setId: q.id }}
-                className="min-w-0 flex-1 truncate font-display text-[17px] font-black hover:underline"
-              >
-                {q.title}
-              </Link>
-              <span className="text-[13px] font-bold text-[#6b655c]">
-                {q.question_count} questions
-              </span>
-              {canManage && (
-                <button
-                  onClick={async () => {
-                    await removeQuestionSetFromSpace(spaceId, q.id);
-                    toast.success("Removed from this space");
-                    onChanged();
-                  }}
-                  className="grid h-9 w-9 place-items-center rounded-xl text-[#6b655c] hover:bg-red-50 hover:text-red-600"
-                  aria-label="Remove question set"
-                >
-                  <Trash2 size={16} />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

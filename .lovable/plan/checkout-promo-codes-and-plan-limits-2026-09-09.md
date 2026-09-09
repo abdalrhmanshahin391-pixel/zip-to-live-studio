@@ -7,6 +7,7 @@ Sharing stays for flashcards only.
 - Delete the three question-sharing pages (public list, single set, publish form) and the "Questions" tab inside classrooms and study groups.
 - Remove the Flashcards/Questions switcher on the sharing page, and the import-into-Lecture-Lab action.
 - Delete the stored shared question sets, their questions and their classroom links permanently from the database.
+- I am not talking about the questions sample for everyone of course these are for each person and not under that idea so don't delete these it's example for people 
 
 ## 2. New checkout page (Everand-style)
 
