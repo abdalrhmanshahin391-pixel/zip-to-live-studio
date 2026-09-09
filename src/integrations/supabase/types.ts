@@ -2849,95 +2849,6 @@ export type Database = {
         }
         Relationships: []
       }
-      shared_question_items: {
-        Row: {
-          created_at: string
-          explanation: string
-          id: string
-          options: Json
-          owner_id: string
-          set_id: string
-          sort: number
-          stem: string
-        }
-        Insert: {
-          created_at?: string
-          explanation?: string
-          id?: string
-          options?: Json
-          owner_id: string
-          set_id: string
-          sort?: number
-          stem: string
-        }
-        Update: {
-          created_at?: string
-          explanation?: string
-          id?: string
-          options?: Json
-          owner_id?: string
-          set_id?: string
-          sort?: number
-          stem?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shared_question_items_set_id_fkey"
-            columns: ["set_id"]
-            isOneToOne: false
-            referencedRelation: "shared_question_sets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      shared_question_sets: {
-        Row: {
-          audience: string
-          cover: string
-          created_at: string
-          description: string | null
-          emoji: string | null
-          id: string
-          owner_id: string
-          published: boolean
-          question_count: number
-          save_count: number
-          tags: string[]
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          audience?: string
-          cover?: string
-          created_at?: string
-          description?: string | null
-          emoji?: string | null
-          id?: string
-          owner_id: string
-          published?: boolean
-          question_count?: number
-          save_count?: number
-          tags?: string[]
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          audience?: string
-          cover?: string
-          created_at?: string
-          description?: string | null
-          emoji?: string | null
-          id?: string
-          owner_id?: string
-          published?: boolean
-          question_count?: number
-          save_count?: number
-          tags?: string[]
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       site_announcements: {
         Row: {
           accent: string
@@ -3419,42 +3330,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "space_messages_space_id_fkey"
-            columns: ["space_id"]
-            isOneToOne: false
-            referencedRelation: "spaces"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      space_question_sets: {
-        Row: {
-          added_by: string | null
-          created_at: string
-          set_id: string
-          space_id: string
-        }
-        Insert: {
-          added_by?: string | null
-          created_at?: string
-          set_id: string
-          space_id: string
-        }
-        Update: {
-          added_by?: string | null
-          created_at?: string
-          set_id?: string
-          space_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "space_question_sets_set_id_fkey"
-            columns: ["set_id"]
-            isOneToOne: false
-            referencedRelation: "shared_question_sets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "space_question_sets_space_id_fkey"
             columns: ["space_id"]
             isOneToOne: false
             referencedRelation: "spaces"
@@ -4773,10 +4648,6 @@ export type Database = {
       }
       can_manage_space: {
         Args: { _space_id: string; _user_id: string }
-        Returns: boolean
-      }
-      can_read_question_set: {
-        Args: { _set_id: string; _user_id: string }
         Returns: boolean
       }
       claim_offer: {

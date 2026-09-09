@@ -12,6 +12,7 @@ import {
   adminDeletePlan,
   adminListPlans,
   adminSavePlan,
+  adminSyncPlanPrices,
   type AdminPlan,
 } from "@/lib/plans-admin.functions";
 import { OfferRibbon, discountPercent, offerLive } from "@/components/pricing/offer";
@@ -91,6 +92,7 @@ function AdminPlansPage() {
   const qc = useQueryClient();
   const list = useServerFn(adminListPlans);
   const save = useServerFn(adminSavePlan);
+  const syncPrices = useServerFn(adminSyncPlanPrices);
   const remove = useServerFn(adminDeletePlan);
   const assign = useServerFn(adminAssignPlan);
 
@@ -128,10 +130,38 @@ function AdminPlansPage() {
     setDrafts((d) => d.map((row) => (row.slug === selected ? { ...row, ...p } : row)));
 
   const persist = async (row: AdminPlan, quiet = false) => {
-    await save({ data: row });
+    const res = (await save({ data: row })) as { sync?: { done: string[]; failed: string[] } };
     setSaved((s) => ({ ...s, [row.slug]: JSON.stringify(row) }));
     await qc.invalidateQueries({ queryKey: ["plans"] });
-    if (!quiet) toast.success(`${row.name} saved`);
+    if (!quiet) {
+      const done = res?.sync?.done?.length ?? 0;
+      toast.success(
+        done > 0
+          ? `${row.name} saved — new price sent to checkout for new buyers`
+          : `${row.name} saved`,
+      );
+      if (res?.sync?.failed?.length) {
+        toast.error(`Checkout price not updated for: ${res.sync.failed.join(", ")}`);
+      }
+    }
+  };
+
+  const onSyncPrices = async () => {
+    if (!plan) return;
+    setBusy(true);
+    try {
+      const r = await syncPrices({ data: { slug: plan.slug, environment: "sandbox" } });
+      toast.success(
+        r.done.length
+          ? `Checkout prices updated (${r.done.join(", ")})`
+          : "Nothing to update — add the checkout price ids first.",
+      );
+      if (r.failed.length) toast.error(`Could not update: ${r.failed.join(", ")}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not reach the payment catalog");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const move = async (i: number, dir: -1 | 1) => {
@@ -671,6 +701,14 @@ function AdminPlansPage() {
                         className="inline-flex items-center justify-center gap-2 rounded-full bg-[#8ec63f] px-5 py-2.5 text-[14px] font-black text-white disabled:opacity-60"
                       >
                         <Save size={15} /> {busy ? "Saving…" : "Save plan"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={onSyncPrices}
+                        className="inline-flex items-center justify-center gap-2 rounded-full border border-black/10 px-4 py-2.5 text-[14px] font-black text-[#23201d] disabled:opacity-60"
+                      >
+                        Send price to checkout
                       </button>
                       <button
                         type="button"

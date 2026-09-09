@@ -14,7 +14,9 @@ export function usePaddleCheckout() {
     customerEmail?: string;
     customData?: Record<string, string>;
     successUrl?: string;
-    /** id of the element the inline payment form is rendered into */
+    /** promo code typed by the student */
+    discountCode?: string;
+    /** CSS class of the element the inline payment form is rendered into */
     frameTarget?: string;
   }) => {
     setLoading(true);
@@ -23,10 +25,14 @@ export function usePaddleCheckout() {
       await initializePaddle(environment);
 
       const inline = !!options.frameTarget;
+      if (inline && !document.getElementsByClassName(options.frameTarget!)[0]) {
+        throw new Error("The payment form could not start. Please refresh the page.");
+      }
       window.Paddle.Checkout.open({
         items: [{ priceId: paddlePriceId, quantity: 1 }],
         customer: options.customerEmail ? { email: options.customerEmail } : undefined,
         customData: options.customData,
+        discountCode: options.discountCode || undefined,
         settings: {
           displayMode: inline ? "inline" : "overlay",
           ...(inline
@@ -47,5 +53,14 @@ export function usePaddleCheckout() {
     }
   };
 
-  return { openCheckout, loading };
+  /** Closes the open payment form so it can be reopened with a promo code. */
+  const closeCheckout = () => {
+    try {
+      window.Paddle?.Checkout?.close?.();
+    } catch {
+      /* nothing open */
+    }
+  };
+
+  return { openCheckout, closeCheckout, loading };
 }

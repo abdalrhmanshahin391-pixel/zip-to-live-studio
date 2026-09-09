@@ -3,7 +3,7 @@ import {
   FolderTree, Users, Smartphone, Ticket, Archive, BookOpen, Video, Package,
   ListPlus, BarChart3, GraduationCap, Palette, ShieldAlert, LifeBuoy, Info,
   UsersRound, Server, History, Star, Heart, Flag, Link2, Wrench, Rocket,
-  ListChecks, CalendarDays, Timer, Library, Bell, Gift, Megaphone,
+  ListChecks, CalendarDays, Timer, Library, Bell, Gift, Megaphone, Tag,
   type LucideIcon,
 } from "lucide-react";
 
@@ -12,7 +12,7 @@ export const ICONS: Record<string, LucideIcon> = {
   FolderTree, Users, Smartphone, Ticket, Archive, BookOpen, Video, Package,
   ListPlus, BarChart3, GraduationCap, Palette, ShieldAlert, LifeBuoy, Info,
   UsersRound, Server, History, Star, Heart, Flag, Link2, Wrench, Rocket,
-  ListChecks, CalendarDays, Timer, Library, Bell, Gift, Megaphone,
+  ListChecks, CalendarDays, Timer, Library, Bell, Gift, Megaphone, Tag,
 };
 
 
@@ -51,6 +51,7 @@ export const DEFAULT_LAYOUT: HubLayout = {
       tiles: [
         t("/admin/ritax-announcements", "RitaX Announcements", "Megaphone"),
         t("/admin/plans", "Rita Prices", "Ticket"),
+        t("/admin/promo-codes", "Promo Codes", "Tag"),
         t("/admin/toolkit", "Free Toolkit", "Gift"),
         t("/admin/notifications", "Notifications", "Bell"),
       ],
