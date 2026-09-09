@@ -1,10 +1,10 @@
-# AquaQbank 
+# RitaJet
 
 This is an old project I built can you rebuild it to me
 
 This project was built with [Lovable](https://lovable.dev).
 
-**Live app**: https://aquaqbabk.lovable.app
+**Live app**: https://ritajet.com
 
 ## Build with Lovable
 

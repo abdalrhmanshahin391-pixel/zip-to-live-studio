@@ -124,6 +124,9 @@ export function SiteFooter() {
               <Link to="/register" className="transition-colors hover:!text-[color:var(--rita-green-deep)]">
                 {ar ? "إنشاء حساب" : "Create account"}
               </Link>
+              <Link to="/terms" className="transition-colors hover:!text-[color:var(--rita-green-deep)]">Terms</Link>
+              <Link to="/privacy-policy" className="transition-colors hover:!text-[color:var(--rita-green-deep)]">Privacy</Link>
+              <Link to="/refund-policy" className="transition-colors hover:!text-[color:var(--rita-green-deep)]">Refunds</Link>
             </div>
           </div>
         </div>

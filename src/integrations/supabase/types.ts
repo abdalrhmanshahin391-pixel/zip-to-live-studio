@@ -4707,10 +4707,6 @@ export type Database = {
           username: string
         }[]
       }
-      identity_taken: {
-        Args: { _phone: string; _username: string }
-        Returns: Json
-      }
       is_space_member: {
         Args: { _space_id: string; _user_id: string }
         Returns: boolean

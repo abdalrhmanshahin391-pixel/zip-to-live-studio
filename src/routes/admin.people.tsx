@@ -711,7 +711,7 @@ function BackupPanel() {
     setLog([]);
     try {
       const parsed = JSON.parse(await file.text());
-      if (parsed?.format !== "aquaqbank.people") throw new Error("This file is not a people archive.");
+      if (parsed?.format !== "ritajet.people") throw new Error("This file is not a RitaJet people archive.");
       const lines: string[] = [];
       for (const t of IMPORTABLE_TABLES) {
         const rows = parsed.tables?.[t] ?? [];

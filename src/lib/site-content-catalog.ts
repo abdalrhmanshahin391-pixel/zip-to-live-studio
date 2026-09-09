@@ -52,14 +52,14 @@ export const CONTENT_GROUPS: ContentGroup[] = [
         key: "cms.home.hero.title",
         label: "Headline",
         kind: "multiline",
-        en: "AquaQBank Academy — your medical question bank, all in one place.",
-        ar: "أكاديمية AquaQBank — بنك أسئلتك الطبية كاملاً في مكان واحد.",
+        en: "RitaJet — your study tools, all in one place.",
+        ar: "RitaJet — أدوات دراستك في مكان واحد.",
       },
       {
         key: "cms.home.hero.subtitle",
         label: "Subtitle",
         kind: "multiline",
-        en: "AquaQBank Academy is an online medical study academy: question banks, past exam questions, video lectures and committee notes — organized by year and course, written by medical students who already passed.",
+        en: "RitaJet brings flashcards, summaries, practice questions, planning and collaborative study into one organized workspace.",
         ar: "بنوك الأسئلة، أسئلة الامتحانات السابقة، محاضرات مرئية وملاحظات اللجنة — مرتّبة حسب السنة والمادة.",
       },
 

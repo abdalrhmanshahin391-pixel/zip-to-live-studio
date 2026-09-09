@@ -100,7 +100,7 @@ export const sendPushSelfTest = createServerFn({ method: "POST" })
     let failed = 0;
     for (const s of list) {
       const r = await sendWebPush(s, {
-        title: ar ? "أكوا كيو بانك" : "AquaQBank",
+        title: "RitaJet",
         body: ar ? "الإشعارات تعمل على هذا الجهاز ✅" : "Notifications are working on this device ✅",
         url: "/profile",
         lang: ar ? "ar" : "en",
