@@ -42,7 +42,9 @@ Two changes to the existing pipeline:
 - Pieces become **2 pages** instead of 4, so the borders pass stays accurate (you asked for the first two pages as the example unit).
 - The explanation JSON stays exactly as it is today (concept / why right / why wrong / summary table) — that already matches what you asked for.
 
-## Real-world paper (OCR)
+## Real-world paper (OCR) 
+
+Two mode a pdf which contain picture or I can send pictures purely 
 
 For a scan or a photo there is no text to read, so before anything else we turn the picture into text:
 

@@ -513,11 +513,22 @@ function CourseDetailPage() {
             >
               ← Start Learning
             </Link>
-            {enrolled && (
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-accent bg-accent/10 border border-accent/30 rounded-full px-3 py-1">
-                <ShieldCheck className="w-3 h-3" /> Enrolled
-              </span>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {enrolled && (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-accent bg-accent/10 border border-accent/30 rounded-full px-3 py-1">
+                  <ShieldCheck className="w-3 h-3" /> Enrolled
+                </span>
+              )}
+              {user && (
+                <Link
+                  to="/courses/$courseId/add-questions"
+                  params={{ courseId: course.id }}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add questions
+                </Link>
+              )}
+            </div>
           </div>
 
           <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">

@@ -5,7 +5,7 @@
 // and are written into the chosen sub-subject.
 
 export const RITA_MODEL = "gemini-2.5-flash";
-export const RITA_CHUNK_PAGES = 4;
+export const RITA_CHUNK_PAGES = 2;
 
 /** Rita uses the same protected Gemini key as the other study tools. */
 export async function resolveRitaKey(supabase: any): Promise<string> {
@@ -80,6 +80,18 @@ Rules:
 - Numbered items ("12." "12)" "Q12") each start a NEW question.
 - Ignore headers, footers, page numbers, table of contents and chapter titles.
 - Return STRICT JSON: a single JSON array. No markdown, no commentary. Return [] if the text holds no questions.`;
+
+export const OCR_SYSTEM = `You read a photographed or scanned page of an exam paper and type it out exactly.
+
+Rules:
+- Return the text EXACTLY as printed, in reading order, top to bottom.
+- Keep question numbering ("12.", "Q12"), option letters ("a)", "B."), and any answer line ("Answer : b") exactly as written.
+- Put every option on its own line. Put a blank line between questions.
+- Do not translate, correct, summarise, answer or comment on anything.
+- Skip page headers, footers and page numbers.
+- If a word is unreadable, write your best guess — never write a placeholder like [illegible].
+- Return PLAIN TEXT only. No markdown fences, no JSON, no commentary. If the page holds no text at all, return an empty response.`;
+
 
 export const SOLVER_SYSTEM = `You are Rita, a medical exam tutor. The user gives you ONE complete question block. Solve it and explain it in depth.
 

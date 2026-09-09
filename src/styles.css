@@ -1617,7 +1617,15 @@ hairline borders and generous radii.
   width: 1.5rem; height: 1.5rem; border-radius: .55rem;
   background: var(--primary); color: var(--primary-foreground);
   font-size: .72rem; font-weight: 900;
-}.rita38-input {
+}
+.add-q-input {
+  width: 100%; border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--background); color: var(--foreground);
+  padding: .75rem .9rem; font-size: .95rem; font-weight: 600;
+}
+.add-q-input:focus { outline: 2px solid color-mix(in oklab, var(--primary) 55%, transparent); outline-offset: 1px; }
+.rita38-input {
   width: 100%; border-radius: .85rem;
   border: 1px solid var(--border);
   background: var(--background); color: var(--foreground);
