@@ -446,6 +446,16 @@ function AllInOneWorkspace() {
                     </button>
                   ))}
                 </div>
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    disabled={!data.questions.length}
+                    onClick={() => void openSaveQs()}
+                    className="rita-btn rita-btn-secondary gap-2 disabled:opacity-40"
+                  >
+                    <FolderPlus size={16} /> Save to Lecture Lab
+                  </button>
+                </div>
                 <div className="mt-6 space-y-3">
                   {data.questions.slice(0, 5).map((qq: any, i: number) => (
                     <div key={qq.id} className="rounded-2xl bg-[#faf6ee] p-4">
