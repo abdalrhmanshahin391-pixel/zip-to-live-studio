@@ -140,6 +140,7 @@ function PricingPage() {
 
        <section className="relative pt-24 md:pt-28">
          <div className="relative mx-auto flex max-w-[1120px] flex-col items-center px-6 pt-6 text-center md:px-10 md:pt-8">
+          <h1 className="sr-only">RitaJet study plans and pricing</h1>
           {kind && (
             <button
               type="button"

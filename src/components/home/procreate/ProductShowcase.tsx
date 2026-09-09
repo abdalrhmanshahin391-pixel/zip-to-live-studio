@@ -13,9 +13,11 @@ type ProductCardProps = {
   image: string;
   imageAlt: string;
   side: "left" | "right";
+  learnLabel: string;
+  buyLabel: string;
 };
 
-function ProductCard({ imageKey, label, title, note, image, imageAlt, side }: ProductCardProps) {
+function ProductCard({ imageKey, label, title, note, image, imageAlt, side, learnLabel, buyLabel }: ProductCardProps) {
   const left = side === "left";
 
   return (
@@ -24,8 +26,8 @@ function ProductCard({ imageKey, label, title, note, image, imageAlt, side }: Pr
       <h2 className="mt-6 text-[36px] font-bold leading-[1.05] text-white md:text-[44px]">{title}</h2>
 
       <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-        <Link to="/pricing" className="rita-btn rita-btn-secondary">Learn more</Link>
-        <Link to="/pricing" className="rita-btn rita-btn-primary">Buy now</Link>
+        <Link to="/pricing" className="rita-btn rita-btn-secondary">{learnLabel}</Link>
+        <Link to="/pricing" className="rita-btn rita-btn-primary">{buyLabel}</Link>
       </div>
       <p className="mt-5 text-[15px] font-normal text-white/48 md:text-[17px]">{note}</p>
 
@@ -169,6 +171,8 @@ export function ProductShowcase() {
           image={plansArt.url}
           imageAlt="RitaJet study plans displayed across a focused night-time study workspace"
           side="left"
+          learnLabel="See plan details"
+          buyLabel="Buy a plan"
         />
         <ProductCard
           imageKey="home.product.toolkit"
@@ -178,6 +182,8 @@ export function ProductShowcase() {
           image={toolkitArt.url}
           imageAlt="A student reviewing colorful flashcards with the RitaJet toolkit on an iPad"
           side="right"
+          learnLabel="Explore the toolkit"
+          buyLabel="Buy the toolkit"
         />
       </div>
 
