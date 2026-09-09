@@ -26,8 +26,8 @@ function ProductCard({ imageKey, label, title, note, image, imageAlt, side, lear
       <h2 className="mt-6 text-[36px] font-bold leading-[1.05] text-white md:text-[44px]">{title}</h2>
 
       <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-        <Link to="/pricing" className="rita-btn rita-btn-secondary">Learn more</Link>
-        <Link to="/pricing" className="rita-btn rita-btn-primary">Buy now</Link>
+        <Link to="/pricing" className="rita-btn rita-btn-secondary">{learnLabel}</Link>
+        <Link to="/pricing" className="rita-btn rita-btn-primary">{buyLabel}</Link>
       </div>
       <p className="mt-5 text-[15px] font-normal text-white/48 md:text-[17px]">{note}</p>
 
