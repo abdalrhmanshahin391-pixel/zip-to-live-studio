@@ -383,13 +383,6 @@ function StudyBoard() {
             ]}
             actions={[
               {
-                label: `Smart review${scopedQueue.length ? ` · ${scopedQueue.length}` : ""}`,
-                icon: <Sparkles size={16} />,
-                onClick: startSmartReview,
-                disabled: review.isLoading,
-                tone: "solid",
-              },
-              {
                 label: "Study mode",
                 icon: <GraduationCap size={16} />,
                 onClick: () => startSession(false),
@@ -402,6 +395,13 @@ function StudyBoard() {
                 onClick: () => startSession(true),
                 disabled: sessionCards.length === 0,
                 tone: "outline",
+              },
+              {
+                label: `Smart review${scopedQueue.length ? ` · ${scopedQueue.length}` : ""}`,
+                icon: <Sparkles size={16} />,
+                onClick: startSmartReview,
+                disabled: review.isLoading,
+                tone: "solid",
               },
             ]}
 
