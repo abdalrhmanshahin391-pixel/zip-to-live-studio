@@ -157,6 +157,80 @@ function AllInOneWorkspace() {
     }
   }
 
+  const playCards: FlashCardItem[] = useMemo(
+    () =>
+      ((data?.cards ?? []) as any[]).map((c) => ({ id: c.id, front: c.front, back: c.back })),
+    [data],
+  );
+
+  const boardSubjects = useMemo(() => readBoard(), [saveCards]);
+
+  function openSaveCards() {
+    setCardSubject(boardSubjects[0]?.name ?? "");
+    setNewCardSubject("");
+    setCardSub(data?.lecture?.title?.slice(0, 60) ?? "All in one");
+    setSaveCards(true);
+  }
+
+  function doSaveCards() {
+    const subjectName = (newCardSubject.trim() || cardSubject).trim();
+    const subName = cardSub.trim();
+    if (!subjectName || !subName) return toast.error("Pick a subject and name the sub-subject.");
+    const list = readBoard();
+    let subject = list.find((s) => s.name === subjectName);
+    if (!subject) {
+      subject = { name: subjectName, subs: [] };
+      list.push(subject);
+    }
+    if (!subject.subs.some((s) => s.name === subName)) subject.subs.push({ name: subName });
+    writeBoard(list);
+    const existing = readCards(subjectName, subName);
+    writeCards(subjectName, subName, [
+      ...existing,
+      ...playCards.map((c, i) => ({ id: `${Date.now().toString(36)}-${i}`, front: c.front, back: c.back })),
+    ]);
+    setSaveCards(false);
+    toast.success(`Saved to ${subjectName} · ${subName}.`);
+  }
+
+  async function openSaveQs() {
+    setSaveQs(true);
+    setQSub(data?.lecture?.title?.slice(0, 60) ?? "All in one");
+    setNewQSubject("");
+    try {
+      const r: any = await board({ data: undefined } as any);
+      setLqData(r);
+      const mine = (r.subjects ?? []).filter((s: any) => !s.is_example);
+      setQSubject(mine[0]?.id ?? "");
+    } catch (e) {
+      toast.error(friendlyError(e));
+    }
+  }
+
+  async function doSaveQs() {
+    const subName = qSub.trim();
+    if (!subName) return toast.error("Name the sub-subject.");
+    setSaving(true);
+    try {
+      let subjectId = qSubject;
+      if (newQSubject.trim()) {
+        const made: any = await addSubject({ data: { name: newQSubject.trim() } });
+        subjectId = made.id;
+      }
+      if (!subjectId) throw new Error("Pick a subject, or type a new one.");
+      const made: any = await addSubtopic({ data: { subjectId, name: subName } });
+      await fileQuestions({ data: { lectureId, subtopicId: made.id as string } });
+      setSaveQs(false);
+      toast.success("Saved to Lecture Lab.");
+    } catch (e) {
+      toast.error(friendlyError(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+
+
   if (busy) {
     return (
       <div className="min-h-screen bg-[#fbf5e9]">
