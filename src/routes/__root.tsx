@@ -137,11 +137,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Manrope:wght@400;500;600;700&family=Inter+Tight:wght@300;400;500;600;700&family=Tajawal:wght@400;500;700;800;900&family=Reem+Kufi:wght@500;600;700&family=Aref+Ruqaa:wght@400;700&family=Cinzel+Decorative:wght@700&display=swap",
       },
-      { rel: "icon", type: "image/x-icon", href: "/favicon.ico?v=4" },
-      { rel: "icon", type: "image/png", sizes: "128x128", href: "/favicon.png?v=4" },
-      { rel: "icon", type: "image/png", sizes: "512x512", href: "/favicon-512.png?v=4" },
-      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png?v=4" },
-      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "icon", type: "image/x-icon", href: "/favicon.ico?v=5" },
+      { rel: "icon", type: "image/png", sizes: "96x96", href: "/favicon.png?v=5" },
+      { rel: "icon", type: "image/png", sizes: "512x512", href: "/favicon-512.png?v=5" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png?v=5" },
+      { rel: "manifest", href: "/manifest.webmanifest?v=5" },
     ],
     scripts: [
       {
@@ -163,7 +163,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               name: "RitaJet",
               alternateName: ["RitaJet", "Rita Study", "RitaJet study tools"],
               url: "https://ritajet.com/",
-              logo: "https://ritajet.com/favicon.png",
+              logo: "https://ritajet.com/favicon-512.png?v=5",
               description:
                 "Rita is a study workspace with flashcards, PDF summaries, AI practice questions and a study planner.",
             },
