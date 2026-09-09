@@ -29,7 +29,7 @@ export const IMPORTABLE_TABLES = [
 ] as const;
 
 export type PeopleBackup = {
-  format: "aquaqbank.people";
+  format: "ritajet.people";
   version: 1;
   exported_at: string;
   accounts: Array<{
@@ -118,7 +118,7 @@ export const exportPeopleBackup = createServerFn({ method: "POST" })
     });
 
     return {
-      format: "aquaqbank.people",
+      format: "ritajet.people",
       version: 1,
       exported_at: new Date().toISOString(),
       accounts,

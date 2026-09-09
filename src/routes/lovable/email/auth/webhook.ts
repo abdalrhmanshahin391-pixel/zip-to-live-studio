@@ -9,10 +9,10 @@ import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 // Configuration
-const SITE_NAME = "AquaQBank"
-const SENDER_DOMAIN = "notify.aquaqbank.com"
-const ROOT_DOMAIN = "aquaqbank.com"
-const FROM_DOMAIN = "notify.aquaqbank.com"
+const SITE_NAME = "RitaJet"
+const SENDER_DOMAIN = "ritajet.com"
+const ROOT_DOMAIN = "ritajet.com"
+const FROM_DOMAIN = "ritajet.com"
 const SITE_URL = `https://${ROOT_DOMAIN}`
 
 // The SDK handler owns verification, dispatch, and retry semantics; this file
@@ -24,7 +24,7 @@ const handler = createAuthEmailHandler({
   sendUrl: process.env['LOVABLE_SEND_URL'],
   emails: {
     signup: {
-      subject: 'Verify your email for AquaQBank',
+      subject: 'Verify your email for RitaJet',
       render: (data) =>
         React.createElement(SignupEmail, {
           siteName: SITE_NAME,
@@ -34,7 +34,7 @@ const handler = createAuthEmailHandler({
         }),
     },
     invite: {
-      subject: "You're invited to AquaQBank",
+      subject: "You're invited to RitaJet",
       render: (data) =>
         React.createElement(InviteEmail, {
           siteName: SITE_NAME,
@@ -43,7 +43,7 @@ const handler = createAuthEmailHandler({
         }),
     },
     magiclink: {
-      subject: 'Your AquaQBank sign-in link',
+      subject: 'Your RitaJet sign-in link',
       render: (data) =>
         React.createElement(MagicLinkEmail, {
           siteName: SITE_NAME,
@@ -51,7 +51,7 @@ const handler = createAuthEmailHandler({
         }),
     },
     recovery: {
-      subject: 'Reset your AquaQBank password',
+      subject: 'Reset your RitaJet password',
       render: (data) =>
         React.createElement(RecoveryEmail, {
           siteName: SITE_NAME,

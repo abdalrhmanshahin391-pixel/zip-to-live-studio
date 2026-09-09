@@ -1,5 +1,4 @@
 import { SiteHeader } from "@/components/SiteHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 
 export function LegalPage({ title, content }: { title: string; content: string }) {
   return (
@@ -9,7 +8,6 @@ export function LegalPage({ title, content }: { title: string; content: string }
         <h1 className="font-display text-[clamp(2.4rem,6vw,4.8rem)] font-black leading-[1.02]">{title}</h1>
         <div className="rita-ink-soft mt-10 whitespace-pre-wrap text-[15px] leading-7 md:text-[16px]">{content}</div>
       </main>
-      <SiteFooter />
     </div>
   );
 }

@@ -52,6 +52,7 @@ function Label({ children }: { children: React.ReactNode }) {
 
 export function AuthDialogHost() {
   const [state, setState] = useState<AuthDialogState>(() => getAuthDialogState());
+  const router = useRouter();
 
   useEffect(() => {
     const unsub = subscribeAuthDialog(setState);
@@ -73,6 +74,18 @@ export function AuthDialogHost() {
       document.body.style.overflow = prev;
     };
   }, [state.open]);
+
+  useEffect(() => {
+    const destination = sessionStorage.getItem("rita-auth-next");
+    if (!destination) return;
+    void supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) return;
+      sessionStorage.removeItem("rita-auth-next");
+      if (destination.startsWith("/") && !destination.startsWith("//")) {
+        void router.navigate({ href: destination, replace: true });
+      }
+    });
+  }, [router]);
 
   if (!state.open) return null;
   return <AuthWindow mode={state.mode} next={state.next} />;
