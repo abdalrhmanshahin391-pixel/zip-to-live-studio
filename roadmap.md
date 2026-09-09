@@ -34,5 +34,5 @@
 - [ ] Import the original full question bank (blocked until the old export is uploaded)
 - [x] Surface the real Google sign-in error instead of hiding provider failures
 - [ ] Confirm RitaJet branding on Google's external consent screen (blocked by the active Google OAuth client settings)
-- [ ] Replace every browser/search icon with the green Rita header face and request a Google refresh
-- [ ] Match Lecture Lab study, session, and exam questions to the archive runner design
+- [x] Replace every browser/search icon with the green Rita header face and request a Google refresh
+- [x] Match Lecture Lab study, session, and exam questions to the archive runner design
