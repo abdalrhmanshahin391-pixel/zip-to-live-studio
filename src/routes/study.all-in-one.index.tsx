@@ -9,7 +9,16 @@ import { usePlanGate } from "@/hooks/usePlanGate";
 import { UpgradeWall } from "@/components/plan/UpgradeWall";
 import { PdfScanError, extractPdfText, friendlyError, renderPdfPages } from "@/lib/pdf-text";
 import { lqGenerate } from "@/lib/lecture-lab.functions";
-import { aioBucket, aioCards, aioList, aioReadPages, aioStart, aioSummary } from "@/lib/all-in-one.functions";
+import { generateSummary } from "@/lib/summaries.functions";
+import {
+  aioBucket,
+  aioCards,
+  aioLinkSummary,
+  aioList,
+  aioReadPages,
+  aioStart,
+  aioSummary,
+} from "@/lib/all-in-one.functions";
 import { BuildProgress, estimateBuildSeconds, type BuildStep } from "@/components/study/BuildProgress";
 
 export const Route = createFileRoute("/study/all-in-one/")({
@@ -38,7 +47,8 @@ const ACCENT = "#3f2c73";
 const BUILD_STEPS: BuildStep[] = [
   { key: "read", label: "Reading the lecture", weight: 1 },
   { key: "home", label: "Making a home for it", weight: 0.3 },
-  { key: "guide", label: "Study guide & summary", weight: 2 },
+  { key: "guide", label: "Study guide", weight: 2 },
+  { key: "sheet", label: "Summary sheet", weight: 2.4 },
   { key: "cards", label: "Flashcards", weight: 1.6 },
   { key: "questions", label: "Questions", weight: 2 },
 ];
