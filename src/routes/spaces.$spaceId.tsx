@@ -181,6 +181,14 @@ function SpacePage() {
               }
             />
           )}
+          {tab === "questions" && (
+            <SpaceQuestionsTab
+              spaceId={spaceId}
+              canAdd={canAddDecks}
+              canManage={canManage}
+              onChanged={() => refresh("space-question-sets")}
+            />
+          )}
           {tab === "members" && (
             <MembersTab
               spaceId={spaceId}
