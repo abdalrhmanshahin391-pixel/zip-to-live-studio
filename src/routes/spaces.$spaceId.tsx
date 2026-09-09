@@ -6,6 +6,7 @@ import {
   Copy,
   FolderPlus,
   Link2,
+  ListChecks,
   MessageCircle,
   Pin,
   Plus,
