@@ -13,7 +13,7 @@
 export const SELLER_NAME = "Abdlarhman Omar Ahmad Shaheen";
 export const SELLER_COUNTRY = "Jordan";
 export const SELLER_CITY = "Amman, Jordan";
-export const SUPPORT_EMAIL = "ritajetweb@outlook.com";
+export const SUPPORT_EMAIL = "ritajetnetwork@outlook.com";
 export const SITE_NAME = "RitaJet";
 export const SITE_DOMAIN = "ritajet.com";
 export const LEGAL_UPDATED = "9 August 2026";
