@@ -48,7 +48,9 @@ export function SiteFooter() {
       heading: ar ? "الحساب والدعم" : "Account & support",
       links: [
         { label: ar ? "الخطط والأسعار" : "Plans & pricing", to: "/pricing" },
-        { label: ar ? "عروض خاصة" : "Special offers", to: "/offers" },
+        ...(settings.offers_page_enabled
+          ? [{ label: ar ? "عروض خاصة" : "Special offers", to: "/offers" }]
+          : []),
         { label: ar ? "كيف يعمل" : "How it works", to: "/tour" },
         { label: ar ? "تواصل معنا" : "Talk to the team", to: "/support" },
       ],
