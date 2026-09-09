@@ -334,6 +334,53 @@ export const aioCards = createServerFn({ method: "POST" })
     return { cards };
   });
 
+/** Attach a real Summary-mode sheet to this lecture. */
+export const aioLinkSummary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ lectureId: z.string().uuid(), summaryId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = (context as any).supabase;
+    const userId = (context as any).userId as string;
+    const { error } = await supabase
+      .from("aio_summaries")
+      .upsert(
+        { user_id: userId, lecture_id: data.lectureId, summary_id: data.summaryId },
+        { onConflict: "lecture_id" },
+      );
+    if (error) throw error;
+    return { ok: true };
+  });
+
+/** File this lecture's questions under a Lecture Lab subject/sub-subject. */
+export const aioFileQuestions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ lectureId: z.string().uuid(), subtopicId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = (context as any).supabase;
+    const userId = (context as any).userId as string;
+
+    const { data: sub, error: subErr } = await supabase
+      .from("lq_subtopics")
+      .select("id")
+      .eq("id", data.subtopicId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (subErr) throw subErr;
+    if (!sub) throw new Error("That sub-subject is not yours.");
+
+    const { error } = await supabase
+      .from("lq_lectures")
+      .update({ subtopic_id: data.subtopicId })
+      .eq("id", data.lectureId)
+      .eq("user_id", userId);
+    if (error) throw error;
+    return { ok: true };
+  });
+
 /** Everything the workspace needs to render. */
 export const aioLoad = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -350,7 +397,11 @@ export const aioLoad = createServerFn({ method: "POST" })
     if (!lecture) throw new Error("That lecture is gone.");
 
     const [summary, cards, questions] = await Promise.all([
-      supabase.from("aio_summaries").select("guide_md, short_md").eq("lecture_id", data.lectureId).maybeSingle(),
+      supabase
+        .from("aio_summaries")
+        .select("guide_md, short_md, summary_id")
+        .eq("lecture_id", data.lectureId)
+        .maybeSingle(),
       supabase.from("aio_cards").select("id, front, back").eq("lecture_id", data.lectureId).order("sort_order"),
       supabase
         .from("lq_questions")
@@ -359,10 +410,23 @@ export const aioLoad = createServerFn({ method: "POST" })
         .order("sort_order"),
     ]);
 
+    const summaryId = (summary.data?.summary_id as string | null) ?? null;
+    let sheet: { id: string; title: string; author_name: string | null; content: any; created_at: string } | null =
+      null;
+    if (summaryId) {
+      const { data: row } = await supabase
+        .from("summaries")
+        .select("id, title, author_name, content, created_at")
+        .eq("id", summaryId)
+        .maybeSingle();
+      sheet = (row as any) ?? null;
+    }
+
     return {
       lecture,
       guide: (summary.data?.guide_md as string) ?? "",
       short: (summary.data?.short_md as string) ?? "",
+      sheet,
       cards: (cards.data ?? []) as { id: string; front: string; back: string }[],
       questions: (questions.data ?? []) as {
         id: string;
