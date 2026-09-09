@@ -12,6 +12,8 @@ import {
   clearRememberedLogin,
 } from "@/lib/remember-login";
 import { RitaFace } from "@/components/brand/RitaBrand";
+import { GoogleButton } from "@/components/auth/GoogleButton";
+
 import {
   closeAuth,
   getAuthDialogState,
@@ -279,7 +281,13 @@ function SignInPanel({ next }: { next?: string }) {
     <div>
       {error && <Err message={error} />}
 
+      <GoogleButton label="Continue with Google" onClick={handleGoogle} disabled={loading} />
+      <div className="my-5 flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#8a847a]">
+        <span className="h-px flex-1 bg-black/[0.08]" /> or <span className="h-px flex-1 bg-black/[0.08]" />
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-4">
+
           <label className="block">
             <Label>email</Label>
             <input
@@ -343,13 +351,7 @@ function SignInPanel({ next }: { next?: string }) {
           </button>
       </form>
 
-      <div className="my-5 flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#8a847a]">
-        <span className="h-px flex-1 bg-black/[0.08]" /> or <span className="h-px flex-1 bg-black/[0.08]" />
-      </div>
-      <button type="button" disabled={loading} onClick={handleGoogle} className="rita-btn rita-btn-secondary mx-auto">
-        <span aria-hidden className="text-[18px] font-black text-[#4285f4]">G</span>
-        Continue with Google
-      </button>
+
 
       <p className="mt-6 border-t border-black/[0.07] pt-4 text-center text-sm font-medium text-muted-foreground">
         New to Rita?{" "}
@@ -505,11 +507,39 @@ function SignUpPanel() {
     );
   }
 
+  const googleSignUp = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+        extraParams: { prompt: "select_account" },
+      });
+      if (result.error) throw result.error;
+      if (!result.redirected) closeAuth();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google sign-up could not start. Please try again.");
+      setLoading(false);
+    }
+  };
+
   return (
     <div>
       {error && <Err message={error} />}
 
+      <GoogleButton label="Sign up with Google" onClick={() => void googleSignUp()} disabled={loading} />
+      <p className="mt-2 text-center text-xs font-medium text-muted-foreground">
+        By continuing with Google you agree to RitaJet's{" "}
+        <Link to="/terms" className="underline">Terms</Link>,{" "}
+        <Link to="/privacy-policy" className="underline">Privacy Policy</Link> and{" "}
+        <Link to="/refund-policy" className="underline">Refund Policy</Link>.
+      </p>
+      <div className="my-5 flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#8a847a]">
+        <span className="h-px flex-1 bg-black/[0.08]" /> or <span className="h-px flex-1 bg-black/[0.08]" />
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-3.5">
+
           <label className="block">
             <Label>full name</Label>
             <input
@@ -596,32 +626,7 @@ function SignUpPanel() {
           </button>
       </form>
 
-      <div className="my-5 flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#8a847a]">
-        <span className="h-px flex-1 bg-black/[0.08]" /> or <span className="h-px flex-1 bg-black/[0.08]" />
-      </div>
-      <button
-        type="button"
-        disabled={loading || !accepted}
-        onClick={async () => {
-          setError(null);
-          setLoading(true);
-          try {
-            const result = await lovable.auth.signInWithOAuth("google", {
-              redirect_uri: window.location.origin,
-              extraParams: { prompt: "select_account" },
-            });
-            if (result.error) throw result.error;
-            if (!result.redirected) closeAuth();
-          } catch (err) {
-            setError(err instanceof Error ? err.message : "Google sign-up could not start. Please try again.");
-            setLoading(false);
-          }
-        }}
-        className="rita-btn rita-btn-secondary mx-auto"
-      >
-        <span aria-hidden className="text-[18px] font-black text-[#4285f4]">G</span>
-        Sign up with Google
-      </button>
+
 
       <p className="mt-6 border-t border-black/[0.07] pt-4 text-center text-sm font-medium text-muted-foreground">
         Already have an account?{" "}
