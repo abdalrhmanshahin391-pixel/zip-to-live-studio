@@ -515,6 +515,94 @@ function AllInOneWorkspace() {
           </section>
         </div>
       </main>
+
+      <StudyPlayer
+        open={playing}
+        title={data.lecture.title}
+        cards={playCards}
+        onClose={() => setPlaying(false)}
+      />
+
+      <SaveSheet open={saveCards} title="Save these flashcards" onClose={() => setSaveCards(false)}>
+        {boardSubjects.length > 0 && (
+          <label className="grid gap-1.5">
+            <span className="text-[12px] font-black uppercase tracking-[0.14em] text-[#a89e90]">Subject</span>
+            <select value={cardSubject} onChange={(e) => setCardSubject(e.target.value)} className={FIELD}>
+              {boardSubjects.map((s) => (
+                <option key={s.name} value={s.name}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <label className="grid gap-1.5">
+          <span className="text-[12px] font-black uppercase tracking-[0.14em] text-[#a89e90]">
+            {boardSubjects.length ? "…or a new subject" : "New subject"}
+          </span>
+          <input
+            value={newCardSubject}
+            onChange={(e) => setNewCardSubject(e.target.value)}
+            placeholder="e.g. Physiology"
+            className={FIELD}
+          />
+        </label>
+        <label className="grid gap-1.5">
+          <span className="text-[12px] font-black uppercase tracking-[0.14em] text-[#a89e90]">Sub-subject</span>
+          <input value={cardSub} onChange={(e) => setCardSub(e.target.value)} className={FIELD} />
+        </label>
+        <button type="button" onClick={doSaveCards} className="rita-btn rita-btn-primary !w-full">
+          Save {playCards.length} cards
+        </button>
+      </SaveSheet>
+
+      <SaveSheet open={saveQs} title="Save these questions" onClose={() => setSaveQs(false)}>
+        {!lqData ? (
+          <div className="flex items-center gap-2 text-[14px] font-bold text-[#a29a8d]">
+            <Loader2 size={15} className="animate-spin" /> Loading your subjects…
+          </div>
+        ) : (
+          <>
+            {(lqData.subjects ?? []).filter((s: any) => !s.is_example).length > 0 && (
+              <label className="grid gap-1.5">
+                <span className="text-[12px] font-black uppercase tracking-[0.14em] text-[#a89e90]">Subject</span>
+                <select value={qSubject} onChange={(e) => setQSubject(e.target.value)} className={FIELD}>
+                  {(lqData.subjects ?? [])
+                    .filter((s: any) => !s.is_example)
+                    .map((s: any) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            )}
+            <label className="grid gap-1.5">
+              <span className="text-[12px] font-black uppercase tracking-[0.14em] text-[#a89e90]">
+                …or a new subject
+              </span>
+              <input
+                value={newQSubject}
+                onChange={(e) => setNewQSubject(e.target.value)}
+                placeholder="e.g. Cardiology"
+                className={FIELD}
+              />
+            </label>
+            <label className="grid gap-1.5">
+              <span className="text-[12px] font-black uppercase tracking-[0.14em] text-[#a89e90]">Sub-subject</span>
+              <input value={qSub} onChange={(e) => setQSub(e.target.value)} className={FIELD} />
+            </label>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => void doSaveQs()}
+              className="rita-btn rita-btn-primary !w-full disabled:opacity-40"
+            >
+              {saving ? "Saving…" : "Save to Lecture Lab"}
+            </button>
+          </>
+        )}
+      </SaveSheet>
     </div>
   );
 }
