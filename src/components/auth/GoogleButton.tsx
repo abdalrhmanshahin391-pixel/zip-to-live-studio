@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { lovable } from "@/integrations/lovable/index";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * "Continue with Google" for the account window.
  *
- * Sign-in goes through the managed OAuth helper (iframe-safe in the editor
- * preview). We always return to the site root — the root route sends brand new
- * accounts on to /welcome, and any saved destination is handled there.
+ * Google is connected directly to RitaJet's auth provider. The public callback
+ * completes the session, then returns the person to the page they came from.
  */
 export function GoogleButton({ label = "Continue with Google" }: { label?: string }) {
   const [busy, setBusy] = useState(false);
@@ -16,20 +15,26 @@ export function GoogleButton({ label = "Continue with Google" }: { label?: strin
     setError(null);
     setBusy(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+      const returnPath = `${window.location.pathname}${window.location.search}`;
+      if (returnPath.startsWith("/") && !returnPath.startsWith("//")) {
+        sessionStorage.setItem("ritajet:oauth-return", returnPath);
+      }
+      const { error: signInError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: { prompt: "select_account" },
+        },
       });
-      if (result.redirected) return;
-      if (result.error) {
+      if (signInError) {
         setError(
-          result.error.message
-            ? `Google couldn't sign you in: ${result.error.message}`
+          signInError.message
+            ? `Google couldn't sign you in: ${signInError.message}`
             : "Google couldn't sign you in. Please try again or use your email and password.",
         );
         setBusy(false);
         return;
       }
-      window.location.assign("/");
     } catch (reason) {
       setError(
         reason instanceof Error && reason.message
