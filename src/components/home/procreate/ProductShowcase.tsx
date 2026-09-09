@@ -182,6 +182,8 @@ export function ProductShowcase() {
           image={toolkitArt.url}
           imageAlt="A student reviewing colorful flashcards with the RitaJet toolkit on an iPad"
           side="right"
+          learnLabel="Explore the toolkit"
+          buyLabel="Buy the toolkit"
         />
       </div>
 
