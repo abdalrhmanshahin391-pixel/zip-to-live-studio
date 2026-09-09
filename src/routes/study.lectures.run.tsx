@@ -498,10 +498,10 @@ function QuestionMap({
           })}
         </div>
         <div className="space-y-2.5 border-t border-border p-3.5">
-          <button type="button" onClick={onFinish} className="rita-btn rita-btn-primary w-full">
+          <button type="button" onClick={onFinish} className="rita-btn rita-btn-primary !w-full">
             Finish {mode === "study" ? "Study" : mode === "session" ? "Session" : "Exam"}
           </button>
-          <Link to="/study/lectures" className="rita-btn rita-btn-secondary w-full">
+          <Link to="/study/lectures" className="rita-btn rita-btn-secondary !w-full">
             End &amp; exit
           </Link>
         </div>
