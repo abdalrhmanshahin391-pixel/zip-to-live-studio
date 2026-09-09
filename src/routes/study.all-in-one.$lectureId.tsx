@@ -4,10 +4,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   ArrowLeft,
+  FolderPlus,
   Layers,
   ListChecks,
   Loader2,
   MessageCircle,
+  Play,
+  Printer,
   RotateCcw,
   ScrollText,
   Send,
@@ -15,9 +18,14 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useAuth } from "@/hooks/useAuth";
-import { aioAsk, aioLoad } from "@/lib/all-in-one.functions";
+import { aioAsk, aioFileQuestions, aioLoad } from "@/lib/all-in-one.functions";
+import { lqAddSubject, lqAddSubtopic, lqBoard } from "@/lib/lecture-lab.functions";
 import { friendlyError } from "@/lib/pdf-text";
 import { GuideDoc } from "@/components/study/GuideDoc";
+import { SummaryView } from "@/components/summary/SummaryView";
+import { StudyPlayer } from "@/components/study/StudyPlayer";
+import { readBoard, writeBoard } from "@/lib/local-board";
+import { readCards, writeCards, type FlashCardItem } from "@/lib/use-flashcards";
 
 export const Route = createFileRoute("/study/all-in-one/$lectureId")({
   component: AllInOneWorkspace,
@@ -47,7 +55,39 @@ const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: "ask", label: "Ask this lecture", icon: <MessageCircle size={16} /> },
 ];
 
-/** Organised guide/summary reader lives in GuideDoc. */
+/** Small cream dialog used by both "save" flows. */
+function SaveSheet({
+  open,
+  title,
+  onClose,
+  children,
+}: {
+  open: boolean;
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4 print:hidden">
+      <div className="w-full max-w-[460px] rounded-[24px] border border-black/[0.07] bg-[#fbf8f2] p-6">
+        <h2 className="font-display text-[22px] font-black text-[#23201d]">{title}</h2>
+        <div className="mt-4 grid gap-3">{children}</div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-4 text-[13px] font-extrabold text-[#a29a8d] hover:text-[#23201d]"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const FIELD =
+  "h-12 w-full rounded-xl border border-black/10 bg-white px-4 text-[14.5px] font-semibold text-[#23201d]";
+
 
 
 function AllInOneWorkspace() {
