@@ -12,8 +12,8 @@ self.addEventListener('push', (event) => {
   const title = payload.title || 'RitaJet';
   const options = {
     body: payload.body || '',
-    icon: '/rita-search-icon.png',
-    badge: '/rita-search-icon.png',
+    icon: '/favicon.png',
+    badge: '/favicon.png',
     dir: payload.dir || 'auto',
     lang: payload.lang || 'en',
     tag: payload.tag || undefined,
