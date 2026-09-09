@@ -98,7 +98,7 @@ export type SendResult = { ok: boolean; status: number; error: string; gone: boo
 export async function sendWebPush(sub: PushSub, payload: unknown, ttl = 24 * 3600): Promise<SendResult> {
   const publicKey = process.env["VAPID_PUBLIC_KEY"];
   const privateKey = process.env["VAPID_PRIVATE_KEY"];
-  const subject = process.env["VAPID_SUBJECT"] || "mailto:support@aquaqbank.com";
+  const subject = process.env["VAPID_SUBJECT"] || "mailto:ritajetweb@outlook.com";
   if (!publicKey || !privateKey) {
     return { ok: false, status: 0, error: "Notification keys are not configured", gone: false };
   }

@@ -455,12 +455,13 @@ function SignUpPanel() {
   }
 
   if (sentTo) {
+    const verificationEmail = sentTo;
     async function resendVerification() {
       setError(null);
       setLoading(true);
       const { error: resendError } = await supabase.auth.resend({
         type: "signup",
-        email: sentTo,
+        email: verificationEmail,
         options: { emailRedirectTo: `${window.location.origin}/` },
       });
       setLoading(false);
@@ -587,7 +588,7 @@ function SignUpPanel() {
       </div>
       <button
         type="button"
-        disabled={loading}
+        disabled={loading || !accepted}
         onClick={async () => {
           setError(null);
           setLoading(true);
