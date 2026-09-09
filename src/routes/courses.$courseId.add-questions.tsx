@@ -206,7 +206,7 @@ function AddQuestionsPage() {
       toast.error("Pick a subject and a sub-subject first.");
       return;
     }
-    if (!gate.check({ feature: "feature_rita38", kind: "rita_questions" })) return;
+    if (!gate.check({ feature: "feature_archive_qgen", kind: "archive_questions" })) return;
 
     setBusy("Getting ready…");
     try {
