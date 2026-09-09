@@ -325,6 +325,20 @@ function AllInOneUpload() {
           >
             {busy ? "Building…" : "Build everything"}
           </button>
+
+          <p className="mt-4 rounded-2xl border border-[#d94a3d]/25 bg-[#d94a3d]/[0.07] px-4 py-3 text-[13px] font-semibold leading-relaxed text-[#c1392b]">
+            <span className="font-black">This takes time — you don't have to wait here.</span>{" "}
+            Close the page and come back whenever you like. Big books can take up to two hours, but it is
+            usually finished in under 30 minutes.
+          </p>
+
+          {failed.length > 0 && (
+            <ul className="mt-3 space-y-1 rounded-2xl bg-[#f6f1e5] px-4 py-3 text-[13px] font-semibold text-[#8a3b32]">
+              {failed.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section className="mt-9">
