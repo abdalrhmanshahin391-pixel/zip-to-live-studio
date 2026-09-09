@@ -15,7 +15,6 @@ export type PlanFeatures = {
   lectureQuestions: boolean;
   archiveQuestions: boolean;
   allInOne: boolean;
-  rita38: boolean;
   /** Lifetime caps. `null` means unlimited. */
   maxTodoTasks: number | null;
   maxCalendarItems: number | null;
@@ -34,7 +33,6 @@ const CAP: Record<string, string> = {
   all_in_one_lectures: "max_all_in_one_lectures",
   all_in_one_questions: "max_all_in_one_questions",
   archive_questions: "max_archive_questions",
-  rita_questions: "max_rita_questions",
   groups: "max_groups",
 };
 
@@ -79,7 +77,6 @@ export function usePlan(): PlanFeatures {
     lectureQuestions: on(plan?.feature_lecture_qgen) && num("max_ai_questions") !== 0,
     archiveQuestions: on(plan?.feature_archive_qgen) && num("max_archive_questions") !== 0,
     allInOne: on(plan?.feature_all_in_one) && num("max_all_in_one_lectures") !== 0,
-    rita38: on(plan?.feature_rita38) && num("max_rita_questions") !== 0,
     maxTodoTasks: num("max_todo_tasks"),
     maxCalendarItems: num("max_calendar_items"),
     maxGroups: num("max_groups"),

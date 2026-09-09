@@ -29,7 +29,6 @@ const METERS = [
   { key: "ai_questions", cap: "max_ai_questions", label: "Lecture questions", tone: "#d9ecf7", bar: "#3f8fc0" },
   { key: "archive_questions", cap: "max_archive_questions", label: "Archive questions", tone: "#e6f0d8", bar: "#6aa62c" },
   { key: "all_in_one_lectures", cap: "max_all_in_one_lectures", label: "All-in-One lectures", tone: "#f6ddd5", bar: "#d1795e" },
-  { key: "rita_questions", cap: "max_rita_questions", label: "Rita 3.8 questions", tone: "#d8ecdd", bar: "#3f9c6c" },
 ] as const;
 
 function useCountdown(iso: string | null | undefined) {

@@ -52,7 +52,6 @@ type FullPlan = PlanRow & {
   feature_lecture_qgen?: boolean;
   feature_archive_qgen?: boolean;
   feature_all_in_one?: boolean;
-  feature_rita38?: boolean;
   billing_kind?: "monthly" | "lifetime";
   once_cents?: number;
   paddle_price_monthly?: string | null;
@@ -379,10 +378,6 @@ function PricingPage() {
                     {
                       on: p.feature_archive_qgen !== false && p.max_archive_questions !== 0,
                       text: cap(p.max_archive_questions, "Archive questions with full explanations"),
-                    },
-                    {
-                      on: p.feature_rita38 !== false && p.max_rita_questions !== 0,
-                      text: cap(p.max_rita_questions, "Rita Model 3.8 questions"),
                     },
                     { on: p.max_todo_tasks !== 0, text: cap(p.max_todo_tasks, "to-do tasks") },
                     {

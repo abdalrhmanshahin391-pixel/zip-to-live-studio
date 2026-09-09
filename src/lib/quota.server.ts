@@ -9,14 +9,12 @@ export type QuotaKind =
   | "all_in_one_lectures"
   | "all_in_one_questions"
   | "archive_questions"
-  | "rita_questions"
   | "groups";
 
 export type PlanFeature =
   | "feature_lecture_qgen"
   | "feature_archive_qgen"
   | "feature_all_in_one"
-  | "feature_rita38"
   | "feature_ai_import"
   | "feature_review";
 
@@ -29,7 +27,6 @@ const LABEL: Record<QuotaKind, string> = {
   all_in_one_lectures: "All-in-One lectures",
   all_in_one_questions: "All-in-One questions",
   archive_questions: "Archive questions",
-  rita_questions: "Rita 3.8 questions",
   groups: "classrooms",
 };
 
@@ -42,7 +39,6 @@ const COLUMN: Record<QuotaKind, string> = {
   all_in_one_lectures: "max_all_in_one_lectures",
   all_in_one_questions: "max_all_in_one_questions",
   archive_questions: "max_archive_questions",
-  rita_questions: "max_rita_questions",
   groups: "max_groups",
 };
 
@@ -50,7 +46,6 @@ const FEATURE_LABEL: Record<PlanFeature, string> = {
   feature_lecture_qgen: "Lecture question generation",
   feature_archive_qgen: "Archive question generation",
   feature_all_in_one: "All-in-One",
-  feature_rita38: "Rita Model 3.8",
   feature_ai_import: "AI import",
   feature_review: "Spaced repetition",
 };
