@@ -1,75 +1,56 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Loader2, ArrowRight } from "lucide-react";
+import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
+import { ProHeader } from "@/components/home/procreate/ProHeader";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import { useAuth } from "@/hooks/useAuth";
-import { SiteHeader } from "@/components/SiteHeader";
+import { SUPPORT_EMAIL } from "@/lib/legal-content";
 
 export const Route = createFileRoute("/checkout/success")({
   head: () => ({
     meta: [
       { title: "Payment successful — RitaJet" },
-      { name: "description", content: "Your RitaJet purchase is confirmed and access is being activated." },
+      {
+        name: "description",
+        content: "Your RitaJet purchase is confirmed and your study plan is being activated.",
+      },
       { property: "og:title", content: "Payment successful — RitaJet" },
       { property: "og:description", content: "Your RitaJet purchase is confirmed." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "robots", content: "noindex" },
     ],
   }),
   validateSearch: (search: Record<string, unknown>) => ({
-    courseId: typeof search.courseId === "string" ? search.courseId : undefined,
-    packageId: typeof search.packageId === "string" ? search.packageId : undefined,
+    plan: typeof search.plan === "string" ? search.plan : "",
   }),
   component: SuccessPage,
 });
 
 function SuccessPage() {
-  const { courseId, packageId } = Route.useSearch();
+  const { plan: slug } = Route.useSearch();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [polling, setPolling] = useState(true);
   const [granted, setGranted] = useState(false);
-  const [targetCourseId, setTargetCourseId] = useState<string | null>(courseId ?? null);
-  const [isLecture, setIsLecture] = useState(false);
 
+  // The payment provider tells our server the moment the money clears; the
+  // plan appears on the account a second or two later, so we poll for it.
   useEffect(() => {
-    if (!user || (!courseId && !packageId)) {
+    if (!user) {
       setPolling(false);
       return;
     }
     let cancelled = false;
     let attempts = 0;
 
-    const check = async (): Promise<boolean> => {
-      if (courseId) {
-        const { data: c } = await supabase
-          .from("courses")
-          .select("kind")
-          .eq("id", courseId)
-          .maybeSingle();
-        const lectures = (c as any)?.kind === "lectures";
-        if (!cancelled) setIsLecture(lectures);
-        const table = lectures ? "user_lecture_courses" : "user_courses";
-        const { data } = await (supabase.from(table) as any)
-          .select("user_id")
-          .eq("user_id", user.id)
-          .eq("course_id", courseId)
-          .maybeSingle();
-        return !!data;
-      }
-      // Subscription checkout: any unlocked course means access is live.
-      const { data: owned } = await (supabase.from("user_courses") as any)
-        .select("course_id")
-        .eq("user_id", user.id);
-      const list = (owned ?? []) as any[];
-      if (list.length > 0 && !cancelled) setTargetCourseId(list[0].course_id);
-      return list.length > 0;
-    };
-
     const tick = async () => {
       if (cancelled) return;
       attempts++;
-      const ok = await check();
+      const { data } = await (supabase.from as any)("user_plans")
+        .select("plan_slug")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const ok = slug ? (data as any)?.plan_slug === slug : !!(data as any)?.plan_slug;
       if (cancelled) return;
       if (ok) {
         setGranted(true);
@@ -83,66 +64,58 @@ function SuccessPage() {
     return () => {
       cancelled = true;
     };
-  }, [courseId, packageId, user]);
+  }, [user, slug]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <SiteHeader variant="light" />
-      <main className="mx-auto max-w-md px-6 pt-28 pb-24 text-center">
-        <div className="mx-auto w-16 h-16 rounded-full bg-accent/10 border border-accent/30 grid place-items-center">
-          <CheckCircle2 className="w-8 h-8 text-accent" />
+    <div
+      className="rita-cream min-h-screen bg-black text-white"
+      style={{ fontFamily: "var(--font-grotesk)" }}
+    >
+      <ProHeader variant="solid" />
+
+      <main className="mx-auto max-w-[560px] px-6 pb-28 pt-28 text-center md:px-10">
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-white/10 bg-white/[0.06]">
+          <CheckCircle2 className="rita-accent h-8 w-8" />
         </div>
-        <h1 className="mt-6 text-3xl font-semibold tracking-tight">Payment received</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Thanks for your purchase — a receipt is on its way to your email.
+        <h1 className="mt-7 text-[34px] font-bold leading-[1.06] md:text-[40px]">
+          Payment received
+        </h1>
+        <p className="mt-4 text-[16px] leading-[1.6] text-white/50">
+          Thank you — a receipt is on its way to your email from Paddle, our payment partner.
         </p>
 
-        <div className="mt-8 rounded-lg border border-border bg-card p-6 text-left shadow-[var(--shadow-card)]">
+        <div className="mt-9 rounded-[28px] border border-white/10 bg-[#131313] p-7 text-left">
           {polling && !granted ? (
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin text-accent" />
-              Activating your access…
-            </div>
+            <p className="flex items-center gap-3 text-[15px] font-semibold text-white/50">
+              <Loader2 className="h-4 w-4 animate-spin" /> Activating your plan…
+            </p>
           ) : granted ? (
-            <div className="space-y-3">
-              <div className="text-sm font-medium">Your access is ready.</div>
-              {targetCourseId ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigate({
-                      to: "/courses/$courseId",
-                      params: { courseId: targetCourseId },
-                    })
-                  }
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground font-semibold py-3 text-sm hover:opacity-90"
-                >
-                  Go to my course <ArrowRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <Link
-                  to="/courses"
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground font-semibold py-3 text-sm hover:opacity-90"
-                >
-                  Open my courses <ArrowRight className="w-4 h-4" />
-                </Link>
-              )}
+            <div className="grid gap-4">
+              <p className="text-[15.5px] font-semibold text-white">Your plan is ready.</p>
+              <Link to="/study" className="rita-btn rita-btn-primary gap-2 self-start">
+                Start studying <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           ) : (
-            <div className="space-y-3 text-sm text-muted-foreground">
+            <div className="grid gap-4 text-[15px] text-white/55">
               <p>
-                Your payment went through. Access can take a few seconds to appear — refresh this
-                page in a moment, or check My Courses.
+                Your payment went through. The plan can take a few seconds to appear — refresh this
+                page in a moment, or open your account.
               </p>
-              <Link
-                to="/courses"
-                className="inline-flex items-center gap-2 text-primary font-semibold hover:underline"
-              >
-                My courses <ArrowRight className="w-4 h-4" />
+              <Link to="/my-plan" className="rita-btn rita-btn-secondary gap-2 self-start">
+                My plan <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           )}
         </div>
+
+        <p className="mt-6 text-[13px] text-white/35">
+          Need help?{" "}
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="rita-accent hover:underline">
+            {SUPPORT_EMAIL}
+          </a>{" "}
+          — we reply within 2 working days.
+        </p>
       </main>
     </div>
   );

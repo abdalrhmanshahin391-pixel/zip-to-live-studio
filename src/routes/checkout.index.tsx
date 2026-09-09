@@ -2,10 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BadgeCheck, Clock3, Loader2, LockKeyhole, RefreshCcw } from "lucide-react";
-import { SiteHeader } from "@/components/SiteHeader";
+import { ProHeader } from "@/components/home/procreate/ProHeader";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import { useAuth } from "@/hooks/useAuth";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { SUPPORT_EMAIL } from "@/lib/legal-content";
 
 export const Route = createFileRoute("/checkout/")({
   head: () => ({
@@ -104,7 +106,11 @@ function CheckoutPage() {
     })
       .then(() => setReady(true))
       .catch((e) =>
-        setError(e instanceof Error ? e.message : "We could not open the payment form."),
+        setError(
+          e instanceof Error && e.message
+            ? e.message
+            : "We could not open the payment form. Please refresh the page and try again.",
+        ),
       );
   }, [plan, user, priceId, openCheckout]);
 
@@ -125,59 +131,90 @@ function CheckoutPage() {
     : [];
 
   return (
-    <div className="min-h-screen bg-[#fbf5e9] text-[#23201d]">
-      <SiteHeader />
+    <div
+      className="rita-cream min-h-screen bg-black text-white"
+      style={{ fontFamily: "var(--font-grotesk)" }}
+    >
+      <PaymentTestModeBanner />
+      <ProHeader variant="solid" />
 
-      <main className="mx-auto max-w-6xl px-4 pb-28 pt-8 md:px-8">
+      <main className="mx-auto max-w-[1120px] px-6 pb-28 pt-24 md:px-10 md:pt-28">
         <Link
           to="/pricing"
-          className="inline-flex items-center gap-2 text-[13.5px] font-black text-[#7a736a] hover:text-[#23201d]"
+          className="inline-flex items-center gap-2 text-[13.5px] font-semibold text-white/45 transition-colors hover:text-white"
         >
           <ArrowLeft size={15} /> Back to plans
         </Link>
 
-        <h1 className="mt-4 font-display text-[32px] font-black leading-tight md:text-[40px]">
+        <p className="mt-8 text-[19px] font-bold md:text-[21px]">
+          RitaJet <span className="rita-accent font-normal">Study</span>
+        </p>
+        <h1 className="mt-4 text-[34px] font-bold leading-[1.06] md:text-[43px]">
           Secure checkout
         </h1>
-        <p className="mt-2 max-w-xl text-[15.5px] text-[#5c554b]">
-          You are paying inside RitaJet. Your card details go straight to our payment partner —
-          we never see or store them.
+        <p className="mt-5 max-w-[30rem] text-[16px] leading-[1.6] text-white/50 md:text-[17px]">
+          You pay inside RitaJet. Your card details go straight to our payment partner — we never
+          see or store them.
         </p>
 
-        <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="mt-10 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_23rem]">
           {/* ---------------------------------------------- payment form */}
-          <section className="rounded-[28px] border border-black/[0.07] bg-white p-5 shadow-[0_30px_60px_-50px_rgba(35,32,29,0.9)] md:p-7">
-            <h2 className="text-[12px] font-black uppercase tracking-[0.18em] text-[#a29a8d]">
+          <section className="overflow-hidden rounded-[28px] border border-white/10 bg-[#131313] p-6 md:rounded-[34px] md:p-9">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">
               Pay securely
-            </h2>
+            </p>
 
             {error && (
-              <p className="mt-4 rounded-2xl bg-[#fdeeea] px-4 py-3 text-[14.5px] font-bold text-[#a4423a]">
-                {error}
+              <p className="mt-5 rounded-[20px] border border-[#a4321f]/40 bg-[#a4321f]/10 px-5 py-4 text-[15px] font-semibold text-[#ff9f8f]">
+                {error}{" "}
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">
+                  Email support
+                </a>{" "}
+                and we will sort it out.
               </p>
             )}
 
             {!error && (isLoading || !ready) && (
-              <p className="mt-6 flex items-center gap-2 text-[14.5px] font-bold text-[#7a736a]">
+              <p className="mt-6 flex items-center gap-2 text-[15px] font-semibold text-white/45">
                 <Loader2 size={16} className="animate-spin" /> Preparing your secure payment form…
               </p>
             )}
 
-            <div id="rita-checkout-frame" className="mt-4 min-h-[26rem]" />
+            <div id="rita-checkout-frame" className="mt-5 min-h-[26rem]" />
+
+            <p className="mt-6 border-t border-white/10 pt-5 text-[13px] leading-relaxed text-white/40">
+              By paying you agree to our{" "}
+              <Link to="/terms" className="rita-accent hover:underline">
+                Terms
+              </Link>
+              ,{" "}
+              <Link to="/privacy-policy" className="rita-accent hover:underline">
+                Privacy notice
+              </Link>{" "}
+              and{" "}
+              <Link to="/refund-policy" className="rita-accent hover:underline">
+                Refund policy
+              </Link>
+              . Our order process is conducted by our online reseller Paddle.com, the Merchant of
+              Record for all our orders; Paddle handles billing enquiries and returns. Questions?{" "}
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="rita-accent hover:underline">
+                {SUPPORT_EMAIL}
+              </a>
+            </p>
           </section>
 
           {/* --------------------------------------------- order summary */}
-          <aside className="rounded-[28px] border border-black/[0.07] bg-white p-6 shadow-[0_30px_60px_-50px_rgba(35,32,29,0.9)] lg:sticky lg:top-6">
-            <h2 className="text-[12px] font-black uppercase tracking-[0.18em] text-[#a29a8d]">
+          <aside className="rounded-[28px] border border-white/10 bg-[#131313] p-7 md:rounded-[34px] lg:sticky lg:top-24">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">
               Order summary
-            </h2>
+            </p>
 
-            {isLoading && <div className="mt-4 h-24 animate-pulse rounded-2xl bg-[#fbf5e9]" />}
+            {isLoading && <div className="mt-5 h-24 animate-pulse rounded-[20px] bg-white/[0.07]" />}
 
             {!isLoading && !plan && (
-              <p className="mt-4 text-[14.5px] font-bold text-[#7a736a]">
+              <p className="mt-4 text-[15px] font-semibold text-white/50">
                 We could not find that plan.{" "}
-                <Link to="/pricing" className="underline">
+                <Link to="/pricing" className="rita-accent underline">
                   Choose one here
                 </Link>
                 .
@@ -186,33 +223,33 @@ function CheckoutPage() {
 
             {plan && (
               <>
-                <p className="mt-3 font-display text-[24px] font-black">{plan.name}</p>
+                <p className="mt-4 text-[26px] font-bold leading-tight">{plan.name}</p>
                 {plan.tagline && (
-                  <p className="mt-1 text-[14px] font-semibold text-[#7a736a]">{plan.tagline}</p>
+                  <p className="mt-2 text-[14.5px] text-white/45">{plan.tagline}</p>
                 )}
 
-                <div className="mt-4 flex items-end gap-2 border-y border-dashed border-black/10 py-4">
-                  <span className="font-display text-[38px] font-black leading-none">
+                <div className="mt-5 flex items-end gap-2 border-y border-white/10 py-5">
+                  <span className="text-[40px] font-bold leading-none">
                     {money(cents, plan.currency)}
                   </span>
-                  <span className="pb-1 text-[13.5px] font-bold text-[#a29a8d]">
+                  <span className="pb-1 text-[13.5px] font-semibold text-white/40">
                     {billing === "once" ? "one-time" : billing === "yearly" ? "/ year" : "/ month"}
                   </span>
                 </div>
 
-                <p className="mt-4 text-[12px] font-black uppercase tracking-[0.16em] text-[#a29a8d]">
+                <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">
                   What you get
                 </p>
-                <ul className="mt-2 grid gap-1.5">
+                <ul className="mt-3 grid gap-2">
                   {perks.map((p) => (
-                    <li key={p.text} className="text-[14.5px] font-semibold text-[#3f3a33]">
+                    <li key={p.text} className="text-[14.5px] font-medium text-white/70">
                       • {p.text}
                     </li>
                   ))}
                 </ul>
 
                 {billing === "once" && (
-                  <p className="mt-4 rounded-2xl bg-[#f3f8ea] px-4 py-3 text-[13.5px] font-semibold text-[#4d7a1f]">
+                  <p className="mt-5 rounded-[20px] border border-white/10 bg-white/[0.05] px-5 py-4 text-[13.5px] font-medium text-white/60">
                     Yours for life — use the credits at your own pace. When the pack runs out you
                     can buy it again and the credits add on top.
                   </p>
@@ -220,18 +257,18 @@ function CheckoutPage() {
               </>
             )}
 
-            <ul className="mt-6 grid gap-2.5 border-t border-dashed border-black/10 pt-5 text-[13.5px] font-semibold text-[#5c554b]">
+            <ul className="mt-7 grid gap-3 border-t border-white/10 pt-6 text-[13.5px] font-medium text-white/55">
               <li className="flex items-center gap-2">
-                <LockKeyhole size={15} className="text-[#8ec63f]" /> Secure payment, encrypted
+                <LockKeyhole size={15} className="rita-accent" /> Secure payment, encrypted
               </li>
               <li className="flex items-center gap-2">
-                <RefreshCcw size={15} className="text-[#8ec63f]" /> 14-day money-back promise
+                <RefreshCcw size={15} className="rita-accent" /> 30-day money-back guarantee
               </li>
               <li className="flex items-center gap-2">
-                <BadgeCheck size={15} className="text-[#8ec63f]" /> Cancel a subscription any time
+                <BadgeCheck size={15} className="rita-accent" /> Cancel a subscription any time
               </li>
               <li className="flex items-center gap-2">
-                <Clock3 size={15} className="text-[#8ec63f]" /> Support replies in 2 working days
+                <Clock3 size={15} className="rita-accent" /> Support replies in 2 working days
               </li>
             </ul>
           </aside>
