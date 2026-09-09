@@ -331,12 +331,43 @@ function AllInOneWorkspace() {
 
             {tab === "summary" && (
               <div>
-                {data.short ? <GuideDoc text={data.short} /> : <p className="text-[15px] text-[#6b6357]">No summary yet.</p>}
+                {data.sheet ? (
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2 print:hidden">
+                      <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="rita-btn rita-btn-primary gap-2"
+                      >
+                        <Printer size={16} /> Download PDF
+                      </button>
+                      <Link
+                        to="/summaries/$summaryId"
+                        params={{ summaryId: data.sheet.id }}
+                        className="rita-btn rita-btn-secondary"
+                      >
+                        Open full summary
+                      </Link>
+                    </div>
+                    <div className="mt-4 overflow-hidden rounded-[26px] bg-[#fbf5e9]">
+                      <SummaryView
+                        content={data.sheet.content}
+                        siteName="Rita"
+                        authorName={data.sheet.author_name ?? undefined}
+                        createdAt={data.sheet.created_at}
+                      />
+                    </div>
+                  </div>
+                ) : data.short ? (
+                  <GuideDoc text={data.short} />
+                ) : (
+                  <p className="text-[15px] text-[#6b6357]">No summary yet.</p>
+                )}
                 {points.length > 0 && (
-                  <div className="mt-6 rounded-2xl bg-[#faf6ee] p-4">
+                  <div className="mt-6 rounded-2xl bg-[#faf6ee] p-4 print:hidden">
                     <div className="text-[11px] font-black uppercase tracking-[0.16em] text-[#a89e90]">Key points</div>
                     <ul className="mt-2 space-y-1.5">
-                      {points.map((p, i) => (
+                      {points.map((p: string, i: number) => (
                         <li key={i} className="flex gap-2 text-[14.5px] leading-[1.6]">
                           <span className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: ACCENT }} />
                           {p}
@@ -350,26 +381,36 @@ function AllInOneWorkspace() {
 
             {tab === "cards" &&
               (data.cards.length ? (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {data.cards.map((c: any) => {
-                    const on = !!flip[c.id];
-                    return (
-                      <button
-                        key={c.id}
-                        onClick={() => setFlip((f) => ({ ...f, [c.id]: !f[c.id] }))}
-                        className="min-h-[132px] rounded-2xl border border-black/[0.08] p-4 text-left transition hover:-translate-y-0.5"
-                        style={{ background: on ? "#faf6ee" : "#fff" }}
-                      >
-                        <div className="text-[11px] font-black uppercase tracking-[0.16em] text-[#a89e90]">
-                          {on ? "Answer" : "Card"}
-                        </div>
-                        <div className="mt-2 text-[15px] font-bold leading-[1.5]">{on ? c.back : c.front}</div>
-                        <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-extrabold text-[#a29a8d]">
-                          <RotateCcw size={13} /> Tap to flip
-                        </div>
-                      </button>
-                    );
-                  })}
+                <div>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={() => setPlaying(true)} className="rita-btn rita-btn-primary gap-2">
+                      <Play size={16} /> Play these cards
+                    </button>
+                    <button type="button" onClick={openSaveCards} className="rita-btn rita-btn-secondary gap-2">
+                      <FolderPlus size={16} /> Save to flashcards
+                    </button>
+                  </div>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {data.cards.map((c: any) => {
+                      const on = !!flip[c.id];
+                      return (
+                        <button
+                          key={c.id}
+                          onClick={() => setFlip((f) => ({ ...f, [c.id]: !f[c.id] }))}
+                          className="min-h-[132px] rounded-2xl border border-black/[0.08] p-4 text-left transition hover:-translate-y-0.5"
+                          style={{ background: on ? "#faf6ee" : "#fff" }}
+                        >
+                          <div className="text-[11px] font-black uppercase tracking-[0.16em] text-[#a89e90]">
+                            {on ? "Answer" : "Card"}
+                          </div>
+                          <div className="mt-2 text-[15px] font-bold leading-[1.5]">{on ? c.back : c.front}</div>
+                          <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-extrabold text-[#a29a8d]">
+                            <RotateCcw size={13} /> Tap to flip
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : (
                 <p className="text-[15px] text-[#6b6357]">No flashcards for this lecture.</p>
