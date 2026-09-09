@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { SiteHeader } from "@/components/SiteHeader";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import { useAuth } from "@/hooks/useAuth";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import toolkitArt from "@/assets/offers-toolkit.jpg.asset.json";
 
 export const Route = createFileRoute("/offers")({
@@ -57,10 +58,11 @@ export function leftFrom(iso: string | null | undefined) {
 
 /** Soft sage green used for ticks and buttons, so a card's own accent never
  * drags the page back to the old loud red look. */
-const SAGE = "#5f8d6b";
+const SAGE = "var(--rita-green-deep)";
 
 function OffersPage() {
   const { user } = useAuth();
+  const settings = useSiteSettings();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [code, setCode] = useState<Record<string, string>>({});
@@ -98,14 +100,32 @@ function OffersPage() {
 
   const offers = data ?? [];
 
+  // The whole page can be switched off from the admin area.
+  if (!settings.offers_page_enabled) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <SiteHeader />
+        <main className="mx-auto max-w-2xl px-4 py-24 text-center">
+          <h1 className="font-display text-3xl font-black">No offers right now</h1>
+          <p className="mt-3 text-[16px] text-muted-foreground">
+            Special offers are closed at the moment. Everything else is waiting for you inside.
+          </p>
+          <Link to="/study" className="rita-btn rita-btn-primary mt-7 inline-flex">
+            Start learning
+          </Link>
+        </main>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#fdf7ee] text-[#2b2620]">
+    <div className="min-h-screen bg-background text-foreground">
       <SiteHeader />
       <main className="mx-auto max-w-5xl px-4 py-12 md:px-8 md:py-16">
         <section className="grid items-center gap-10 md:grid-cols-[1.05fr_1fr]">
           <div>
             <span
-              className="inline-flex items-center gap-2 rounded-full bg-[#eaf1e6] px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.16em]"
+              className="inline-flex items-center gap-2 rounded-full bg-[color:var(--rita-green-soft)] px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.16em]"
               style={{ color: SAGE }}
             >
               <Gift size={14} /> Free toolkit
@@ -115,7 +135,7 @@ function OffersPage() {
               <br />
               to the study toolkit.
             </h1>
-            <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-[#6d665c]">
+            <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-muted-foreground">
               Flashcards, one-page summaries and practice questions land in your account the moment you
               tap. No card, one per student, and it works right away in every Rita mode.
             </p>
@@ -130,11 +150,11 @@ function OffersPage() {
         </section>
 
         {isLoading ? (
-          <p className="mt-14 text-[15px] font-semibold text-[#6d665c]">Loading the good stuff…</p>
+          <p className="mt-14 text-[15px] font-semibold text-muted-foreground">Loading the good stuff…</p>
         ) : offers.length === 0 ? (
           <div className="mt-14 rounded-[30px] border border-black/5 bg-white p-10 text-center shadow-[0_20px_40px_-30px_rgba(43,38,32,0.35)]">
             <p className="text-[17px] font-black">No offers running right now.</p>
-            <p className="mt-2 text-[15px] text-[#6d665c]">Check back soon — new packs land often.</p>
+            <p className="mt-2 text-[15px] text-muted-foreground">Check back soon — new packs land often.</p>
           </div>
         ) : (
           <div className="mt-14 grid gap-7 md:grid-cols-2">
@@ -152,7 +172,7 @@ function OffersPage() {
           </div>
         )}
 
-        <p className="mt-14 text-[13px] text-[#8b8377]">
+        <p className="mt-14 text-[13px] text-muted-foreground">
           Offers only work from this page. Credits are added on top of your plan and stop counting when the
           free period is over.
         </p>
@@ -183,7 +203,7 @@ function OfferCard({
     <article className="relative overflow-hidden rounded-[30px] border border-black/5 bg-white p-7 shadow-[0_24px_50px_-34px_rgba(43,38,32,0.45)]">
       {offer.badge && (
         <span
-          className="inline-flex items-center rounded-full bg-[#eaf1e6] px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em]"
+          className="inline-flex items-center rounded-full bg-[color:var(--rita-green-soft)] px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em]"
           style={{ color: SAGE }}
         >
           {offer.badge}
@@ -200,7 +220,7 @@ function OfferCard({
       )}
 
       <h2 className="mt-5 font-display text-2xl font-black leading-tight">{offer.title}</h2>
-      {offer.subtitle && <p className="mt-2 text-[15px] leading-relaxed text-[#6d665c]">{offer.subtitle}</p>}
+      {offer.subtitle && <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">{offer.subtitle}</p>}
 
       <ul className="mt-5 space-y-2.5">
         {(offer.bullets ?? []).map((b) => (
@@ -211,26 +231,25 @@ function OfferCard({
         ))}
       </ul>
 
-      <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#f6f0e6] px-3.5 py-1.5 text-[12px] font-semibold text-[#8b8377]">
+      <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#f6f0e6] px-3.5 py-1.5 text-[12px] font-semibold text-muted-foreground">
         <Timer size={13} /> Valid{" "}
         {months > 0 ? `${months} month${months > 1 ? "s" : ""}` : `${offer.duration_days} days`} from the moment
         you claim
       </p>
 
       {offer.claimed ? (
-        <div className="mt-6 rounded-[24px] bg-[#eaf1e6] p-5">
+        <div className="mt-6 rounded-[24px] bg-[color:var(--rita-green-soft)] p-5">
           <p className="text-[15px] font-black" style={{ color: SAGE }}>
             Claimed 🎉
           </p>
-          <p className="mt-1 text-[14px] font-semibold text-[#6d665c]">
+          <p className="mt-1 text-[14px] font-semibold text-muted-foreground">
             {left
               ? `${left.days}d ${left.hours}h ${left.minutes}m left before it runs out.`
               : "This one has run out."}
           </p>
           <Link
             to="/my-plan"
-            className="mt-4 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-bold text-white"
-            style={{ background: SAGE }}
+            className="rita-btn rita-btn-primary mt-4 inline-flex"
           >
             <Sparkles size={15} /> See it in My plan
           </Link>
@@ -239,7 +258,7 @@ function OfferCard({
         <div className="mt-6">
           {offer.requires_code && (
             <label className="mb-3 flex items-center gap-2 rounded-2xl border border-black/10 bg-[#fdf7ee] px-4 py-2.5">
-              <KeyRound size={15} className="shrink-0 text-[#8b8377]" />
+              <KeyRound size={15} className="shrink-0 text-muted-foreground" />
               <input
                 value={code}
                 onChange={(e) => onCode(e.target.value.toUpperCase())}
@@ -251,14 +270,13 @@ function OfferCard({
           <button
             onClick={onClaim}
             disabled={busy}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-4 text-[16px] font-bold text-white transition-transform hover:scale-[1.01] disabled:opacity-60"
-            style={{ background: SAGE, boxShadow: `0 18px 32px -20px ${SAGE}` }}
+            className="rita-btn rita-btn-primary inline-flex disabled:opacity-60"
           >
             {busy ? <Loader2 size={17} className="animate-spin" /> : <Gift size={17} />}
             {signedIn ? "Get it free" : "Sign in and get it free"}
           </button>
           {!offer.requires_code && (
-            <details className="mt-3 text-[13px] font-semibold text-[#8b8377]">
+            <details className="mt-3 text-[13px] font-semibold text-muted-foreground">
               <summary className="cursor-pointer">Got a code instead?</summary>
               <input
                 value={code}
