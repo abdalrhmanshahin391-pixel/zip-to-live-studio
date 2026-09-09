@@ -22,7 +22,6 @@ const GRANT_COLUMNS = [
   ["all_in_one_lectures", "max_all_in_one_lectures"],
   ["all_in_one_questions", "max_all_in_one_questions"],
   ["archive_questions", "max_archive_questions"],
-  ["rita_questions", "max_rita_questions"],
   ["groups", "max_groups"],
 ] as const;
 

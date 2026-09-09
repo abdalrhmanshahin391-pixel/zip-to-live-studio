@@ -322,9 +322,9 @@ export async function runRitaWorker(maxSubmit = 2): Promise<{ handled: number; j
 
     const { bumpQuota, remainingQuota } = await import("@/lib/quota.server");
     if (importedThisTick > 0) {
-      await bumpQuota(job.user_id, "rita_questions", importedThisTick);
+      await bumpQuota(job.user_id, "archive_questions", importedThisTick);
     }
-    const left = await remainingQuota(job.user_id, "rita_questions");
+    const left = await remainingQuota(job.user_id, "archive_questions");
     if (left !== null && left <= 0) {
       // The plan allowance ran out part-way through this PDF: stop cleanly and
       // keep everything already imported.
@@ -338,7 +338,7 @@ export async function runRitaWorker(maxSubmit = 2): Promise<{ handled: number; j
       const counters = await refreshJobCounters(admin, job.id);
       log.push({
         at: now(),
-        text: `Stopped part-way: your plan's Rita 3.8 limit is used up. ${counters.importedTotal} question${counters.importedTotal === 1 ? "" : "s"} were saved. Upgrade on the Plans page to finish this PDF.`,
+        text: `Stopped part-way: your plan's archive question limit is used up. ${counters.importedTotal} question${counters.importedTotal === 1 ? "" : "s"} were saved. Upgrade on the Plans page to finish this PDF.`,
       });
       await admin.from(JOBS).update({
         status: "done",

@@ -64,7 +64,6 @@ function blank(sort: number, n: number): AdminPlan {
     max_all_in_one_lectures: 5,
     max_all_in_one_questions: 100,
     max_archive_questions: 100,
-    max_rita_questions: 100,
     todo_full: true,
     rich_cards: true,
     feature_ai_import: true,
@@ -72,7 +71,6 @@ function blank(sort: number, n: number): AdminPlan {
     feature_lecture_qgen: true,
     feature_archive_qgen: true,
     feature_all_in_one: true,
-    feature_rita38: true,
     perks: [],
     published: false,
     highlight: false,
@@ -576,7 +574,6 @@ function AdminPlansPage() {
                                 max_flashcards: preset.n,
                                 max_ai_questions: preset.q,
                                 max_archive_questions: preset.q,
-                                max_rita_questions: preset.q,
                                 max_all_in_one_lectures: preset.l,
                                 max_summaries: preset.l,
                               })
@@ -621,11 +618,6 @@ function AdminPlansPage() {
                         onChange={(v) => patch({ max_archive_questions: v })}
                       />
                       <Limit
-                        label="Rita 3.8 questions"
-                        value={plan.max_rita_questions ?? null}
-                        onChange={(v) => patch({ max_rita_questions: v })}
-                      />
-                      <Limit
                         label="To-do tasks"
                         value={plan.max_todo_tasks ?? null}
                         onChange={(v) => patch({ max_todo_tasks: v })}
@@ -656,7 +648,6 @@ function AdminPlansPage() {
                       <Toggle on={plan.feature_lecture_qgen !== false} label="Lecture Lab questions" onClick={() => patch({ feature_lecture_qgen: !(plan.feature_lecture_qgen !== false) })} />
                       <Toggle on={plan.feature_all_in_one !== false} label="All-in-One" onClick={() => patch({ feature_all_in_one: !(plan.feature_all_in_one !== false) })} />
                       <Toggle on={plan.feature_archive_qgen !== false} label="Archive solver" onClick={() => patch({ feature_archive_qgen: !(plan.feature_archive_qgen !== false) })} />
-                      <Toggle on={plan.feature_rita38 !== false} label="Rita Model 3.8" onClick={() => patch({ feature_rita38: !(plan.feature_rita38 !== false) })} />
                     </div>
                   </Block>
 

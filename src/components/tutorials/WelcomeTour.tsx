@@ -95,7 +95,7 @@ export function WelcomeTour() {
               type="button"
               onClick={() => {
                 void remember();
-                void navigate({ to: "/tour" });
+                void navigate({ to: "/tutorial" });
               }}
               className="btn-chunky w-full"
             >

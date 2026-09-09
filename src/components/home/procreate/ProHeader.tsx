@@ -21,14 +21,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { CreditsMeter } from "@/components/CreditsMeter";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { avatarTone, useAvatarUrl } from "@/lib/avatars";
-import { setImageEditMode, useImageEditMode } from "@/lib/image-edit-mode";
 import { RitaBrand } from "@/components/brand/RitaBrand";
 import { StartLearningLink } from "@/components/StartLearningLink";
 
 import { NAV_GROUPS } from "@/components/site-nav";
 
 const SIMPLE_LINKS: { to: string; label: string }[] = [
-  { to: "/tour", label: "How it works" },
+  { to: "/tutorial", label: "Tutorial" },
 ];
 
 /** Transparent over artwork on the home page, solid cream everywhere else. */
@@ -39,7 +38,6 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
   const navigate = useNavigate();
   const [accountOpen, setAccountOpen] = useState(false);
   const [sheet, setSheet] = useState(false);
-  const imageEdit = useImageEditMode();
   const solid = variant === "solid";
 
   const displayName = profile?.username ?? user?.email ?? "";
@@ -234,31 +232,6 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                           <span
                             className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
                               adminMode ? "left-6" : "left-1"
-                            }`}
-                          />
-                        </span>
-                      </button>
-                    )}
-                    {isRealAdmin && (
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={imageEdit}
-                        onClick={() => setImageEditMode(!imageEdit)}
-                        className="rita-ink flex w-full items-center justify-between gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold transition-opacity hover:opacity-65"
-                      >
-                        <span className="inline-flex items-center gap-3">
-                          <ImageUp size={16} className={imageEdit ? "rita-accent" : "text-white/40"} />
-                          Image edit mode
-                        </span>
-                        <span
-                          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                            imageEdit ? "rita-accent-bg" : "bg-white/20"
-                          }`}
-                        >
-                          <span
-                            className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
-                              imageEdit ? "left-6" : "left-1"
                             }`}
                           />
                         </span>

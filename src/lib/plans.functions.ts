@@ -17,13 +17,11 @@ export type PlanRow = {
   max_all_in_one_lectures: number | null;
   max_all_in_one_questions: number | null;
   max_archive_questions: number | null;
-  max_rita_questions: number | null;
   todo_full: boolean;
   rich_cards: boolean;
   feature_lecture_qgen: boolean;
   feature_archive_qgen: boolean;
   feature_all_in_one: boolean;
-  feature_rita38: boolean;
   sort: number;
   billing_kind?: "monthly" | "lifetime";
   once_cents?: number;
@@ -43,7 +41,6 @@ export type PlanUsage = {
     all_in_one_lectures: number;
     all_in_one_questions: number;
     archive_questions: number;
-    rita_questions: number;
     groups: number;
   };
   /** Extra allowance bought as one-time packs, on top of the plan caps. */

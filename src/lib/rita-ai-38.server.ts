@@ -12,7 +12,7 @@ export async function resolveRitaKey(supabase: any): Promise<string> {
   void supabase;
   const key = (process.env['GEMINI_API_KEY'] ?? "").trim();
   if (key.length > 10) return key;
-  throw new Error("Rita AI 3.8 is not connected yet. Ask the site owner to add the Gemini key.");
+  throw new Error("Add Questions is not connected yet. Ask the site owner to add the Gemini key.");
 }
 
 export function ritaKeyError(status: number, body: string): string {

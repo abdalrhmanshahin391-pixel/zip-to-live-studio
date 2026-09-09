@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import { ImageUp, Loader2, RotateCcw, X } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
-import { useImageEditMode } from "@/lib/image-edit-mode";
 import { useSiteImage, useSiteImageActions, useSiteImages } from "@/lib/site-images";
 
 type Props = {
@@ -36,7 +35,6 @@ export function EditableImage({
   wrapperClassName,
 }: Props) {
   const { isRealAdmin } = useAuth();
-  const editing = useImageEditMode();
   const src = useSiteImage(imageKey, fallback);
   const { data: overrides } = useSiteImages();
   const { replace, reset } = useSiteImageActions();
@@ -45,7 +43,7 @@ export function EditableImage({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const canEdit = isRealAdmin && editing;
+  const canEdit = isRealAdmin;
   const hasOverride = Boolean(overrides?.[imageKey]);
 
   async function onPick(file: File | null) {

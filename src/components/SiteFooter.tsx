@@ -31,7 +31,7 @@ export function SiteFooter() {
       heading: ar ? "مع الذكاء الاصطناعي" : "With AI",
       links: [
         { label: ar ? "الكل في واحد" : "All in one", to: "/study/all-in-one" },
-        { label: "Rita AI 3.8", to: "/study/rita-ai" },
+        { label: "Tutorial", to: "/tutorial" },
         { label: ar ? "مختبر المحاضرات" : "Lecture Lab", to: "/study/lectures" },
         { label: ar ? "الألمانية" : "German Lab", to: "/german" },
       ],
@@ -51,7 +51,7 @@ export function SiteFooter() {
         ...(settings.offers_page_enabled
           ? [{ label: ar ? "عروض خاصة" : "Special offers", to: "/offers" }]
           : []),
-        { label: ar ? "كيف يعمل" : "How it works", to: "/tour" },
+        { label: ar ? "دليل الاستخدام" : "Tutorial", to: "/tutorial" },
         { label: ar ? "تواصل معنا" : "Talk to the team", to: "/support" },
       ],
     },

@@ -45,7 +45,6 @@ export type DemoKind =
   | "calendar"
   | "timer"
   | "allinone"
-  | "rita"
   | "qbank"
   | "lecture"
   | "share"
@@ -316,31 +315,6 @@ export const TOOLS: ToolDef[] = [
       { en: "Pick what you want: summary, cards, questions.", ar: "اختر ما تريد: ملخص، بطاقات، أسئلة." },
       { en: "Wait for Rita to finish — it runs in one pass.", ar: "انتظر ريتا لتنتهي — كل شيء بمرة واحدة." },
       { en: "Everything lands in your own study space.", ar: "كل شيء يُحفظ في مساحتك الدراسية." },
-    ],
-  },
-  {
-    key: "rita-ai",
-    section: "study-space",
-    column: "ai",
-    to: "/study/rita-ai",
-    href: "/study/rita-ai",
-    icon: Sparkles,
-    image: ritaArt,
-    soft: "#e7dcf7",
-    ink: "#3f2c73",
-    name: { en: "Rita AI Model 3.8", ar: "ريتا 3.8" },
-    tag: { en: "Elite question engine", ar: "محرك الأسئلة" },
-    line: {
-      en: "Upload a PDF — Rita cuts out every question and writes the full explanation.",
-      ar: "ارفع PDF — تستخرج ريتا كل سؤال وتكتب الشرح الكامل.",
-    },
-    cta: { en: "Open Rita AI 3.8", ar: "افتح ريتا 3.8" },
-    demo: "rita",
-    steps: [
-      { en: "Choose the archive subject and sub-subject.", ar: "اختر المادة والمادة الفرعية." },
-      { en: "Upload the exam or question PDF.", ar: "ارفع ملف الأسئلة أو الامتحان." },
-      { en: "Rita writes why the right answer is right and the others wrong.", ar: "تشرح ريتا سبب صحة الجواب وخطأ الباقي." },
-      { en: "The questions are saved privately to your account.", ar: "تُحفظ الأسئلة في حسابك بشكل خاص." },
     ],
   },
   {

@@ -151,7 +151,6 @@ function render(kind: DemoKind, tool: ToolDef) {
       );
 
     case "allinone":
-    case "rita":
       return (
         <div className="space-y-3">
           <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm">

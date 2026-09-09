@@ -49,7 +49,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "With AI",
         items: [
           { to: "/study/all-in-one", label: "All in one", hint: "One upload · everything", icon: Wand2, soft: "#e7dcf7", ink: "#3f2c73" },
-          { to: "/study/rita-ai", label: "Rita AI 3.8", hint: "Question engine", icon: Sparkles, soft: "#e7dcf7", ink: "#3f2c73" },
+          { to: "/tutorial", label: "Tutorial", hint: "How every tool works", icon: Sparkles, soft: "#dcf1e4", ink: "#20613f" },
           { to: "/courses/$courseId", params: { courseId: "22222222-2222-4222-8222-222222222222" }, label: "Question bank", hint: "Study · exam", icon: ListChecks, soft: "#d9ecf7", ink: "#1d4d6b" },
           { to: "/study/lectures", label: "Lecture Lab", hint: "Lecture → quiz", icon: BookOpen, soft: "#e6f0d8", ink: "#2f6318" },
         ],

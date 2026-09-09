@@ -29,6 +29,7 @@ import { Route as StudyRouteImport } from './routes/study'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as ToolkitRouteImport } from './routes/toolkit'
 import { Route as TourRouteImport } from './routes/tour'
+import { Route as TutorialRouteImport } from './routes/tutorial'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -70,7 +71,6 @@ import { Route as StudyExamsRouteImport } from './routes/study.exams'
 import { Route as StudyMatchRouteImport } from './routes/study.match'
 import { Route as StudyPdfRouteImport } from './routes/study.pdf'
 import { Route as StudyProgressRouteImport } from './routes/study.progress'
-import { Route as StudyRitaAiRouteImport } from './routes/study.rita-ai'
 import { Route as StudySessionRouteImport } from './routes/study.session'
 import { Route as StudySummariesRouteImport } from './routes/study.summaries'
 import { Route as StudyTodoRouteImport } from './routes/study.todo'
@@ -207,6 +207,11 @@ const ToolkitRoute = ToolkitRouteImport.update({
 const TourRoute = TourRouteImport.update({
   id: '/tour',
   path: '/tour',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TutorialRoute = TutorialRouteImport.update({
+  id: '/tutorial',
+  path: '/tutorial',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WelcomeRoute = WelcomeRouteImport.update({
@@ -414,11 +419,6 @@ const StudyPdfRoute = StudyPdfRouteImport.update({
 const StudyProgressRoute = StudyProgressRouteImport.update({
   id: '/progress',
   path: '/progress',
-  getParentRoute: () => StudyRoute,
-} as any)
-const StudyRitaAiRoute = StudyRitaAiRouteImport.update({
-  id: '/rita-ai',
-  path: '/rita-ai',
   getParentRoute: () => StudyRoute,
 } as any)
 const StudySessionRoute = StudySessionRouteImport.update({
@@ -633,6 +633,7 @@ export interface FileRoutesByFullPath {
   '/support': typeof SupportRoute
   '/toolkit': typeof ToolkitRoute
   '/tour': typeof TourRoute
+  '/tutorial': typeof TutorialRoute
   '/welcome': typeof WelcomeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -667,7 +668,6 @@ export interface FileRoutesByFullPath {
   '/study/match': typeof StudyMatchRoute
   '/study/pdf': typeof StudyPdfRoute
   '/study/progress': typeof StudyProgressRoute
-  '/study/rita-ai': typeof StudyRitaAiRoute
   '/study/session': typeof StudySessionRoute
   '/study/summaries': typeof StudySummariesRoute
   '/study/todo': typeof StudyTodoRoute
@@ -732,6 +732,7 @@ export interface FileRoutesByTo {
   '/support': typeof SupportRoute
   '/toolkit': typeof ToolkitRoute
   '/tour': typeof TourRoute
+  '/tutorial': typeof TutorialRoute
   '/welcome': typeof WelcomeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -764,7 +765,6 @@ export interface FileRoutesByTo {
   '/study/match': typeof StudyMatchRoute
   '/study/pdf': typeof StudyPdfRoute
   '/study/progress': typeof StudyProgressRoute
-  '/study/rita-ai': typeof StudyRitaAiRoute
   '/study/session': typeof StudySessionRoute
   '/study/summaries': typeof StudySummariesRoute
   '/study/todo': typeof StudyTodoRoute
@@ -831,6 +831,7 @@ export interface FileRoutesById {
   '/support': typeof SupportRoute
   '/toolkit': typeof ToolkitRoute
   '/tour': typeof TourRoute
+  '/tutorial': typeof TutorialRoute
   '/welcome': typeof WelcomeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -865,7 +866,6 @@ export interface FileRoutesById {
   '/study/match': typeof StudyMatchRoute
   '/study/pdf': typeof StudyPdfRoute
   '/study/progress': typeof StudyProgressRoute
-  '/study/rita-ai': typeof StudyRitaAiRoute
   '/study/session': typeof StudySessionRoute
   '/study/summaries': typeof StudySummariesRoute
   '/study/todo': typeof StudyTodoRoute
@@ -934,6 +934,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/toolkit'
     | '/tour'
+    | '/tutorial'
     | '/welcome'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -968,7 +969,6 @@ export interface FileRouteTypes {
     | '/study/match'
     | '/study/pdf'
     | '/study/progress'
-    | '/study/rita-ai'
     | '/study/session'
     | '/study/summaries'
     | '/study/todo'
@@ -1033,6 +1033,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/toolkit'
     | '/tour'
+    | '/tutorial'
     | '/welcome'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -1065,7 +1066,6 @@ export interface FileRouteTypes {
     | '/study/match'
     | '/study/pdf'
     | '/study/progress'
-    | '/study/rita-ai'
     | '/study/session'
     | '/study/summaries'
     | '/study/todo'
@@ -1131,6 +1131,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/toolkit'
     | '/tour'
+    | '/tutorial'
     | '/welcome'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -1165,7 +1166,6 @@ export interface FileRouteTypes {
     | '/study/match'
     | '/study/pdf'
     | '/study/progress'
-    | '/study/rita-ai'
     | '/study/session'
     | '/study/summaries'
     | '/study/todo'
@@ -1233,6 +1233,7 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   ToolkitRoute: typeof ToolkitRoute
   TourRoute: typeof TourRoute
+  TutorialRoute: typeof TutorialRoute
   WelcomeRoute: typeof WelcomeRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -1419,6 +1420,13 @@ declare module '@tanstack/react-router' {
       path: '/tour'
       fullPath: '/tour'
       preLoaderRoute: typeof TourRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tutorial': {
+      id: '/tutorial'
+      path: '/tutorial'
+      fullPath: '/tutorial'
+      preLoaderRoute: typeof TutorialRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/welcome': {
@@ -1706,13 +1714,6 @@ declare module '@tanstack/react-router' {
       path: '/progress'
       fullPath: '/study/progress'
       preLoaderRoute: typeof StudyProgressRouteImport
-      parentRoute: typeof StudyRoute
-    }
-    '/study/rita-ai': {
-      id: '/study/rita-ai'
-      path: '/rita-ai'
-      fullPath: '/study/rita-ai'
-      preLoaderRoute: typeof StudyRitaAiRouteImport
       parentRoute: typeof StudyRoute
     }
     '/study/session': {
@@ -2053,7 +2054,6 @@ interface StudyRouteChildren {
   StudyMatchRoute: typeof StudyMatchRoute
   StudyPdfRoute: typeof StudyPdfRoute
   StudyProgressRoute: typeof StudyProgressRoute
-  StudyRitaAiRoute: typeof StudyRitaAiRoute
   StudySessionRoute: typeof StudySessionRoute
   StudySummariesRoute: typeof StudySummariesRoute
   StudyTodoRoute: typeof StudyTodoRoute
@@ -2071,7 +2071,6 @@ const StudyRouteChildren: StudyRouteChildren = {
   StudyMatchRoute: StudyMatchRoute,
   StudyPdfRoute: StudyPdfRoute,
   StudyProgressRoute: StudyProgressRoute,
-  StudyRitaAiRoute: StudyRitaAiRoute,
   StudySessionRoute: StudySessionRoute,
   StudySummariesRoute: StudySummariesRoute,
   StudyTodoRoute: StudyTodoRoute,
@@ -2132,6 +2131,7 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   ToolkitRoute: ToolkitRoute,
   TourRoute: TourRoute,
+  TutorialRoute: TutorialRoute,
   WelcomeRoute: WelcomeRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:

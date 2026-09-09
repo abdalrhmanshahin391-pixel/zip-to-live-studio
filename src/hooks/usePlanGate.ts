@@ -7,8 +7,7 @@ export type GateKind = keyof PlanUsage["usage"];
 export type GateFeature =
   | "feature_lecture_qgen"
   | "feature_archive_qgen"
-  | "feature_all_in_one"
-  | "feature_rita38";
+  | "feature_all_in_one";
 
 export type GateBlock = {
   reason: "feature" | "quota";
@@ -25,7 +24,6 @@ const LABEL: Record<GateKind, string> = {
   all_in_one_lectures: "All-in-One lectures",
   all_in_one_questions: "All-in-One questions",
   archive_questions: "Archive questions",
-  rita_questions: "Rita 3.8 runs",
   groups: "classrooms",
 };
 
@@ -33,7 +31,6 @@ const FEATURE_LABEL: Record<GateFeature, string> = {
   feature_lecture_qgen: "Lecture questions",
   feature_archive_qgen: "Archive questions",
   feature_all_in_one: "All-in-One",
-  feature_rita38: "Rita Model 3.8",
 };
 
 const CAP: Record<GateKind, string> = {
@@ -45,7 +42,6 @@ const CAP: Record<GateKind, string> = {
   all_in_one_lectures: "max_all_in_one_lectures",
   all_in_one_questions: "max_all_in_one_questions",
   archive_questions: "max_archive_questions",
-  rita_questions: "max_rita_questions",
   groups: "max_groups",
 };
 

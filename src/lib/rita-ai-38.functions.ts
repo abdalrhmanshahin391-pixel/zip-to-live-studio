@@ -209,8 +209,8 @@ export const ritaCreateJob = createServerFn({ method: "POST" })
     const supabase = (context as any).supabase;
     const userId = (context as any).userId as string;
     const { assertFeature, assertQuota } = await import("@/lib/quota.server");
-    await assertFeature(userId, "feature_rita38");
-    await assertQuota(userId, "rita_questions", 1);
+    await assertFeature(userId, "feature_archive_qgen");
+    await assertQuota(userId, "archive_questions", 1);
     const { courseId, groupId } = await assertOwnsSubject(supabase, userId, data.subjectId);
 
     const { extractText, getDocumentProxy } = await import("unpdf");
@@ -279,8 +279,8 @@ export const ritaCreateTextJob = createServerFn({ method: "POST" })
     const supabase = (context as any).supabase;
     const userId = (context as any).userId as string;
     const { assertFeature, assertQuota } = await import("@/lib/quota.server");
-    await assertFeature(userId, "feature_rita38");
-    await assertQuota(userId, "rita_questions", 1);
+    await assertFeature(userId, "feature_archive_qgen");
+    await assertQuota(userId, "archive_questions", 1);
     const { courseId, groupId } = await assertOwnsSubject(supabase, userId, data.subjectId);
 
     const { data: job, error } = await supabase.from(JOBS).insert({
@@ -319,8 +319,8 @@ export const ritaCreateImageJob = createServerFn({ method: "POST" })
     const supabase = (context as any).supabase;
     const userId = (context as any).userId as string;
     const { assertFeature, assertQuota } = await import("@/lib/quota.server");
-    await assertFeature(userId, "feature_rita38");
-    await assertQuota(userId, "rita_questions", 1);
+    await assertFeature(userId, "feature_archive_qgen");
+    await assertQuota(userId, "archive_questions", 1);
     const { courseId, groupId } = await assertOwnsSubject(supabase, userId, data.subjectId);
 
     const { RITA_MODEL, OCR_SYSTEM, resolveRitaKey, ritaKeyError } = await import(

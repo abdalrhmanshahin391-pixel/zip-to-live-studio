@@ -121,10 +121,6 @@ function CheckoutPage() {
           on: plan.max_archive_questions !== 0,
           text: cap(plan.max_archive_questions, "Archive questions"),
         },
-        {
-          on: plan.max_rita_questions !== 0,
-          text: cap(plan.max_rita_questions, "Rita Model 3.8 questions"),
-        },
       ].filter((p) => p.on)
     : [];
 
