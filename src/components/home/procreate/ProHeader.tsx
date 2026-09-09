@@ -4,13 +4,11 @@ import {
   Bell,
   ChevronDown,
   Gauge,
-  ImageUp,
   LayoutGrid,
   LogOut,
   Menu,
   ReceiptText,
   Settings,
-  ShieldCheck,
   X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -33,7 +31,7 @@ const SIMPLE_LINKS: { to: string; label: string }[] = [
 /** Transparent over artwork on the home page, solid cream everywhere else. */
 export function ProHeader({ variant = "transparent" }: { variant?: "transparent" | "solid" } = {}) {
   const { t } = useTranslation();
-  const { user, profile, isAdmin, isRealAdmin, isGolden, adminMode, setAdminMode, loading: authLoading } = useAuth();
+  const { user, profile, isAdmin, isRealAdmin, isGolden, loading: authLoading } = useAuth();
   const settings = useSiteSettings();
   const navigate = useNavigate();
   const [accountOpen, setAccountOpen] = useState(false);
@@ -62,10 +60,6 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
     setSheet(false);
     await supabase.auth.signOut();
     navigate({ to: "/" });
-  }
-
-  function toggleAdminMode() {
-    setAdminMode(!adminMode);
   }
 
   const menuLink =
@@ -212,31 +206,6 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                   </div>
 
                   <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                    {isRealAdmin && (
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={adminMode}
-                        onClick={toggleAdminMode}
-                        className="rita-ink flex w-full items-center justify-between gap-3 border-t border-black/[0.07] px-5 py-3 text-[14px] font-semibold transition-opacity hover:opacity-65"
-                      >
-                        <span className="inline-flex items-center gap-3">
-                          <ShieldCheck size={16} className={adminMode ? "rita-accent" : "text-white/40"} />
-                          Admin mode
-                        </span>
-                        <span
-                          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                            adminMode ? "rita-accent-bg" : "bg-white/20"
-                          }`}
-                        >
-                          <span
-                            className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
-                              adminMode ? "left-6" : "left-1"
-                            }`}
-                          />
-                        </span>
-                      </button>
-                    )}
                     <Link to="/profile" onClick={() => setAccountOpen(false)} className={menuLink}>
                       <Settings size={16} className="text-white/50" />
                       {t("cms.header.profileSettings")}

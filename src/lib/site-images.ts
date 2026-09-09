@@ -1,6 +1,6 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/legacy-client";
-import { signSiteMedia, uploadSiteMedia } from "@/lib/site-media";
+import { signSiteMedia } from "@/lib/site-media";
 
 export type SiteImageMap = Record<string, string>;
 
@@ -26,24 +26,3 @@ export function useSiteImage(key: string, fallback: string) {
   return data?.[key] || fallback;
 }
 
-export function useSiteImageActions() {
-  const qc = useQueryClient();
-
-  async function replace(key: string, file: File) {
-    const path = await uploadSiteMedia(file);
-    const { error } = await (supabase.from as any)("site_images").upsert(
-      { key, path },
-      { onConflict: "key" },
-    );
-    if (error) throw error;
-    await qc.invalidateQueries({ queryKey: ["site-images"] });
-  }
-
-  async function reset(key: string) {
-    const { error } = await (supabase.from as any)("site_images").delete().eq("key", key);
-    if (error) throw error;
-    await qc.invalidateQueries({ queryKey: ["site-images"] });
-  }
-
-  return { replace, reset };
-}

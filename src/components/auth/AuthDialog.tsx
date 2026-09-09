@@ -2,7 +2,10 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { Eye, EyeOff, MailCheck, X, ArrowLeft } from "lucide-react";
 import { z } from "zod";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/legacy-client";
+import { lovable } from "@/integrations/lovable";
+import { checkIdentityAvailability } from "@/lib/auth.functions";
 import {
   loadRememberedLogin,
   saveRememberedLogin,
@@ -135,7 +138,6 @@ function SignInPanel({ next }: { next?: string }) {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(true);
-  const [agree, setAgree] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [blocked, setBlocked] = useState<{
@@ -152,10 +154,6 @@ function SignInPanel({ next }: { next?: string }) {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!agree) {
-      setError("Please accept the Terms, Privacy Policy and Refund Policy to sign in.");
-      return;
-    }
     if (!email.trim() || !password) {
       setError("Please fill in your email and password.");
       return;
@@ -215,6 +213,32 @@ function SignInPanel({ next }: { next?: string }) {
     }
   }
 
+  async function handleGoogle() {
+    setError(null);
+    setLoading(true);
+    try {
+      if (next?.startsWith("/") && !next.startsWith("//")) {
+        sessionStorage.setItem("rita-auth-next", next);
+      }
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+        extraParams: { prompt: "select_account" },
+      });
+      if (result.error) throw result.error;
+      if (result.redirected) return;
+      closeAuth();
+      await router.invalidate();
+      const destination = sessionStorage.getItem("rita-auth-next");
+      sessionStorage.removeItem("rita-auth-next");
+      if (destination?.startsWith("/") && !destination.startsWith("//")) {
+        void router.navigate({ href: destination });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google sign-in could not start. Please try again.");
+      setLoading(false);
+    }
+  }
+
   if (blocked) {
     return (
       <div className="text-center">
@@ -241,16 +265,6 @@ function SignInPanel({ next }: { next?: string }) {
   return (
     <div>
       {error && <Err message={error} />}
-
-      <label className="mb-5 flex cursor-pointer select-none items-start gap-3 rounded-2xl border border-black/[0.05] bg-[#f6f1e5] px-4 py-3.5 text-[13px] font-semibold leading-relaxed text-[#4b463f]">
-        <input
-          type="checkbox"
-          checked={agree}
-          onChange={(e) => setAgree(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 rounded border-2 border-border accent-[var(--rita-green)]"
-        />
-        <span>I accept RitaJet's terms of use, privacy practices and refund rules.</span>
-      </label>
 
       <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block">
@@ -310,11 +324,19 @@ function SignInPanel({ next }: { next?: string }) {
             </button>
           </div>
 
-          <button type="submit" disabled={loading || !agree} className={primaryBtn}>
+          <button type="submit" disabled={loading} className={primaryBtn}>
 
             {loading ? "Signing in…" : "Sign in"}
           </button>
       </form>
+
+      <div className="my-5 flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#8a847a]">
+        <span className="h-px flex-1 bg-black/[0.08]" /> or <span className="h-px flex-1 bg-black/[0.08]" />
+      </div>
+      <button type="button" disabled={loading} onClick={handleGoogle} className="rita-btn rita-btn-secondary mx-auto">
+        <span aria-hidden className="text-[18px] font-black text-[#4285f4]">G</span>
+        Continue with Google
+      </button>
 
       <p className="mt-6 border-t border-black/[0.07] pt-4 text-center text-sm font-medium text-muted-foreground">
         New to Rita?{" "}
@@ -354,6 +376,7 @@ const signupSchema = z
   .strip();
 
 function SignUpPanel() {
+  const checkIdentity = useServerFn(checkIdentityAvailability);
   const [form, setForm] = useState({
     full_name: "",
     username: "",
@@ -388,15 +411,7 @@ function SignUpPanel() {
 
     setLoading(true);
     try {
-      const { data: taken, error: rpcErr } = await (supabase.rpc as any)("identity_taken", {
-        _username: data.username,
-        _phone: phone ?? "",
-      });
-      if (rpcErr) {
-        setError(rpcErr.message);
-        setLoading(false);
-        return;
-      }
+      const taken = await checkIdentity({ data: { username: data.username, phone: phone ?? "" } });
       if (taken?.username) {
         setError("This username is already taken.");
         setLoading(false);
@@ -440,8 +455,20 @@ function SignUpPanel() {
   }
 
   if (sentTo) {
+    async function resendVerification() {
+      setError(null);
+      setLoading(true);
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email: sentTo,
+        options: { emailRedirectTo: `${window.location.origin}/` },
+      });
+      setLoading(false);
+      if (resendError) setError(resendError.message);
+    }
     return (
       <div className="space-y-4 text-center">
+        {error && <Err message={error} />}
         <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[var(--rita-green)] text-[color:var(--rita-green-ink)]">
           <MailCheck size={26} />
         </span>
@@ -449,8 +476,14 @@ function SignUpPanel() {
           We sent a verification link to <span className="underline">{sentTo}</span>
         </p>
         <p className="text-sm text-muted-foreground">
-          Open that email to activate your account — check your spam folder if it isn't there.
+          Your account stays inactive until you open that link. Check your spam folder if it is not in your inbox.
         </p>
+        <button type="button" onClick={resendVerification} disabled={loading} className="rita-btn rita-btn-secondary mx-auto">
+          {loading ? "Sending…" : "Send the verification email again"}
+        </button>
+        <button type="button" onClick={() => setSentTo(null)} className="text-sm font-bold text-muted-foreground underline">
+          Use a different email
+        </button>
         <button type="button" onClick={() => setAuthMode("signin")} className={primaryBtn}>
           Back to sign in
         </button>
@@ -538,7 +571,9 @@ function SignUpPanel() {
               className="mt-0.5 h-4 w-4 shrink-0 rounded border-2 border-border accent-[var(--rita-green)]"
             />
             <span>
-              I accept RitaJet's terms of use, privacy practices and refund rules.
+              I agree to RitaJet's <Link to="/terms" className="underline">Terms</Link>,{" "}
+              <Link to="/privacy-policy" className="underline">Privacy Policy</Link> and{" "}
+              <Link to="/refund-policy" className="underline">Refund Policy</Link>.
             </span>
           </label>
 
@@ -546,6 +581,33 @@ function SignUpPanel() {
             {loading ? "Creating your account…" : "Create account"}
           </button>
       </form>
+
+      <div className="my-5 flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#8a847a]">
+        <span className="h-px flex-1 bg-black/[0.08]" /> or <span className="h-px flex-1 bg-black/[0.08]" />
+      </div>
+      <button
+        type="button"
+        disabled={loading}
+        onClick={async () => {
+          setError(null);
+          setLoading(true);
+          try {
+            const result = await lovable.auth.signInWithOAuth("google", {
+              redirect_uri: window.location.origin,
+              extraParams: { prompt: "select_account" },
+            });
+            if (result.error) throw result.error;
+            if (!result.redirected) closeAuth();
+          } catch (err) {
+            setError(err instanceof Error ? err.message : "Google sign-up could not start. Please try again.");
+            setLoading(false);
+          }
+        }}
+        className="rita-btn rita-btn-secondary mx-auto"
+      >
+        <span aria-hidden className="text-[18px] font-black text-[#4285f4]">G</span>
+        Sign up with Google
+      </button>
 
       <p className="mt-6 border-t border-black/[0.07] pt-4 text-center text-sm font-medium text-muted-foreground">
         Already have an account?{" "}

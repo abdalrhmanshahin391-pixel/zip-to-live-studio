@@ -21,12 +21,15 @@ import { Route as MyPlanRouteImport } from './routes/my-plan'
 import { Route as NotesRouteImport } from './routes/notes'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StudyRouteImport } from './routes/study'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ToolkitRouteImport } from './routes/toolkit'
 import { Route as TourRouteImport } from './routes/tour'
 import { Route as TutorialRouteImport } from './routes/tutorial'
@@ -169,9 +172,19 @@ const PricingRoute = PricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -197,6 +210,11 @@ const StudyRoute = StudyRouteImport.update({
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ToolkitRoute = ToolkitRouteImport.update({
@@ -625,12 +643,15 @@ export interface FileRoutesByFullPath {
   '/notes': typeof NotesRoute
   '/offers': typeof OffersRoute
   '/pricing': typeof PricingRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/profile': typeof ProfileRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/study': typeof StudyRouteWithChildren
   '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/toolkit': typeof ToolkitRoute
   '/tour': typeof TourRoute
   '/tutorial': typeof TutorialRoute
@@ -725,11 +746,14 @@ export interface FileRoutesByTo {
   '/notes': typeof NotesRoute
   '/offers': typeof OffersRoute
   '/pricing': typeof PricingRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/profile': typeof ProfileRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/toolkit': typeof ToolkitRoute
   '/tour': typeof TourRoute
   '/tutorial': typeof TutorialRoute
@@ -823,12 +847,15 @@ export interface FileRoutesById {
   '/notes': typeof NotesRoute
   '/offers': typeof OffersRoute
   '/pricing': typeof PricingRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/profile': typeof ProfileRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/study': typeof StudyRouteWithChildren
   '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/toolkit': typeof ToolkitRoute
   '/tour': typeof TourRoute
   '/tutorial': typeof TutorialRoute
@@ -926,12 +953,15 @@ export interface FileRouteTypes {
     | '/notes'
     | '/offers'
     | '/pricing'
+    | '/privacy-policy'
     | '/profile'
+    | '/refund-policy'
     | '/register'
     | '/reset-password'
     | '/sitemap.xml'
     | '/study'
     | '/support'
+    | '/terms'
     | '/toolkit'
     | '/tour'
     | '/tutorial'
@@ -1026,11 +1056,14 @@ export interface FileRouteTypes {
     | '/notes'
     | '/offers'
     | '/pricing'
+    | '/privacy-policy'
     | '/profile'
+    | '/refund-policy'
     | '/register'
     | '/reset-password'
     | '/sitemap.xml'
     | '/support'
+    | '/terms'
     | '/toolkit'
     | '/tour'
     | '/tutorial'
@@ -1123,12 +1156,15 @@ export interface FileRouteTypes {
     | '/notes'
     | '/offers'
     | '/pricing'
+    | '/privacy-policy'
     | '/profile'
+    | '/refund-policy'
     | '/register'
     | '/reset-password'
     | '/sitemap.xml'
     | '/study'
     | '/support'
+    | '/terms'
     | '/toolkit'
     | '/tour'
     | '/tutorial'
@@ -1225,12 +1261,15 @@ export interface RootRouteChildren {
   NotesRoute: typeof NotesRoute
   OffersRoute: typeof OffersRoute
   PricingRoute: typeof PricingRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   ProfileRoute: typeof ProfileRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StudyRoute: typeof StudyRouteWithChildren
   SupportRoute: typeof SupportRoute
+  TermsRoute: typeof TermsRoute
   ToolkitRoute: typeof ToolkitRoute
   TourRoute: typeof TourRoute
   TutorialRoute: typeof TutorialRoute
@@ -1366,11 +1405,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -1406,6 +1459,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/toolkit': {
@@ -2123,12 +2183,15 @@ const rootRouteChildren: RootRouteChildren = {
   NotesRoute: NotesRoute,
   OffersRoute: OffersRoute,
   PricingRoute: PricingRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
   ProfileRoute: ProfileRoute,
+  RefundPolicyRoute: RefundPolicyRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StudyRoute: StudyRouteWithChildren,
   SupportRoute: SupportRoute,
+  TermsRoute: TermsRoute,
   ToolkitRoute: ToolkitRoute,
   TourRoute: TourRoute,
   TutorialRoute: TutorialRoute,

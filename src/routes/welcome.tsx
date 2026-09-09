@@ -3,6 +3,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, BadgeCheck, LogOut } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/legacy-client";
+import { useServerFn } from "@tanstack/react-start";
+import { checkIdentityAvailability } from "@/lib/auth.functions";
 import { refreshAuthProfile } from "@/lib/auth-store";
 import {
   AuthShell,
@@ -48,6 +50,7 @@ const schema = z.object({
 });
 
 function WelcomePage() {
+  const checkIdentity = useServerFn(checkIdentityAvailability);
   const navigate = useNavigate();
   const { next } = Route.useSearch();
   const [form, setForm] = useState({ full_name: "", username: "", phone: "" });
@@ -72,8 +75,7 @@ function WelcomePage() {
         .maybeSingle();
       if (cancelled) return;
       setEmail(user.email ?? "");
-      // A provider sign-up may already carry the person's real name — offer it so
-      // they only have to confirm it instead of typing it again.
+      // Use a verified provider name when available so the form is easier to finish.
       const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
       const providerName =
         typeof meta.full_name === "string"
@@ -118,15 +120,7 @@ function WelcomePage() {
         return;
       }
 
-      const { data: taken, error: rpcErr } = await (supabase.rpc as any)("identity_taken", {
-        _username: data.username,
-        _phone: data.phone,
-      });
-      if (rpcErr) {
-        setError(rpcErr.message);
-        setSaving(false);
-        return;
-      }
+      const taken = await checkIdentity({ data: { username: data.username, phone: data.phone } });
       if (taken?.username) {
         setError("This username is already taken — try another one.");
         setSaving(false);
