@@ -27,7 +27,7 @@ import { StartLearningLink } from "@/components/StartLearningLink";
 import { NAV_GROUPS } from "@/components/site-nav";
 
 const SIMPLE_LINKS: { to: string; label: string }[] = [
-  { to: "/tour", label: "How it works" },
+  { to: "/tutorial", label: "Tutorial" },
 ];
 
 /** Transparent over artwork on the home page, solid cream everywhere else. */

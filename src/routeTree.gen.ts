@@ -29,6 +29,7 @@ import { Route as StudyRouteImport } from './routes/study'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as ToolkitRouteImport } from './routes/toolkit'
 import { Route as TourRouteImport } from './routes/tour'
+import { Route as TutorialRouteImport } from './routes/tutorial'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -206,6 +207,11 @@ const ToolkitRoute = ToolkitRouteImport.update({
 const TourRoute = TourRouteImport.update({
   id: '/tour',
   path: '/tour',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TutorialRoute = TutorialRouteImport.update({
+  id: '/tutorial',
+  path: '/tutorial',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WelcomeRoute = WelcomeRouteImport.update({
@@ -627,6 +633,7 @@ export interface FileRoutesByFullPath {
   '/support': typeof SupportRoute
   '/toolkit': typeof ToolkitRoute
   '/tour': typeof TourRoute
+  '/tutorial': typeof TutorialRoute
   '/welcome': typeof WelcomeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -725,6 +732,7 @@ export interface FileRoutesByTo {
   '/support': typeof SupportRoute
   '/toolkit': typeof ToolkitRoute
   '/tour': typeof TourRoute
+  '/tutorial': typeof TutorialRoute
   '/welcome': typeof WelcomeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -823,6 +831,7 @@ export interface FileRoutesById {
   '/support': typeof SupportRoute
   '/toolkit': typeof ToolkitRoute
   '/tour': typeof TourRoute
+  '/tutorial': typeof TutorialRoute
   '/welcome': typeof WelcomeRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -925,6 +934,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/toolkit'
     | '/tour'
+    | '/tutorial'
     | '/welcome'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -1023,6 +1033,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/toolkit'
     | '/tour'
+    | '/tutorial'
     | '/welcome'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -1120,6 +1131,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/toolkit'
     | '/tour'
+    | '/tutorial'
     | '/welcome'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -1221,6 +1233,7 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   ToolkitRoute: typeof ToolkitRoute
   TourRoute: typeof TourRoute
+  TutorialRoute: typeof TutorialRoute
   WelcomeRoute: typeof WelcomeRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -1407,6 +1420,13 @@ declare module '@tanstack/react-router' {
       path: '/tour'
       fullPath: '/tour'
       preLoaderRoute: typeof TourRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tutorial': {
+      id: '/tutorial'
+      path: '/tutorial'
+      fullPath: '/tutorial'
+      preLoaderRoute: typeof TutorialRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/welcome': {
@@ -2111,6 +2131,7 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   ToolkitRoute: ToolkitRoute,
   TourRoute: TourRoute,
+  TutorialRoute: TutorialRoute,
   WelcomeRoute: WelcomeRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:

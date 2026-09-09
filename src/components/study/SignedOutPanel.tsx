@@ -63,7 +63,7 @@ export function SignedOutPanel({ what }: { what: string }) {
 
         <p className="mt-6 text-[14px] text-[#8a8378]">
           Just looking around?{" "}
-          <Link to="/tour" className="rita-accent font-bold underline-offset-4 hover:underline">
+          <Link to="/tutorial" className="rita-accent font-bold underline-offset-4 hover:underline">
             See how RitaJet works
           </Link>
         </p>

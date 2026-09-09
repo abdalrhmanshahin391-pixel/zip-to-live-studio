@@ -51,7 +51,7 @@ export function SiteFooter() {
         ...(settings.offers_page_enabled
           ? [{ label: ar ? "عروض خاصة" : "Special offers", to: "/offers" }]
           : []),
-        { label: ar ? "كيف يعمل" : "How it works", to: "/tour" },
+        { label: ar ? "دليل الاستخدام" : "Tutorial", to: "/tutorial" },
         { label: ar ? "تواصل معنا" : "Talk to the team", to: "/support" },
       ],
     },
