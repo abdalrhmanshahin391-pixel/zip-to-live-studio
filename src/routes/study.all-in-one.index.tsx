@@ -7,7 +7,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlanGate } from "@/hooks/usePlanGate";
 import { UpgradeWall } from "@/components/plan/UpgradeWall";
-import { PdfScanError, extractPdfText, friendlyError, renderPdfPages } from "@/lib/pdf-text";
+import { PdfScanError, condenseForAi, extractPdfText, friendlyError, renderPdfPages } from "@/lib/pdf-text";
 import { lqGenerate } from "@/lib/lecture-lab.functions";
 import { generateSummary } from "@/lib/summaries.functions";
 import {
@@ -95,6 +95,7 @@ function AllInOneUpload() {
   const [current, setCurrent] = useState<string | null>(null);
   const [estimate, setEstimate] = useState(120);
   const [runId, setRunId] = useState(0);
+  const [failed, setFailed] = useState<string[]>([]);
 
   const refresh = useCallback(async () => {
     const r: any = await list({ data: undefined } as any);
@@ -114,6 +115,7 @@ function AllInOneUpload() {
     const name = file?.name?.replace(/\.pdf$/i, "").slice(0, 120) || "Untitled lecture";
 
     setBusy(true);
+    setFailed([]);
     setDone([]);
     setCurrent(null);
     setRunId((n) => n + 1);
@@ -138,7 +140,11 @@ function AllInOneUpload() {
         }
       }
       setDone((d) => [...d, "read"]);
-      setEstimate(estimateBuildSeconds(text.length, source === "pdf"));
+      // A 300-page book is far too big to send in one request — condense it to
+      // a representative slice first, or every step fails seconds after start.
+      const aiText = condenseForAi(text, 90_000);
+      if (aiText.length < 200) throw new Error("We could not read enough text from that file.");
+      setEstimate(estimateBuildSeconds(aiText.length, source === "pdf"));
 
       setCurrent("home");
       setStage("Making a home for it…");
@@ -153,22 +159,33 @@ function AllInOneUpload() {
       const step = async (key: string, label: string, stageLine: string, fn: () => Promise<unknown>) => {
         setCurrent(key);
         setStage(stageLine);
-        try {
-          await fn();
-          setDone((d) => [...d, key]);
-        } catch (e) {
-          toast.error(`${label}: ${friendlyError(e)}`);
+        // One retry: a single slow answer should never cost the whole build.
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            await fn();
+            setDone((d) => [...d, key]);
+            return;
+          } catch (e) {
+            if (attempt === 0) {
+              setStage(`${stageLine} (retrying)`);
+              await new Promise((r) => setTimeout(r, 1500));
+              continue;
+            }
+            const line = `${label}: ${friendlyError(e)}`;
+            setFailed((f) => [...f, line]);
+            toast.error(line);
+          }
         }
       };
 
       await step("guide", "Study guide", "Writing your study guide…", () =>
-        buildSummary({ data: { lectureId, title: name, text } }),
+        buildSummary({ data: { lectureId, title: name, text: aiText } }),
       );
       await step("sheet", "Summary sheet", "Writing your full summary…", async () => {
         const res: any = await buildSheet({
           data: {
             kind: "text",
-            text: text.slice(0, 200_000),
+            text: aiText,
             length: "comprehensive",
             tone: "concept",
             titleOverride: name,
@@ -178,7 +195,7 @@ function AllInOneUpload() {
         if (res?.id) await linkSheet({ data: { lectureId, summaryId: res.id as string } });
       });
       await step("cards", "Flashcards", "Cutting your flashcards…", () =>
-        buildCards({ data: { lectureId, title: name, text, count: 16 } }),
+        buildCards({ data: { lectureId, title: name, text: aiText, count: 16 } }),
       );
       await step("questions", "Questions", "Writing your questions…", () =>
         generate({
@@ -186,7 +203,7 @@ function AllInOneUpload() {
             subtopicId,
             title: name,
             sourceName: file?.name ?? "Pasted text",
-            text,
+            text: aiText,
             count: 15,
             difficulty: "mixed",
             keyPoints: false,
@@ -308,6 +325,20 @@ function AllInOneUpload() {
           >
             {busy ? "Building…" : "Build everything"}
           </button>
+
+          <p className="mt-4 rounded-2xl border border-[#d94a3d]/25 bg-[#d94a3d]/[0.07] px-4 py-3 text-[13px] font-semibold leading-relaxed text-[#c1392b]">
+            <span className="font-black">This takes time — you don't have to wait here.</span>{" "}
+            Close the page and come back whenever you like. Big books can take up to two hours, but it is
+            usually finished in under 30 minutes.
+          </p>
+
+          {failed.length > 0 && (
+            <ul className="mt-3 space-y-1 rounded-2xl bg-[#f6f1e5] px-4 py-3 text-[13px] font-semibold text-[#8a3b32]">
+              {failed.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section className="mt-9">

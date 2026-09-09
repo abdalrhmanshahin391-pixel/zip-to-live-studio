@@ -282,14 +282,13 @@ function PresenceTracker() {
 }
 
 /**
- * Accounts created through a social provider land without a username, real
+ * Accounts can land without a username, real
  * name or phone. Send them through /welcome once, from anywhere in the app,
  * so the state can never linger half-finished.
  */
 const ONBOARDING_EXEMPT = [
   "/welcome",
   "/auth",
-  "/auth/callback",
   "/login",
   "/register",
   "/forgot-password",
@@ -328,7 +327,6 @@ const NO_FOOTER = [
   "/register",
   "/forgot-password",
   "/reset-password",
-  "/auth/callback",
 ];
 
 function GlobalFooter() {

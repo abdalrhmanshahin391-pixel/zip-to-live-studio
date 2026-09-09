@@ -84,3 +84,32 @@ export function friendlyError(e: unknown, fallback = "That did not work. Try aga
   if (msg.length > 220) return fallback;
   return msg;
 }
+
+/**
+ * Books are far bigger than any model can read in one go, and sending the
+ * whole thing also blows the request size limit — which is what made very
+ * large uploads die a few seconds in. Keep the opening and closing pages and
+ * spread the rest of the budget evenly through the middle, so the AI still
+ * sees the whole shape of the document.
+ */
+export function condenseForAi(text: string, limit = 90_000): string {
+  const clean = text.replace(/\n{3,}/g, "\n\n").trim();
+  if (clean.length <= limit) return clean;
+
+  const head = Math.round(limit * 0.25);
+  const tail = Math.round(limit * 0.15);
+  const middleBudget = limit - head - tail;
+  const windows = 12;
+  const win = Math.floor(middleBudget / windows);
+
+  const midStart = head;
+  const midEnd = clean.length - tail;
+  const span = midEnd - midStart;
+  const parts: string[] = [clean.slice(0, head)];
+  for (let i = 0; i < windows; i++) {
+    const at = midStart + Math.round((span / windows) * i);
+    parts.push(clean.slice(at, at + win));
+  }
+  parts.push(clean.slice(midEnd));
+  return parts.join("\n\n…\n\n").slice(0, limit);
+}

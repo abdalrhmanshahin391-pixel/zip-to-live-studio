@@ -224,14 +224,20 @@ function AdminToolkit() {
           <h2 className="mb-3 inline-flex items-center gap-2 text-lg font-black">
             <Flame size={18} className="text-destructive" /> Special offers page
           </h2>
-          <label className="flex items-center gap-3 text-sm font-bold">
+          <label className="flex items-start gap-3 rounded-2xl border-2 border-border bg-muted/40 p-4 text-sm font-bold">
             <input
               type="checkbox"
               checked={settings.data?.offers_page_enabled ?? true}
               onChange={(e) => saveSetting({ offers_page_enabled: e.target.checked })}
-              className="h-4 w-4 accent-[var(--primary)]"
+              className="mt-1 h-5 w-5 accent-[var(--primary)]"
             />
-            Show /offers and its link in the header
+            <span>
+              Special offers are live
+              <span className="mt-1 block text-xs font-semibold text-muted-foreground">
+                Turn this off to remove the offers page from the whole website — the header link, the
+                footer link, the plan page and the page itself all disappear at once.
+              </span>
+            </span>
           </label>
 
           <div className="mt-6 grid gap-3 md:grid-cols-5">

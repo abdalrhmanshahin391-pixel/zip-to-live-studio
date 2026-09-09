@@ -72,10 +72,10 @@ function WelcomePage() {
         .maybeSingle();
       if (cancelled) return;
       setEmail(user.email ?? "");
-      // A Google sign-in already carries the person's real name — offer it so
+      // A provider sign-up may already carry the person's real name — offer it so
       // they only have to confirm it instead of typing it again.
       const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
-      const googleName =
+      const providerName =
         typeof meta.full_name === "string"
           ? meta.full_name
           : typeof meta.name === "string"
@@ -83,7 +83,7 @@ function WelcomePage() {
             : "";
       const existingName = (prof?.full_name ?? "").trim();
       setForm({
-        full_name: existingName || googleName.trim(),
+        full_name: existingName || providerName.trim(),
         username: (prof?.username ?? "") === user.id ? "" : (prof?.username ?? ""),
         phone: prof?.phone ?? "",
       });
