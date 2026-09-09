@@ -8,17 +8,15 @@ import {
   Layers,
   ListChecks,
   Loader2,
-  MessageCircle,
   Play,
   Printer,
   RotateCcw,
   ScrollText,
-  Send,
   Sparkles,
 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useAuth } from "@/hooks/useAuth";
-import { aioAsk, aioFileQuestions, aioLoad } from "@/lib/all-in-one.functions";
+import { aioFileQuestions, aioLoad } from "@/lib/all-in-one.functions";
 import { lqAddSubject, lqAddSubtopic, lqBoard } from "@/lib/lecture-lab.functions";
 import { friendlyError } from "@/lib/pdf-text";
 import { GuideDoc } from "@/components/study/GuideDoc";
@@ -45,14 +43,13 @@ export const Route = createFileRoute("/study/all-in-one/$lectureId")({
 });
 
 const ACCENT = "#3f2c73";
-type Tab = "guide" | "summary" | "cards" | "questions" | "ask";
+type Tab = "guide" | "summary" | "cards" | "questions";
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: "guide", label: "Study guide", icon: <ScrollText size={16} /> },
   { key: "summary", label: "Summary", icon: <Sparkles size={16} /> },
   { key: "cards", label: "Flashcards", icon: <Layers size={16} /> },
   { key: "questions", label: "Questions", icon: <ListChecks size={16} /> },
-  { key: "ask", label: "Ask this lecture", icon: <MessageCircle size={16} /> },
 ];
 
 /** Small cream dialog used by both "save" flows. */
@@ -95,7 +92,6 @@ function AllInOneWorkspace() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const load = useServerFn(aioLoad);
-  const ask = useServerFn(aioAsk);
   const board = useServerFn(lqBoard);
   const addSubject = useServerFn(lqAddSubject);
   const addSubtopic = useServerFn(lqAddSubtopic);
@@ -106,9 +102,7 @@ function AllInOneWorkspace() {
   const [data, setData] = useState<any>(null);
 
   const [flip, setFlip] = useState<Record<string, boolean>>({});
-  const [q, setQ] = useState("");
-  const [chat, setChat] = useState<{ me: string; rita: string }[]>([]);
-  const [asking, setAsking] = useState(false);
+
 
   // Play + save flashcards
   const [playing, setPlaying] = useState(false);
@@ -134,28 +128,6 @@ function AllInOneWorkspace() {
       .finally(() => setBusy(false));
   }, [user, lectureId, load]);
 
-  const material = useMemo(() => {
-    if (!data) return "";
-    return [data.guide, data.short, ...(data.cards ?? []).map((c: any) => `${c.front} — ${c.back}`)]
-      .filter(Boolean)
-      .join("\n\n")
-      .slice(0, 50_000);
-  }, [data]);
-
-  async function send() {
-    const question = q.trim();
-    if (!question || asking || material.length < 20) return;
-    setAsking(true);
-    setQ("");
-    try {
-      const r: any = await ask({ data: { question, context: material, title: data?.lecture?.title ?? "Lecture" } });
-      setChat((c) => [...c, { me: question, rita: r.answer }]);
-    } catch (e) {
-      toast.error(friendlyError(e));
-    } finally {
-      setAsking(false);
-    }
-  }
 
   const playCards: FlashCardItem[] = useMemo(
     () =>
@@ -469,49 +441,6 @@ function AllInOneWorkspace() {
               </div>
             )}
 
-            {tab === "ask" && (
-              <div>
-                <p className="text-[15px] text-[#6b6357]">
-                  Ask anything about this lecture. Rita answers only from this material.
-                </p>
-                <div className="mt-4 space-y-4">
-                  {chat.map((c, i) => (
-                    <div key={i}>
-                      <div className="ml-auto w-fit max-w-[85%] rounded-2xl px-4 py-2.5 text-[14.5px] font-bold text-white" style={{ background: ACCENT }}>
-                        {c.me}
-                      </div>
-                      <div className="mt-2 w-fit max-w-[92%] rounded-2xl bg-[#faf6ee] px-4 py-3 text-[15px] leading-[1.6]">
-                        {c.rita}
-                      </div>
-                    </div>
-                  ))}
-                  {asking && (
-                    <div className="flex items-center gap-2 text-[14px] font-bold text-[#a29a8d]">
-                      <Loader2 size={15} className="animate-spin" /> Reading your lecture…
-                    </div>
-                  )}
-                </div>
-                <div className="mt-5 flex gap-2">
-                  <input
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") void send();
-                    }}
-                    placeholder="e.g. Why does preload fall here?"
-                    className="h-12 flex-1 rounded-xl border border-black/10 bg-[#fbf8f2] px-4 text-[14.5px] font-semibold"
-                  />
-                  <button
-                    onClick={() => void send()}
-                    disabled={asking || !q.trim()}
-                    className="grid h-12 w-12 place-items-center rounded-xl text-white disabled:opacity-40"
-                    style={{ background: "#23201d" }}
-                  >
-                    <Send size={17} />
-                  </button>
-                </div>
-              </div>
-            )}
           </section>
         </div>
       </main>

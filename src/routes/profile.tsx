@@ -62,23 +62,8 @@ function ProfilePage() {
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
   const [savingPw, setSavingPw] = useState(false);
-  const [sendingReset, setSendingReset] = useState(false);
   const [pwMsg, setPwMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
-  async function sendResetLink() {
-    if (!user?.email) return;
-    setPwMsg(null);
-    setSendingReset(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setSendingReset(false);
-    setPwMsg(
-      error
-        ? { type: "err", text: error.message }
-        : { type: "ok", text: `We sent a reset link to ${user.email}. Check your inbox.` },
-    );
-  }
 
 
   useEffect(() => {
@@ -190,27 +175,39 @@ function ProfilePage() {
       setPwMsg({ type: "err", text: "New passwords do not match." });
       return;
     }
+    if (!currentPw) {
+      setPwMsg({ type: "err", text: "Please type your current password first." });
+      return;
+    }
     if (!user?.email) return;
     setSavingPw(true);
     try {
-      const { error: signInErr } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: currentPw,
-      });
-      if (signInErr) {
-        setPwMsg({ type: "err", text: "Current password is incorrect." });
-        setSavingPw(false);
-        return;
-      }
-      const { error } = await supabase.auth.updateUser({ password: newPw });
+      const { error } = await supabase.auth.updateUser({
+        password: newPw,
+        // Lovable Cloud requires the current password for signed-in changes.
+        ...( { current_password: currentPw } as any),
+      } as any);
       if (error) {
-        setPwMsg({ type: "err", text: error.message });
+        const m = (error.message || "").toLowerCase();
+        setPwMsg({
+          type: "err",
+          text:
+            m.includes("current") || m.includes("invalid credentials")
+              ? "Your current password isn't right."
+              : m.includes("weak") || m.includes("pwned") || m.includes("breach")
+                ? "That password has appeared in a data leak — please pick a different one."
+                : m.includes("same")
+                  ? "Your new password must be different from the current one."
+                  : error.message,
+        });
       } else {
         setPwMsg({ type: "ok", text: "Password changed successfully." });
         setCurrentPw("");
         setNewPw("");
         setConfirmPw("");
       }
+    } catch (err: any) {
+      setPwMsg({ type: "err", text: err?.message || "Could not change your password." });
     } finally {
       setSavingPw(false);
     }
@@ -392,15 +389,6 @@ function ProfilePage() {
               >
                 <ShieldCheck size={16} />
                 {savingPw ? "Updating…" : "Change Password"}
-              </button>
-              <button
-                type="button"
-                onClick={sendResetLink}
-                disabled={sendingReset}
-                className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-5 py-3 text-sm font-bold text-muted-foreground transition hover:text-foreground hover:bg-muted disabled:opacity-60"
-              >
-                <KeyRound size={16} />
-                {sendingReset ? "Sending…" : "Email me a reset link"}
               </button>
             </div>
           </form>

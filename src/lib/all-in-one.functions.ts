@@ -437,27 +437,3 @@ export const aioLoad = createServerFn({ method: "POST" })
       }[],
     };
   });
-
-/** Ask a question about this one lecture. */
-export const aioAsk = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        question: z.string().trim().min(2).max(500),
-        context: z.string().min(20).max(60_000),
-        title: z.string().max(160),
-      })
-      .parse(d),
-  )
-  .handler(async ({ data, context }) => {
-    const t = await target((context as any).supabase);
-    const parsed = await ask(
-      t,
-      "You answer only from the lecture material you are given. Return STRICT JSON only. " +
-        "If the material does not answer it, say so plainly in the answer. Keep it under 120 words.",
-      `Lecture: "${data.title}".\nQuestion: ${data.question}\n` +
-        `JSON shape: {"answer":"..."}\n\nLECTURE MATERIAL:\n${data.context}`,
-    );
-    return { answer: String(parsed?.answer ?? "").trim() || "I could not find that in this lecture." };
-  });
