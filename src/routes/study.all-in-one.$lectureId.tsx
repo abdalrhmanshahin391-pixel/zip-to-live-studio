@@ -96,6 +96,10 @@ function AllInOneWorkspace() {
   const navigate = useNavigate();
   const load = useServerFn(aioLoad);
   const ask = useServerFn(aioAsk);
+  const board = useServerFn(lqBoard);
+  const addSubject = useServerFn(lqAddSubject);
+  const addSubtopic = useServerFn(lqAddSubtopic);
+  const fileQuestions = useServerFn(aioFileQuestions);
 
   const [tab, setTab] = useState<Tab>("guide");
   const [busy, setBusy] = useState(true);
@@ -105,6 +109,21 @@ function AllInOneWorkspace() {
   const [q, setQ] = useState("");
   const [chat, setChat] = useState<{ me: string; rita: string }[]>([]);
   const [asking, setAsking] = useState(false);
+
+  // Play + save flashcards
+  const [playing, setPlaying] = useState(false);
+  const [saveCards, setSaveCards] = useState(false);
+  const [cardSubject, setCardSubject] = useState("");
+  const [newCardSubject, setNewCardSubject] = useState("");
+  const [cardSub, setCardSub] = useState("");
+
+  // Save questions into Lecture Lab
+  const [saveQs, setSaveQs] = useState(false);
+  const [lqData, setLqData] = useState<any>(null);
+  const [qSubject, setQSubject] = useState("");
+  const [newQSubject, setNewQSubject] = useState("");
+  const [qSub, setQSub] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!user) return;
