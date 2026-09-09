@@ -10,7 +10,7 @@
   "theme_color": "#8ec63f",
   "icons": [
     {
-      "src": "/rita-search-icon.png",
+      "src": "/favicon.png",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "any"
