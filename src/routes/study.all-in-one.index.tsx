@@ -138,7 +138,11 @@ function AllInOneUpload() {
         }
       }
       setDone((d) => [...d, "read"]);
-      setEstimate(estimateBuildSeconds(text.length, source === "pdf"));
+      // A 300-page book is far too big to send in one request — condense it to
+      // a representative slice first, or every step fails seconds after start.
+      const aiText = condenseForAi(text, 90_000);
+      if (aiText.length < 200) throw new Error("We could not read enough text from that file.");
+      setEstimate(estimateBuildSeconds(aiText.length, source === "pdf"));
 
       setCurrent("home");
       setStage("Making a home for it…");
