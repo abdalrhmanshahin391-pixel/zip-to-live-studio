@@ -68,7 +68,7 @@ export const Route = createFileRoute("/spaces/$spaceId")({
   component: SpacePage,
 });
 
-type Tab = "decks" | "members" | "news" | "chat" | "settings";
+type Tab = "decks" | "questions" | "members" | "news" | "chat" | "settings";
 
 function SpacePage() {
   const { spaceId } = Route.useParams();
@@ -123,7 +123,8 @@ function SpacePage() {
   }
 
   const tabs: [Tab, string, React.ReactNode][] = [
-    ["decks", "Decks", <Plus key="d" size={14} />],
+    ["decks", "Flashcards", <Plus key="d" size={14} />],
+    ["questions", "Questions", <ListChecks key="q" size={14} />],
     ["members", `Members (${members.data?.length ?? 0})`, <Users key="m" size={14} />],
     ["news", "Announcements", <Bell key="n" size={14} />],
     ...(s.chat_enabled ? ([["chat", "Chat", <MessageCircle key="c" size={14} />]] as [Tab, string, React.ReactNode][]) : []),
