@@ -1,37 +1,44 @@
-# The old icon: what's actually happening
+# Lecture quiz polish + All-in-one fixes
 
-## Checked just now on the live site
+## 1. Lecture quiz: nicer questions and choices
 
-All four icon files at ritajet.com are the **new green Rita icon**, byte-for-byte identical to the ones in the project:
+Keep the current layout, only lift the finish:
 
-- `/favicon.ico` — 200, new artwork
-- `/favicon.png` — 200, new artwork
-- `/favicon-512.png` — 200, new artwork
-- `/apple-touch-icon.png` — 200, new artwork
+- Question text larger and set in the home-page display font.
+- Answer rows: taller, roomier padding, larger option text, softer rounded corners, clearer letter badges, gentler hover lift.
+- Previous / Next / Submit become the site's standard pill buttons (fixed height, hugging the label, never stretched on phones).
+- Explanation panel and question map get the same type scale, so nothing looks smaller than the question.
 
-So the site is correct. Nothing is broken and nothing is serving the old picture. What you are still seeing is two caches outside the site:
+No change to modes, timer, saving, flags, or the archive-mode structure.
 
-1. **Your own browser** keeps favicons in a separate store that a normal refresh does not clear.
-2. **Google's icon cache** is refreshed by Google's own favicon crawler on its own schedule (days to about two weeks). No API can flush it.
+## 2. All-in-one: use the real Summary mode
 
-## What I would do
+Today All-in-one writes its own short summary. Instead:
 
-1. Add a small, safe hardening step so both caches have the strongest possible signal:
-   - keep the classic filenames exactly as they are (already right),
-   - make sure the homepage HTML itself lists `/favicon.ico` first and without any version query string (already right — I would only re-confirm after any future change).
-2. Nothing else in the code needs to change. I would not rename the files again: renaming resets Google's discovery and usually makes it slower, not faster.
+- During the build, All-in-one sends the same lecture (PDF file when a PDF was uploaded, otherwise the pasted text) to the Summary mode generator with **Comprehensive** length and **Conceptual** tone.
+- The finished summary is linked to the lecture, so the workspace's **Summary** tab shows the real Rita summary sheet — same design as Summary mode — instead of the plain text block.
+- The tab gets an **Open full summary** link and a **Download PDF** action (the same save-as-PDF used by Summary mode, so the sheet prints exactly as designed).
+- If the summary step fails, the build carries on and the tab explains it can be retried; the rest of the lecture is unaffected.
 
-## The tricks that actually work (only you can press these)
+## 3. Save flashcards into your own subjects
 
-- **Your device:** close every RitaJet tab, then open `https://ritajet.com/favicon.ico` directly once and hard-refresh; or clear browsing data for the site. On iPhone/iPad the icon updates after the tab is closed and Safari reopened.
-- **Google:** Search Console → URL Inspection → enter `https://ritajet.com/` → **Request Indexing**. This is the one manual accelerator people report working; the API version of it is read-only, so I cannot press it for you.
+In the workspace's **Flashcards** tab:
 
-## About Paddle
+- Add a **Play these cards** action so the deck runs in the normal flashcard player instead of only sitting in a grid.
+- Add **Save to flashcards**: pick an existing subject and sub-subject, or type a new one, and the cards are copied into your flashcards board, where they open in Flashcards mode like any other deck.
+- Confirmation names where they landed, and duplicate saves create a new sub-subject instead of overwriting.
 
-The old icon in Google results does **not** affect Paddle approval. Paddle reviews the live site: your business name, what you sell, prices, and the refund/terms/privacy/contact pages. Their reviewer sees the new icon, because the live files are already correct. A stale Google thumbnail is not part of that check.
+## 4. Save questions into Lecture Lab
 
-If you want, I can separately review the site against Paddle's checklist (clear pricing, refund policy, terms, privacy, contact details) — that is what genuinely decides acceptance.
+In the **Questions** tab:
 
-## Technical note
+- Add **Save to Lecture Lab**: choose an existing lecture subject and sub-subject, or create new ones, and the lecture's questions move there so they show under that subject instead of the hidden "All in one" bucket.
+- After saving, the lecture appears in Lecture Lab's list and can be run from there in Study, Session, or Timed exam.
 
-No files need to change for this. Verification was a direct byte comparison between `public/*` and the live URLs.
+## Technical notes
+
+- Quiz styling: `src/routes/study.lectures.run.tsx` only, using the existing `.rita-btn` pills and shared type scale.
+- Summary: call `generateSummary` from `src/lib/summaries.functions.ts` with `length: "comprehensive"`, `tone: "concept"`, and PDF base64 when available; store the returned id in the existing `aio_summaries.summary_id` column (no schema change needed). Render with `src/components/summary/SummaryView.tsx`; reuse the print path from `src/routes/summaries.$summaryId.tsx`.
+- Flashcards: write into the browser flashcard board through `src/lib/local-board.ts` / `src/lib/use-flashcards.ts`; play through the existing flashcard player.
+- Questions: new authenticated server function to list/create `lq_subjects` / `lq_subtopics` and re-point the lecture's `subtopic_id`.
+- Verify end to end on the sample lecture: build, summary sheet + PDF, card save + play, question save + run in all three modes, on desktop and phone.
