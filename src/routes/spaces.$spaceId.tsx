@@ -21,6 +21,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { MemberAvatar, MemberRow } from "@/components/spaces/MemberRow";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchMyDecks } from "@/lib/share-decks";
+import { fetchSpaceQuestionSets, removeQuestionSetFromSpace } from "@/lib/share-questions";
 import { DeckRating } from "@/components/share/DeckRating";
 import {
   KIND_LABEL,
