@@ -416,9 +416,11 @@ function AddQuestionsPage() {
               >
                 {busy ? <><Loader2 size={16} className="animate-spin" /> {busy}</> : "Add these questions"}
               </button>
-              <p className="mt-3 text-xs text-muted-foreground">
-                Big documents take a while — usually around half an hour. You can leave this page; the
-                questions appear in your sub-subject by themselves.
+              <p className="mt-4 rounded-2xl border border-[#d94a3d]/25 bg-[#d94a3d]/[0.07] px-4 py-3 text-[13px] font-semibold leading-relaxed text-[#c1392b]">
+                <span className="font-black">This takes time — you don't have to wait here.</span>{" "}
+                Close the page and come back whenever you like; the questions keep being written and land
+                in your sub-subject by themselves. Big files can take up to two hours, but it is usually
+                finished in under 30 minutes.
               </p>
             </section>
 
