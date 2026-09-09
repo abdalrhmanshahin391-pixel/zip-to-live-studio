@@ -7,13 +7,13 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data ? event.data.json() : {};
   } catch (_) {
-    payload = { title: 'AquaQBank', body: event.data ? event.data.text() : '' };
+    payload = { title: 'RitaJet', body: event.data ? event.data.text() : '' };
   }
-  const title = payload.title || 'AquaQBank';
+  const title = payload.title || 'RitaJet';
   const options = {
     body: payload.body || '',
-    icon: '/favicon.png',
-    badge: '/favicon.png',
+    icon: '/rita-search-icon.png',
+    badge: '/rita-search-icon.png',
     dir: payload.dir || 'auto',
     lang: payload.lang || 'en',
     tag: payload.tag || undefined,

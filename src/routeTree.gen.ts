@@ -47,6 +47,7 @@ import { Route as AdminRolesRouteImport } from './routes/admin.roles'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AdminToolkitRouteImport } from './routes/admin.toolkit'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as CheckoutIndexRouteImport } from './routes/checkout.index'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CoursesCourseIdRouteImport } from './routes/courses.$courseId'
@@ -77,7 +78,6 @@ import { Route as StudyTodoRouteImport } from './routes/study.todo'
 import { Route as SummariesIndexRouteImport } from './routes/summaries.index'
 import { Route as SummariesSummaryIdRouteImport } from './routes/summaries.$summaryId'
 import { Route as SummariesNewRouteImport } from './routes/summaries.new'
-import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AdminGermanIndexRouteImport } from './routes/admin.german.index'
 import { Route as AdminGermanCourseIdRouteImport } from './routes/admin.german.$courseId'
@@ -301,6 +301,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/admin/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CheckoutIndexRoute = CheckoutIndexRouteImport.update({
   id: '/checkout/',
   path: '/checkout/',
@@ -449,11 +454,6 @@ const SummariesSummaryIdRoute = SummariesSummaryIdRouteImport.update({
 const SummariesNewRoute = SummariesNewRouteImport.update({
   id: '/summaries/new',
   path: '/summaries/new',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
-  id: '/.lovable/oauth/consent',
-  path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
@@ -649,6 +649,7 @@ export interface FileRoutesByFullPath {
   '/admin/support': typeof AdminSupportRoute
   '/admin/toolkit': typeof AdminToolkitRoute
   '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/courses/$courseId': typeof CoursesCourseIdRouteWithChildren
   '/german/add': typeof GermanAddRoute
@@ -680,7 +681,6 @@ export interface FileRoutesByFullPath {
   '/spaces/': typeof SpacesIndexRoute
   '/study/': typeof StudyIndexRoute
   '/summaries/': typeof SummariesIndexRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/german/$courseId': typeof AdminGermanCourseIdRouteWithChildren
   '/admin/spaces/$spaceId': typeof AdminSpacesSpaceIdRoute
@@ -747,6 +747,7 @@ export interface FileRoutesByTo {
   '/admin/support': typeof AdminSupportRoute
   '/admin/toolkit': typeof AdminToolkitRoute
   '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/german/add': typeof GermanAddRoute
   '/german/articles': typeof GermanArticlesRoute
@@ -777,7 +778,6 @@ export interface FileRoutesByTo {
   '/spaces': typeof SpacesIndexRoute
   '/study': typeof StudyIndexRoute
   '/summaries': typeof SummariesIndexRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/german/$courseId': typeof AdminGermanCourseIdRouteWithChildren
   '/admin/spaces/$spaceId': typeof AdminSpacesSpaceIdRoute
@@ -847,6 +847,7 @@ export interface FileRoutesById {
   '/admin/support': typeof AdminSupportRoute
   '/admin/toolkit': typeof AdminToolkitRoute
   '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/courses/$courseId': typeof CoursesCourseIdRouteWithChildren
   '/german/add': typeof GermanAddRoute
@@ -878,7 +879,6 @@ export interface FileRoutesById {
   '/spaces/': typeof SpacesIndexRoute
   '/study/': typeof StudyIndexRoute
   '/summaries/': typeof SummariesIndexRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/german/$courseId': typeof AdminGermanCourseIdRouteWithChildren
   '/admin/spaces/$spaceId': typeof AdminSpacesSpaceIdRoute
@@ -950,6 +950,7 @@ export interface FileRouteTypes {
     | '/admin/support'
     | '/admin/toolkit'
     | '/admin/users'
+    | '/auth/callback'
     | '/checkout/success'
     | '/courses/$courseId'
     | '/german/add'
@@ -981,7 +982,6 @@ export interface FileRouteTypes {
     | '/spaces/'
     | '/study/'
     | '/summaries/'
-    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/german/$courseId'
     | '/admin/spaces/$spaceId'
@@ -1048,6 +1048,7 @@ export interface FileRouteTypes {
     | '/admin/support'
     | '/admin/toolkit'
     | '/admin/users'
+    | '/auth/callback'
     | '/checkout/success'
     | '/german/add'
     | '/german/articles'
@@ -1078,7 +1079,6 @@ export interface FileRouteTypes {
     | '/spaces'
     | '/study'
     | '/summaries'
-    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/german/$courseId'
     | '/admin/spaces/$spaceId'
@@ -1147,6 +1147,7 @@ export interface FileRouteTypes {
     | '/admin/support'
     | '/admin/toolkit'
     | '/admin/users'
+    | '/auth/callback'
     | '/checkout/success'
     | '/courses/$courseId'
     | '/german/add'
@@ -1178,7 +1179,6 @@ export interface FileRouteTypes {
     | '/spaces/'
     | '/study/'
     | '/summaries/'
-    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/german/$courseId'
     | '/admin/spaces/$spaceId'
@@ -1249,6 +1249,7 @@ export interface RootRouteChildren {
   AdminSupportRoute: typeof AdminSupportRoute
   AdminToolkitRoute: typeof AdminToolkitRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   JoinCodeRoute: typeof JoinCodeRoute
   LearnGermanRoute: typeof LearnGermanRoute
@@ -1265,7 +1266,6 @@ export interface RootRouteChildren {
   ShareIndexRoute: typeof ShareIndexRoute
   SpacesIndexRoute: typeof SpacesIndexRoute
   SummariesIndexRoute: typeof SummariesIndexRoute
-  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   AdminSpacesSpaceIdRoute: typeof AdminSpacesSpaceIdRoute
   ApiGermanScoreRoute: typeof ApiGermanScoreRoute
@@ -1547,6 +1547,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/checkout/': {
       id: '/checkout/'
       path: '/checkout'
@@ -1755,13 +1762,6 @@ declare module '@tanstack/react-router' {
       path: '/summaries/new'
       fullPath: '/summaries/new'
       preLoaderRoute: typeof SummariesNewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.lovable/oauth/consent': {
-      id: '/.lovable/oauth/consent'
-      path: '/.lovable/oauth/consent'
-      fullPath: '/.lovable/oauth/consent'
-      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.mcp/invoke-tool/$tool': {
@@ -2148,6 +2148,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSupportRoute: AdminSupportRoute,
   AdminToolkitRoute: AdminToolkitRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   JoinCodeRoute: JoinCodeRoute,
   LearnGermanRoute: LearnGermanRoute,
@@ -2164,7 +2165,6 @@ const rootRouteChildren: RootRouteChildren = {
   ShareIndexRoute: ShareIndexRoute,
   SpacesIndexRoute: SpacesIndexRoute,
   SummariesIndexRoute: SummariesIndexRoute,
-  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   AdminSpacesSpaceIdRoute: AdminSpacesSpaceIdRoute,
   ApiGermanScoreRoute: ApiGermanScoreRoute,

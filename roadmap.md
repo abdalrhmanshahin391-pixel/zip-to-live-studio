@@ -33,6 +33,7 @@
 - [x] Verify the public sample hierarchy and complete question-session path
 - [ ] Import the original full question bank (blocked until the old export is uploaded)
 - [x] Surface the real Google sign-in error instead of hiding provider failures
-- [ ] Confirm RitaJet branding on Google's external consent screen (blocked by the active Google OAuth client settings)
+- [ ] Bypass the legacy Lovable Google broker and return sign-ins through RitaJet (code complete; publishing blocked until Google accepts the authentication callback URL)
 - [x] Replace every browser/search icon with the green Rita header face and request a Google refresh
 - [x] Match Lecture Lab study, session, and exam questions to the archive runner design
+- [x] Give Google one stable newly named Rita search icon
