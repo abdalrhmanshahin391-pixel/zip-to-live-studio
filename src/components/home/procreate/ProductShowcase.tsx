@@ -171,6 +171,8 @@ export function ProductShowcase() {
           image={plansArt.url}
           imageAlt="RitaJet study plans displayed across a focused night-time study workspace"
           side="left"
+          learnLabel="See plan details"
+          buyLabel="Buy a plan"
         />
         <ProductCard
           imageKey="home.product.toolkit"
