@@ -22,7 +22,7 @@
 - [x] Verify the signed-out desktop and phone flows and pricing layout
 - [x] Fix signed-in account-name contrast across transparent and cream headers
 - [x] Add the spacious animated German Lab iPad feature after the three study cards
-- [x] Remove Google access from sign-in and registration
+- [x] Rebuild Google sign-in and registration with the fresh managed RitaJet connection
 - [x] Connect Rita and shared study AI to one protected Gemini key
 - [x] Make published question-bank outlines visible while keeping questions protected
 - [ ] Import the original courses, subjects, questions, and answers (waiting for old-data upload)
@@ -33,7 +33,11 @@
 - [x] Verify the public sample hierarchy and complete question-session path
 - [ ] Import the original full question bank (blocked until the old export is uploaded)
 - [x] Surface the real Google sign-in error instead of hiding provider failures
-- [ ] Bypass the legacy Lovable Google broker and return sign-ins through RitaJet (code complete; publishing blocked until Google accepts the authentication callback URL)
+- [x] Replace the legacy Google setup with the managed RitaJet sign-in flow
 - [x] Replace every browser/search icon with the green Rita header face and request a Google refresh
 - [x] Match Lecture Lab study, session, and exam questions to the archive runner design
 - [x] Give Google one stable newly named Rita search icon
+- [x] Remove image-changing controls and the Admin mode switch everywhere
+- [x] Repair registration, move agreement above account creation, and require email verification
+- [x] Remove obsolete AquaQBank branding while preserving the intentional toolkit code
+- [x] Add working Terms, Privacy, and Refund pages and verify account screens on desktop and phone
