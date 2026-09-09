@@ -2078,7 +2078,6 @@ export type Database = {
           feature_archive_qgen: boolean
           feature_lecture_qgen: boolean
           feature_review: boolean
-          feature_rita38: boolean
           highlight: boolean
           max_ai_questions: number | null
           max_all_in_one_lectures: number | null
@@ -2087,7 +2086,6 @@ export type Database = {
           max_calendar_items: number | null
           max_flashcards: number | null
           max_groups: number | null
-          max_rita_questions: number | null
           max_summaries: number | null
           max_todo_tasks: number | null
           name: string
@@ -2120,7 +2118,6 @@ export type Database = {
           feature_archive_qgen?: boolean
           feature_lecture_qgen?: boolean
           feature_review?: boolean
-          feature_rita38?: boolean
           highlight?: boolean
           max_ai_questions?: number | null
           max_all_in_one_lectures?: number | null
@@ -2129,7 +2126,6 @@ export type Database = {
           max_calendar_items?: number | null
           max_flashcards?: number | null
           max_groups?: number | null
-          max_rita_questions?: number | null
           max_summaries?: number | null
           max_todo_tasks?: number | null
           name: string
@@ -2162,7 +2158,6 @@ export type Database = {
           feature_archive_qgen?: boolean
           feature_lecture_qgen?: boolean
           feature_review?: boolean
-          feature_rita38?: boolean
           highlight?: boolean
           max_ai_questions?: number | null
           max_all_in_one_lectures?: number | null
@@ -2171,7 +2166,6 @@ export type Database = {
           max_calendar_items?: number | null
           max_flashcards?: number | null
           max_groups?: number | null
-          max_rita_questions?: number | null
           max_summaries?: number | null
           max_todo_tasks?: number | null
           name?: string
