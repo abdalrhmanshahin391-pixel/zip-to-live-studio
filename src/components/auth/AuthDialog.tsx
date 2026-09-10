@@ -622,6 +622,15 @@ function SignUpPanel() {
   return (
     <div>
       {error && <Err message={error} />}
+      {problem && (
+        <ProblemNote
+          problem={problem}
+          onPick={(v) => {
+            update("username", v);
+            setProblem(null);
+          }}
+        />
+      )}
 
       <GoogleButton label="Sign up with Google" onClick={() => void googleSignUp()} disabled={loading} />
       <p className="mt-2 text-center text-xs font-medium text-muted-foreground">
