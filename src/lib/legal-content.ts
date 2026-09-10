@@ -151,11 +151,14 @@ We share data only with the processors needed to run the service: our cloud data
 6. INTERNATIONAL TRANSFERS
 Our providers may process data outside your country, including in the EU and the United States. Where required, transfers rely on Standard Contractual Clauses or an equivalent safeguard.
 
-7. HOW LONG WE KEEP IT
-Account and study content are kept while your account is open and for 30 days after you delete it, so an accidental deletion can be reversed. Billing records are kept for as long as tax law requires (normally 7 years). Security logs are kept for 12 months.
+ 7. HOW LONG WE KEEP IT
+Account and study content are kept while your account is open. After you ask us to delete your account, we keep it for 30 days before erasing it, so an accidental request can be reversed, and we erase it sooner if you ask. Billing records are kept for as long as tax law requires (normally 7 years). Security logs are kept for 12 months.
 
-8. YOUR RIGHTS
-You can access, correct, export or delete your data, object to or restrict processing, and withdraw consent. Most of this is available inside the app; anything else, email ${SUPPORT_EMAIL} and we will act within 30 days. If you are in the EEA or UK you may also complain to your local data-protection authority.
+ 8. YOUR RIGHTS
+You can ask us to give you a copy of your data, correct it, export it or delete it, and you can object to or restrict processing or withdraw consent. Email ${SUPPORT_EMAIL} with your request and we will act within 30 days. If you are in the EEA or UK you may also complain to your local data-protection authority.
+
+ 8a. HOW TO ASK FOR DELETION
+Send an email to ${SUPPORT_EMAIL} from the address you signed up with, with "Delete my account" in the subject and your username in the message. We confirm the request, then erase your account, profile, flashcards, lectures, questions, uploads and study history. Billing records created by a purchase have to stay for as long as tax law requires, and anything you chose to share publicly may need to be removed by you first or named in your email so we can remove it too.
 
 9. COOKIES AND LOCAL STORAGE
 We use only what the app needs: a session cookie/token to keep you signed in, local storage for your interface preferences and offline drafts, and basic anonymous counts of feature use. We do not run advertising or cross-site tracking cookies.

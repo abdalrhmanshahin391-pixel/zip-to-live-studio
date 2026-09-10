@@ -14,7 +14,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { openAuth } from "@/lib/auth-dialog";
 import { useAuth } from "@/hooks/useAuth";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
+
 import { supabase } from "@/integrations/supabase/client";
 import { CreditsMeter } from "@/components/CreditsMeter";
 import { InstallAppButton } from "@/components/InstallAppButton";
@@ -32,7 +32,7 @@ const SIMPLE_LINKS: { to: string; label: string }[] = [
 export function ProHeader({ variant = "transparent" }: { variant?: "transparent" | "solid" } = {}) {
   const { t } = useTranslation();
   const { user, profile, isAdmin, isRealAdmin, isGolden, loading: authLoading } = useAuth();
-  const settings = useSiteSettings();
+  
   const navigate = useNavigate();
   const [accountOpen, setAccountOpen] = useState(false);
   const [sheet, setSheet] = useState(false);
@@ -126,15 +126,6 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
           >
             Pricing
           </Link>
-          {settings.offers_page_enabled && (
-            <Link
-              to="/offers"
-              className="rita-accent-bg inline-flex h-10 items-center rounded-full px-5 text-[14px] font-bold transition-opacity hover:opacity-90"
-              style={{ fontFamily: "var(--font-grotesk)" }}
-            >
-              Special offers
-            </Link>
-          )}
           {user && <CreditsMeter dark={!solid} />}
 
           {authLoading ? (
@@ -311,16 +302,6 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
           >
             Pricing
           </Link>
-          {settings.offers_page_enabled && (
-            <Link
-              to="/offers"
-              onClick={() => setSheet(false)}
-              className="block border-b border-black/[0.06] px-3 py-3 text-[16px] font-bold text-white"
-              style={{ fontFamily: "var(--font-grotesk)" }}
-            >
-              Special offers
-            </Link>
-          )}
           {user && (
             <div className="px-1 py-2">
               <CreditsMeter dark compact />

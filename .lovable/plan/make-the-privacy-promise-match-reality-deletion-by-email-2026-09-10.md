@@ -12,11 +12,13 @@
 
 One thing only: the wording on the privacy page, so it stops implying deletion is available inside the app.
 
-- Rewrite the "Your rights" section: you can ask for access, correction, export or deletion of your data by emailing ritajetnetwork@outlook.com, and it is acted on within 30 days. Keep the EEA/UK complaint line.
+- Rewrite the "Your rights" section: you can ask for access, correction, export or deletion of your data by emailing [ritajetnetwork@outlook.com](mailto:ritajetnetwork@outlook.com), and it is acted on within 30 days. Keep the EEA/UK complaint line.
 - Adjust the "How long we keep it" line so the 30-day recovery window is described as counted from your deletion request, not from a self-service delete.
 - Add a short, plain "How to ask for deletion" note under the rights section: what to send, from which email address, what gets removed, and what has to stay (billing records for tax law).
 
 No database changes, no new pages, no account-settings changes.
+
+Can u also remove special offer page just remove the button from the header 
 
 ## Technical detail
 
