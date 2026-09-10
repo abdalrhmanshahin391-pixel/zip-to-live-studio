@@ -77,6 +77,8 @@ const createHandler = () => createAuthEmailHandler({
   },
 })
 
+let cachedHandler: ReturnType<typeof createHandler> | null = null
+
 export const Route = createFileRoute("/lovable/email/auth/webhook")({
   server: {
     handlers: {
