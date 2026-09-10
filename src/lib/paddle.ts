@@ -1,7 +1,9 @@
 import { resolvePaddlePrice } from "@/utils/payments.functions";
 
-const clientToken = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN as string | undefined;
+const liveClientToken = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN as string | undefined;
 const testClientToken = import.meta.env.VITE_PAYMENTS_TEST_CLIENT_TOKEN as string | undefined;
+/** While the live account is still being reviewed every checkout runs in test mode. */
+const forceTest = String(import.meta.env.VITE_PAYMENTS_FORCE_TEST ?? "") === "1";
 
 export type PayEnv = "sandbox" | "live";
 
@@ -11,14 +13,18 @@ declare global {
   }
 }
 
+/** The environment every payment form must open in. */
 export function getPaddleEnvironment(): PayEnv {
-  return clientToken?.startsWith("test_") ? "sandbox" : "live";
+  if (forceTest && (testClientToken || liveClientToken?.startsWith("test_"))) return "sandbox";
+  return liveClientToken?.startsWith("test_") ? "sandbox" : "live";
 }
 
 function tokenFor(env: PayEnv): string | undefined {
-  if (env === getPaddleEnvironment()) return clientToken;
-  // Fallback path: the live catalog is not ready yet, so pay in test mode.
-  return env === "sandbox" ? (testClientToken ?? clientToken) : clientToken;
+  if (env === "sandbox") {
+    if (testClientToken?.startsWith("test_")) return testClientToken;
+    return liveClientToken?.startsWith("test_") ? liveClientToken : undefined;
+  }
+  return liveClientToken?.startsWith("live_") ? liveClientToken : undefined;
 }
 
 let scriptPromise: Promise<void> | null = null;
@@ -28,7 +34,7 @@ function loadScript(): Promise<void> {
   if (scriptPromise) return scriptPromise;
   scriptPromise = new Promise<void>((resolve, reject) => {
     if (typeof window === "undefined") {
-      reject(new Error("Paddle can only be initialized in the browser"));
+      reject(new Error("The payment form can only open in your browser."));
       return;
     }
     const existing = document.querySelector<HTMLScriptElement>(
@@ -44,16 +50,25 @@ function loadScript(): Promise<void> {
       document.head.appendChild(script);
     }
     script.addEventListener("load", () => resolve(), { once: true });
-    script.addEventListener("error", () => reject(new Error("Paddle.js failed to load")), {
-      once: true,
-    });
+    script.addEventListener(
+      "error",
+      () => {
+        scriptPromise = null;
+        reject(
+          new Error(
+            "The secure payment form could not load. Check your connection or any ad blocker and try again.",
+          ),
+        );
+      },
+      { once: true },
+    );
   });
   return scriptPromise;
 }
 
 export async function initializePaddle(env: PayEnv = getPaddleEnvironment()): Promise<void> {
   const token = tokenFor(env);
-  if (!token) throw new Error("Payments are not configured");
+  if (!token) throw new Error("Card payments are being set up. Please try again shortly.");
   await loadScript();
   if (initializedEnv === env) return;
   window.Paddle.Environment.set(env === "sandbox" ? "sandbox" : "production");
@@ -66,5 +81,7 @@ export async function getPaddlePriceId(
   priceId: string,
 ): Promise<{ paddlePriceId: string; environment: PayEnv }> {
   const environment = getPaddleEnvironment();
-  return resolvePaddlePrice({ data: { priceId, environment } });
+  const result = await resolvePaddlePrice({ data: { priceId, environment } });
+  if (!result.ok) throw new Error(result.error);
+  return { paddlePriceId: result.paddlePriceId, environment: result.environment };
 }
