@@ -14,7 +14,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { openAuth } from "@/lib/auth-dialog";
 import { useAuth } from "@/hooks/useAuth";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
+
 import { supabase } from "@/integrations/supabase/client";
 import { CreditsMeter } from "@/components/CreditsMeter";
 import { InstallAppButton } from "@/components/InstallAppButton";
