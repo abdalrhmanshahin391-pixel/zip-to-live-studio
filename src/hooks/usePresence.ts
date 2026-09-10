@@ -39,7 +39,9 @@ export function usePresence() {
       activeUserId = null;
     }
 
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+    let sub: { subscription: { unsubscribe: () => void } } | null = null;
+    try {
+    const result = supabase.auth.onAuthStateChange((event, session) => {
       const uid = session?.user?.id;
       if (event === "SIGNED_IN" && uid) {
         void (supabase.from as any)("user_login_events")
@@ -52,15 +54,19 @@ export function usePresence() {
         start(uid);
       }
     });
+    sub = result.data;
 
     // On first mount, if a session already exists, start heartbeat.
     supabase.auth.getSession().then(({ data }) => {
       const uid = data.session?.user?.id;
       if (uid) start(uid);
     }, () => {});
+    } catch {
+      /* Presence is optional when account services are unavailable. */
+    }
 
     return () => {
-      sub.subscription.unsubscribe();
+      sub?.subscription.unsubscribe();
       stop();
     };
   }, []);

@@ -285,16 +285,16 @@ function CheckoutPage() {
                 <div className="mt-4 flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="text-[20px] font-bold leading-tight">{plan.name}</p>
-                    <p className="mt-1 text-[13.5px] text-white/45">{period}</p>
+                    <p className="mt-1 text-[13.5px] text-muted-foreground">{period}</p>
                   </div>
                   <span className="text-[19px] font-bold">{money(cents, plan.currency)}</span>
                 </div>
 
-                <ul className="mt-5 grid gap-2 border-t border-white/10 pt-5">
+                <ul className="mt-5 grid gap-2 border-t border-border pt-5">
                   {perks.map((p) => (
                     <li
                       key={p.text}
-                      className="flex items-start gap-2 text-[14px] font-medium text-white/70"
+                      className="flex items-start gap-2 text-[14px] font-medium text-foreground/75"
                     >
                       <Check size={15} className="rita-accent mt-[3px] shrink-0" /> {p.text}
                     </li>
@@ -302,9 +302,9 @@ function CheckoutPage() {
                 </ul>
 
                 {/* promo code */}
-                <div className="mt-6 border-t border-white/10 pt-5">
+                <div className="mt-6 border-t border-border pt-5">
                   {promo ? (
-                    <div className="flex items-center justify-between gap-3 rounded-[18px] border border-white/10 bg-white/[0.05] px-4 py-3">
+                    <div className="flex items-center justify-between gap-3 rounded-[14px] border border-border bg-muted px-4 py-3">
                       <span className="flex min-w-0 items-center gap-2 text-[13.5px] font-semibold">
                         <Tag size={14} className="rita-accent" />
                         <span className="truncate">{promo.code}</span>
@@ -316,7 +316,7 @@ function CheckoutPage() {
                         <button
                           onClick={removeCode}
                           aria-label="Remove promo code"
-                          className="text-white/40 transition-colors hover:text-white"
+                          className="text-muted-foreground transition-colors hover:text-foreground"
                         >
                           <X size={15} />
                         </button>
@@ -330,12 +330,12 @@ function CheckoutPage() {
                         onKeyDown={(e) => e.key === "Enter" && applyCode()}
                         placeholder="Add promo code"
                         maxLength={32}
-                        className="min-w-0 flex-1 rounded-[16px] border border-white/12 bg-white/[0.05] px-4 py-3 text-[14px] font-semibold outline-none placeholder:text-white/30 focus:border-white/30"
+                        className="min-w-0 flex-1 rounded-[12px] border border-input bg-background px-4 py-3 text-[14px] font-semibold outline-none placeholder:text-muted-foreground focus:border-primary"
                       />
                       <button
                         onClick={applyCode}
                         disabled={checking || !codeInput.trim()}
-                        className="rounded-[16px] border border-white/15 px-5 py-3 text-[13.5px] font-bold transition-colors hover:bg-white/10 disabled:opacity-40"
+                        className="rita-btn rita-btn-secondary disabled:opacity-40"
                       >
                         {checking ? "…" : "Apply"}
                       </button>
@@ -346,15 +346,15 @@ function CheckoutPage() {
                   )}
                 </div>
 
-                <div className="mt-5 flex items-end justify-between border-t border-white/10 pt-5">
-                  <span className="text-[14px] font-semibold text-white/55">Total due today</span>
+                <div className="mt-5 flex items-end justify-between border-t border-border pt-5">
+                  <span className="text-[14px] font-semibold text-muted-foreground">Total due today</span>
                   <span className="text-[26px] font-bold leading-none">
                     {money(total, plan.currency)}
                   </span>
                 </div>
 
                 {billing === "once" && (
-                  <p className="mt-5 rounded-[20px] border border-white/10 bg-white/[0.05] px-5 py-4 text-[13.5px] font-medium text-white/60">
+                  <p className="mt-5 rounded-[14px] border border-border bg-muted px-5 py-4 text-[13.5px] font-medium text-muted-foreground">
                     Yours for life — use the credits at your own pace. When the pack runs out you
                     can buy it again and the credits add on top.
                   </p>
@@ -362,7 +362,7 @@ function CheckoutPage() {
               </>
             )}
 
-            <ul className="mt-7 grid gap-3 border-t border-white/10 pt-6 text-[13.5px] font-medium text-white/55">
+            <ul className="mt-7 grid gap-3 border-t border-border pt-6 text-[13.5px] font-medium text-muted-foreground">
               <li className="flex items-center gap-2">
                 <LockKeyhole size={15} className="rita-accent" /> Secure payment, encrypted
               </li>

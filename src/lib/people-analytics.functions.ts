@@ -207,7 +207,7 @@ export const getPersonHistory = createServerFn({ method: "POST" })
     return row as PersonHistory;
   });
 
-/** Move one person onto another plan. */
+/** Give one person manual access without overwriting their paid plan. */
 export const setPersonPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { userId: string; planSlug: string }) => {
@@ -216,10 +216,14 @@ export const setPersonPlan = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { error } = await (context.supabase as any).from("user_plans").upsert(
-      { user_id: data.userId, plan_slug: data.planSlug, updated_at: new Date().toISOString() },
-      { onConflict: "user_id" },
-    );
+    const { error } = await (context.supabase as any).from("manual_plan_grants").insert({
+      user_id: data.userId,
+      plan_slug: data.planSlug,
+      starts_at: new Date().toISOString(),
+      reason: "Granted from People admin",
+      overrides_paid: true,
+      granted_by: (context as any).userId,
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

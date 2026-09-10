@@ -67,16 +67,12 @@ async function loadPlan(userId: string): Promise<{ admin: boolean; plan: PlanRow
     .maybeSingle();
   if (role) return { admin: true, plan: null };
 
-  const { data: up } = await admin
-    .from("user_plans")
-    .select("plan_slug")
-    .eq("user_id", userId)
-    .maybeSingle();
+  const { data: effectiveSlug } = await admin.rpc("effective_plan_slug", { _user_id: userId });
 
   const { data: plan } = await admin
     .from("plans")
     .select("*")
-    .eq("slug", up?.plan_slug ?? "starter")
+    .eq("slug", effectiveSlug ?? "starter")
     .maybeSingle();
 
   const merged = await mergeClaimedOffer(userId, (plan as PlanRow) ?? null);

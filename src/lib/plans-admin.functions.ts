@@ -187,27 +187,105 @@ export const adminDeletePlan = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Put one student on a plan, found by email or username. */
-export const adminAssignPlan = createServerFn({ method: "POST" })
+const grantSchema = z.object({
+  query: z.string().trim().min(2).max(200),
+  slug: z.string().min(1),
+  startsAt: z.string().datetime(),
+  expiresAt: z.string().datetime().nullable(),
+  reason: z.string().trim().max(500).default(""),
+  overridesPaid: z.boolean().default(true),
+});
+
+async function exactStudent(admin: any, raw: string) {
+  const q = raw.trim().toLowerCase();
+  const { data: rows, error } = await admin
+    .from("profiles")
+    .select("id, full_name, email, username")
+    .or(`email.eq.${q},username.eq.${q}`)
+    .limit(2);
+  if (error) throw new Error(error.message);
+  if (!rows?.length) throw new Error(`No exact account matches “${raw.trim()}”. Check the full username or email.`);
+  if (rows.length > 1) throw new Error("More than one account matched. Use the complete email address.");
+  return rows[0];
+}
+
+/** Preview the exact account before granting access. */
+export const adminFindGrantStudent = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ query: z.string().min(2), slug: z.string().min(1) }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ query: z.string().trim().min(2).max(200) }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
     const admin = supabaseAdmin as any;
-    const q = data.query.trim();
-    const { data: rows } = await admin
-      .from("profiles")
-      .select("id, email, username")
-      .or(`email.ilike.${q},username.ilike.${q}`)
-      .limit(1);
-    const target = rows?.[0];
-    if (!target) throw new Error(`No student found for “${q}”.`);
-    const { error } = await admin
-      .from("user_plans")
-      .upsert({ user_id: target.id, plan_slug: data.slug }, { onConflict: "user_id" });
+    const student = await exactStudent(admin, data.query);
+    const [{ data: paid }, { data: manual }] = await Promise.all([
+      admin.from("user_plans").select("plan_slug, updated_at").eq("user_id", student.id).maybeSingle(),
+      admin.from("manual_plan_grants").select("id, plan_slug, starts_at, expires_at, overrides_paid").eq("user_id", student.id).is("revoked_at", null).order("granted_at", { ascending: false }).limit(1).maybeSingle(),
+    ]);
+    return { student, paid: paid ?? null, manual: manual ?? null };
+  });
+
+/** Create a dated, audited manual access grant without changing a purchase. */
+export const adminCreatePlanGrant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => grantSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+    const admin = supabaseAdmin as any;
+    const target = await exactStudent(admin, data.query);
+    if (data.expiresAt && new Date(data.expiresAt) <= new Date(data.startsAt)) {
+      throw new Error("The expiry must be after the start date.");
+    }
+    const { error } = await admin.from("manual_plan_grants").insert({
+      user_id: target.id,
+      plan_slug: data.slug,
+      starts_at: data.startsAt,
+      expires_at: data.expiresAt,
+      reason: data.reason,
+      overrides_paid: data.overridesPaid,
+      granted_by: (context as any).userId,
+    });
     if (error) throw new Error(error.message);
-    return { ok: true, who: target.email ?? target.username ?? q };
+    return { ok: true, who: target.email ?? target.username ?? data.query };
+  });
+
+export type ManualPlanGrant = {
+  id: string; user_id: string; plan_slug: string; starts_at: string; expires_at: string | null;
+  reason: string; overrides_paid: boolean; granted_at: string; revoked_at: string | null;
+  revoke_reason: string | null; student: { full_name: string; username: string; email: string } | null;
+};
+
+/** Recent manual-access history, including expired and revoked entries. */
+export const adminListPlanGrants = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+    const admin = supabaseAdmin as any;
+    const { data, error } = await admin
+      .from("manual_plan_grants")
+      .select("id,user_id,plan_slug,starts_at,expires_at,reason,overrides_paid,granted_at,revoked_at,revoke_reason")
+      .order("granted_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    const ids = [...new Set((data ?? []).map((row: any) => row.user_id))];
+    const { data: people } = ids.length
+      ? await admin.from("profiles").select("id,full_name,username,email").in("id", ids)
+      : { data: [] };
+    const byId = new Map((people ?? []).map((person: any) => [person.id, person]));
+    return (data ?? []).map((row: any) => ({ ...row, student: byId.get(row.user_id) ?? null })) as ManualPlanGrant[];
+  });
+
+export const adminRevokePlanGrant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), reason: z.string().trim().max(500).default("") }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+    const { error } = await (supabaseAdmin as any).from("manual_plan_grants").update({
+      revoked_at: new Date().toISOString(), revoked_by: (context as any).userId, revoke_reason: data.reason,
+    }).eq("id", data.id).is("revoked_at", null);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
