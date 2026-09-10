@@ -46,6 +46,7 @@ import { Route as AdminGroupsRouteImport } from './routes/admin.groups'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminPeopleRouteImport } from './routes/admin.people'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
+import { Route as AdminPromoCodesRouteImport } from './routes/admin.promo-codes'
 import { Route as AdminRitaxAnnouncementsRouteImport } from './routes/admin.ritax-announcements'
 import { Route as AdminRolesRouteImport } from './routes/admin.roles'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
@@ -297,6 +298,11 @@ const AdminPeopleRoute = AdminPeopleRouteImport.update({
 const AdminPlansRoute = AdminPlansRouteImport.update({
   id: '/admin/plans',
   path: '/admin/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPromoCodesRoute = AdminPromoCodesRouteImport.update({
+  id: '/admin/promo-codes',
+  path: '/admin/promo-codes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRitaxAnnouncementsRoute = AdminRitaxAnnouncementsRouteImport.update({
@@ -667,6 +673,7 @@ export interface FileRoutesByFullPath {
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/people': typeof AdminPeopleRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/admin/promo-codes': typeof AdminPromoCodesRoute
   '/admin/ritax-announcements': typeof AdminRitaxAnnouncementsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/admin/support': typeof AdminSupportRoute
@@ -768,6 +775,7 @@ export interface FileRoutesByTo {
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/people': typeof AdminPeopleRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/admin/promo-codes': typeof AdminPromoCodesRoute
   '/admin/ritax-announcements': typeof AdminRitaxAnnouncementsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/admin/support': typeof AdminSupportRoute
@@ -871,6 +879,7 @@ export interface FileRoutesById {
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/people': typeof AdminPeopleRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/admin/promo-codes': typeof AdminPromoCodesRoute
   '/admin/ritax-announcements': typeof AdminRitaxAnnouncementsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/admin/support': typeof AdminSupportRoute
@@ -977,6 +986,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/people'
     | '/admin/plans'
+    | '/admin/promo-codes'
     | '/admin/ritax-announcements'
     | '/admin/roles'
     | '/admin/support'
@@ -1078,6 +1088,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/people'
     | '/admin/plans'
+    | '/admin/promo-codes'
     | '/admin/ritax-announcements'
     | '/admin/roles'
     | '/admin/support'
@@ -1180,6 +1191,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/people'
     | '/admin/plans'
+    | '/admin/promo-codes'
     | '/admin/ritax-announcements'
     | '/admin/roles'
     | '/admin/support'
@@ -1285,6 +1297,7 @@ export interface RootRouteChildren {
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminPeopleRoute: typeof AdminPeopleRoute
   AdminPlansRoute: typeof AdminPlansRoute
+  AdminPromoCodesRoute: typeof AdminPromoCodesRoute
   AdminRitaxAnnouncementsRoute: typeof AdminRitaxAnnouncementsRoute
   AdminRolesRoute: typeof AdminRolesRoute
   AdminSupportRoute: typeof AdminSupportRoute
@@ -1578,6 +1591,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/plans'
       fullPath: '/admin/plans'
       preLoaderRoute: typeof AdminPlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/promo-codes': {
+      id: '/admin/promo-codes'
+      path: '/admin/promo-codes'
+      fullPath: '/admin/promo-codes'
+      preLoaderRoute: typeof AdminPromoCodesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/ritax-announcements': {
@@ -2208,6 +2228,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminPeopleRoute: AdminPeopleRoute,
   AdminPlansRoute: AdminPlansRoute,
+  AdminPromoCodesRoute: AdminPromoCodesRoute,
   AdminRitaxAnnouncementsRoute: AdminRitaxAnnouncementsRoute,
   AdminRolesRoute: AdminRolesRoute,
   AdminSupportRoute: AdminSupportRoute,

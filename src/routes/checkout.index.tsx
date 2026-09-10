@@ -1,12 +1,24 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BadgeCheck, Clock3, Loader2, LockKeyhole, RefreshCcw } from "lucide-react";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  Check,
+  Clock3,
+  Loader2,
+  LockKeyhole,
+  RefreshCcw,
+  Tag,
+  X,
+} from "lucide-react";
 import { ProHeader } from "@/components/home/procreate/ProHeader";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import { useAuth } from "@/hooks/useAuth";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { getPaddlePriceId } from "@/lib/paddle";
+import { checkPromoCode } from "@/lib/promo.functions";
 import { SUPPORT_EMAIL } from "@/lib/legal-content";
 
 export const Route = createFileRoute("/checkout/")({
@@ -36,20 +48,28 @@ export const Route = createFileRoute("/checkout/")({
   component: CheckoutPage,
 });
 
+const FRAME = "rita-checkout-frame";
 const SYMBOL: Record<string, string> = { USD: "$", EUR: "€", GBP: "£", JOD: "JD " };
 const money = (cents: number, currency = "USD") =>
   `${SYMBOL[currency] ?? `${currency} `}${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
 const cap = (n: number | null | undefined, unit: string) =>
   n === null || n === undefined ? `Unlimited ${unit}` : `${n.toLocaleString()} ${unit}`;
 
+type Promo = { code: string; label: string; discountCents: number; totalCents: number };
+
 function CheckoutPage() {
   const { plan: slug, billing } = Route.useSearch();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { openCheckout } = usePaddleCheckout();
+  const { openCheckout, closeCheckout } = usePaddleCheckout();
+
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
-  const started = useRef(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [promo, setPromo] = useState<Promo | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const opened = useRef("");
 
   const { data: plan, isLoading } = useQuery({
     queryKey: ["checkout-plan", slug],
@@ -90,29 +110,71 @@ function CheckoutPage() {
         : (plan.price_cents ?? 0)
     : 0;
 
-  useEffect(() => {
-    if (!plan || !user || started.current) return;
-    if (!priceId) {
-      setError("This plan is not on sale yet. Please try another one or contact support.");
-      return;
-    }
-    started.current = true;
-    openCheckout({
-      priceId,
-      customerEmail: user.email ?? undefined,
-      customData: { userId: user.id, planSlug: plan.slug },
-      successUrl: `${window.location.origin}/checkout/success?plan=${plan.slug}`,
-      frameTarget: "rita-checkout-frame",
-    })
-      .then(() => setReady(true))
-      .catch((e) =>
+  const start = useCallback(
+    async (discountCode?: string) => {
+      if (!plan || !user || !priceId) return;
+      setReady(false);
+      setError(null);
+      try {
+        closeCheckout();
+        await openCheckout({
+          priceId,
+          customerEmail: user.email ?? undefined,
+          customData: { userId: user.id, planSlug: plan.slug },
+          successUrl: `${window.location.origin}/checkout/success?plan=${plan.slug}`,
+          discountCode,
+          frameTarget: FRAME,
+        });
+        setReady(true);
+      } catch (e) {
         setError(
           e instanceof Error && e.message
             ? e.message
             : "We could not open the payment form. Please refresh the page and try again.",
-        ),
-      );
-  }, [plan, user, priceId, openCheckout]);
+        );
+      }
+    },
+    [plan, user, priceId, openCheckout, closeCheckout],
+  );
+
+  useEffect(() => {
+    if (!plan || !user) return;
+    if (!priceId) {
+      setError("This plan is not on sale yet. Please try another one or contact support.");
+      return;
+    }
+    const key = `${plan.slug}:${billing}`;
+    if (opened.current === key) return;
+    opened.current = key;
+    void start();
+  }, [plan, user, priceId, billing, start]);
+
+  const applyCode = async () => {
+    const code = codeInput.trim();
+    if (!code || !priceId) return;
+    setChecking(true);
+    setPromoError(null);
+    try {
+      const { paddlePriceId, environment } = await getPaddlePriceId(priceId);
+      const result = await checkPromoCode({
+        data: { code, environment, paddlePriceId, cents },
+      });
+      setPromo(result);
+      setCodeInput("");
+      await start(result.code);
+    } catch (e) {
+      setPromo(null);
+      setPromoError(e instanceof Error ? e.message : "That code could not be used.");
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const removeCode = async () => {
+    setPromo(null);
+    setPromoError(null);
+    await start();
+  };
 
   const perks = plan
     ? [
@@ -130,6 +192,9 @@ function CheckoutPage() {
       ].filter((p) => p.on)
     : [];
 
+  const total = promo ? promo.totalCents : cents;
+  const period = billing === "once" ? "one-time" : billing === "yearly" ? "per year" : "per month";
+
   return (
     <div
       className="rita-cream min-h-screen bg-black text-white"
@@ -138,7 +203,7 @@ function CheckoutPage() {
       <PaymentTestModeBanner />
       <ProHeader variant="solid" />
 
-      <main className="mx-auto max-w-[1120px] px-6 pb-28 pt-24 md:px-10 md:pt-28">
+      <main className="mx-auto max-w-[1080px] px-6 pb-28 pt-24 md:px-10 md:pt-28">
         <Link
           to="/pricing"
           className="inline-flex items-center gap-2 text-[13.5px] font-semibold text-white/45 transition-colors hover:text-white"
@@ -146,23 +211,20 @@ function CheckoutPage() {
           <ArrowLeft size={15} /> Back to plans
         </Link>
 
-        <p className="mt-8 text-[19px] font-bold md:text-[21px]">
-          RitaJet <span className="rita-accent font-normal">Study</span>
-        </p>
-        <h1 className="mt-4 text-[34px] font-bold leading-[1.06] md:text-[43px]">
-          Secure checkout
+        <h1 className="mt-7 text-center text-[30px] font-bold leading-[1.08] md:text-[40px]">
+          Complete your purchase
         </h1>
-        <p className="mt-5 max-w-[30rem] text-[16px] leading-[1.6] text-white/50 md:text-[17px]">
-          You pay inside RitaJet. Your card details go straight to our payment partner — we never
+        <p className="mx-auto mt-4 max-w-[34rem] text-center text-[15.5px] leading-[1.6] text-white/50 md:text-[16.5px]">
+          Pay by card right here. Your card details go straight to our payment partner — we never
           see or store them.
         </p>
 
-        <div className="mt-10 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_23rem]">
+        <div className="mt-11 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22.5rem]">
           {/* ---------------------------------------------- payment form */}
           <section className="overflow-hidden rounded-[28px] border border-white/10 bg-[#131313] p-6 md:rounded-[34px] md:p-9">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">
-              Pay securely
-            </p>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-[13px] font-semibold">
+              <LockKeyhole size={14} className="rita-accent" /> Card payment
+            </div>
 
             {error && (
               <p className="mt-5 rounded-[20px] border border-[#a4321f]/40 bg-[#a4321f]/10 px-5 py-4 text-[15px] font-semibold text-[#ff9f8f]">
@@ -180,7 +242,7 @@ function CheckoutPage() {
               </p>
             )}
 
-            <div id="rita-checkout-frame" className="mt-5 min-h-[26rem]" />
+            <div className={`${FRAME} mt-5 min-h-[26rem]`} />
 
             <p className="mt-6 border-t border-white/10 pt-5 text-[13px] leading-relaxed text-white/40">
               By paying you agree to our{" "}
@@ -206,7 +268,7 @@ function CheckoutPage() {
           {/* --------------------------------------------- order summary */}
           <aside className="rounded-[28px] border border-white/10 bg-[#131313] p-7 md:rounded-[34px] lg:sticky lg:top-24">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">
-              Order summary
+              Order details
             </p>
 
             {isLoading && <div className="mt-5 h-24 animate-pulse rounded-[20px] bg-white/[0.07]" />}
@@ -223,30 +285,76 @@ function CheckoutPage() {
 
             {plan && (
               <>
-                <p className="mt-4 text-[26px] font-bold leading-tight">{plan.name}</p>
-                {plan.tagline && (
-                  <p className="mt-2 text-[14.5px] text-white/45">{plan.tagline}</p>
-                )}
-
-                <div className="mt-5 flex items-end gap-2 border-y border-white/10 py-5">
-                  <span className="text-[40px] font-bold leading-none">
-                    {money(cents, plan.currency)}
-                  </span>
-                  <span className="pb-1 text-[13.5px] font-semibold text-white/40">
-                    {billing === "once" ? "one-time" : billing === "yearly" ? "/ year" : "/ month"}
-                  </span>
+                <div className="mt-4 flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-[20px] font-bold leading-tight">{plan.name}</p>
+                    <p className="mt-1 text-[13.5px] text-white/45">{period}</p>
+                  </div>
+                  <span className="text-[19px] font-bold">{money(cents, plan.currency)}</span>
                 </div>
 
-                <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">
-                  What you get
-                </p>
-                <ul className="mt-3 grid gap-2">
+                <ul className="mt-5 grid gap-2 border-t border-white/10 pt-5">
                   {perks.map((p) => (
-                    <li key={p.text} className="text-[14.5px] font-medium text-white/70">
-                      • {p.text}
+                    <li
+                      key={p.text}
+                      className="flex items-start gap-2 text-[14px] font-medium text-white/70"
+                    >
+                      <Check size={15} className="rita-accent mt-[3px] shrink-0" /> {p.text}
                     </li>
                   ))}
                 </ul>
+
+                {/* promo code */}
+                <div className="mt-6 border-t border-white/10 pt-5">
+                  {promo ? (
+                    <div className="flex items-center justify-between gap-3 rounded-[18px] border border-white/10 bg-white/[0.05] px-4 py-3">
+                      <span className="flex min-w-0 items-center gap-2 text-[13.5px] font-semibold">
+                        <Tag size={14} className="rita-accent" />
+                        <span className="truncate">{promo.code}</span>
+                      </span>
+                      <span className="flex items-center gap-3">
+                        <span className="rita-accent text-[13.5px] font-bold">
+                          −{money(promo.discountCents, plan.currency)}
+                        </span>
+                        <button
+                          onClick={removeCode}
+                          aria-label="Remove promo code"
+                          className="text-white/40 transition-colors hover:text-white"
+                        >
+                          <X size={15} />
+                        </button>
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        value={codeInput}
+                        onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                        onKeyDown={(e) => e.key === "Enter" && applyCode()}
+                        placeholder="Add promo code"
+                        maxLength={32}
+                        className="min-w-0 flex-1 rounded-[16px] border border-white/12 bg-white/[0.05] px-4 py-3 text-[14px] font-semibold outline-none placeholder:text-white/30 focus:border-white/30"
+                      />
+                      <button
+                        onClick={applyCode}
+                        disabled={checking || !codeInput.trim()}
+                        className="rounded-[16px] border border-white/15 px-5 py-3 text-[13.5px] font-bold transition-colors hover:bg-white/10 disabled:opacity-40"
+                      >
+                        {checking ? "…" : "Apply"}
+                      </button>
+                    </div>
+                  )}
+                  {promoError && (
+                    <p className="mt-2 text-[13px] font-semibold text-[#ff9f8f]">{promoError}</p>
+                  )}
+                </div>
+
+                <div className="mt-5 flex items-end justify-between border-t border-white/10 pt-5">
+                  <span className="text-[14px] font-semibold text-white/55">Total due today</span>
+                  <span className="text-[26px] font-bold leading-none">
+                    {money(total, plan.currency)}
+                  </span>
+                </div>
 
                 {billing === "once" && (
                   <p className="mt-5 rounded-[20px] border border-white/10 bg-white/[0.05] px-5 py-4 text-[13.5px] font-medium text-white/60">

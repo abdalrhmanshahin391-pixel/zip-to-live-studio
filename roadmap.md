@@ -48,3 +48,9 @@
 - [x] Require email verification for new email sign-ups
 - [x] Share lecture questions separately from flashcards, publicly and inside classrooms
 - [x] Page shared questions and sets so very large collections stay fast
+- [x] Remove question sharing entirely and keep flashcard sharing only
+- [x] Rebuild checkout in the two-column style with a promo-code box and fix the payment frame error
+- [x] Add an admin Promo codes page backed by real payment-provider discounts
+- [x] Send plan price/name changes to the checkout catalog for new buyers
+- [x] Confirm plan limits are checked before any AI request or file is processed
+- [x] Make sign-up problem messages clear, with username ideas and a sign-in shortcut

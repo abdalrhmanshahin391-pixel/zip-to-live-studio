@@ -64,7 +64,74 @@ export const adminListPlans = createServerFn({ method: "GET" })
     return (data ?? []) as AdminPlan[];
   });
 
-/** Create or update one plan. */
+type Env = "sandbox" | "live";
+
+async function pay(env: Env, path: string, init?: RequestInit) {
+  const { gatewayFetch } = await import("@/lib/paddle.server");
+  const res = await gatewayFetch(env, path, init);
+  const text = await res.text();
+  let body: any = null;
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    body = null;
+  }
+  if (!res.ok) {
+    throw new Error(body?.error?.detail || `Payment catalog request failed (${res.status})`);
+  }
+  return body;
+}
+
+/**
+ * Pushes a plan's name and prices to the payment catalog so the amount a
+ * student is charged always matches what the pricing page shows. Students who
+ * already bought keep the price they signed up on.
+ */
+async function syncPlanToPaddle(plan: AdminPlan, env: Env) {
+  const targets: { externalId: string | null; cents: number }[] = [
+    { externalId: plan.paddle_price_monthly, cents: plan.price_cents },
+    { externalId: plan.paddle_price_yearly, cents: plan.yearly_cents },
+    { externalId: plan.paddle_price_once, cents: plan.once_cents },
+  ];
+  const done: string[] = [];
+  const failed: string[] = [];
+  let productSynced = false;
+
+  for (const t of targets) {
+    if (!t.externalId || !t.cents) continue;
+    try {
+      const found = await pay(env, `/prices?external_id=${encodeURIComponent(t.externalId)}`);
+      const price = found?.data?.[0];
+      if (!price) {
+        failed.push(t.externalId);
+        continue;
+      }
+      await pay(env, `/prices/${price.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          unit_price: { amount: String(t.cents), currency_code: plan.currency.toUpperCase() },
+        }),
+      });
+      done.push(t.externalId);
+
+      if (!productSynced && price.product_id) {
+        await pay(env, `/products/${price.product_id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            name: plan.name,
+            description: plan.tagline || plan.name,
+          }),
+        }).catch(() => null);
+        productSynced = true;
+      }
+    } catch {
+      failed.push(t.externalId);
+    }
+  }
+  return { done, failed };
+}
+
+/** Create or update one plan, and keep the payment catalog in step. */
 export const adminSavePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => planSchema.parse(d))
@@ -75,7 +142,34 @@ export const adminSavePlan = createServerFn({ method: "POST" })
       .from("plans")
       .upsert({ ...data, updated_at: new Date().toISOString() }, { onConflict: "slug" });
     if (error) throw new Error(error.message);
-    return { ok: true };
+
+    // Best effort: saving the plan must never fail because the catalog is busy.
+    let sync: { done: string[]; failed: string[] } = { done: [], failed: [] };
+    try {
+      sync = await syncPlanToPaddle(data, "sandbox");
+    } catch {
+      sync = { done: [], failed: ["catalog unreachable"] };
+    }
+    return { ok: true, sync };
+  });
+
+/** Re-send one plan's prices to the payment catalog on demand. */
+export const adminSyncPlanPrices = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ slug: z.string().min(1), environment: z.enum(["sandbox", "live"]).default("sandbox") }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+    const { data: row, error } = await (supabaseAdmin as any)
+      .from("plans")
+      .select("*")
+      .eq("slug", data.slug)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("That plan no longer exists.");
+    return await syncPlanToPaddle(row as AdminPlan, data.environment);
   });
 
 /** Delete a plan; students on it fall back to Starter. */

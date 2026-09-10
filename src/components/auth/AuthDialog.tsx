@@ -42,6 +42,57 @@ function Err({ message }: { message: string }) {
   );
 }
 
+type Problem = {
+  title: string;
+  hint?: string;
+  suggestions?: string[];
+  action?: "signin" | "reset";
+};
+
+/** A calm, explanatory message with a way forward — used when sign-up can't continue. */
+function ProblemNote({
+  problem,
+  onPick,
+}: {
+  problem: Problem;
+  onPick?: (value: string) => void;
+}) {
+  return (
+    <div
+      role="alert"
+      className="mb-4 rounded-2xl border border-destructive/25 bg-destructive/[0.07] px-4 py-3.5"
+    >
+      <p className="text-[14px] font-black text-destructive">{problem.title}</p>
+      {problem.hint && (
+        <p className="mt-1 text-[13px] font-medium leading-relaxed text-[#6b655c]">{problem.hint}</p>
+      )}
+      {!!problem.suggestions?.length && (
+        <div className="mt-2.5 flex flex-wrap gap-2">
+          {problem.suggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => onPick?.(s)}
+              className="rounded-full border border-black/[0.08] bg-white px-3 py-1.5 text-[13px] font-black text-foreground transition hover:-translate-y-0.5"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+      {problem.action && (
+        <button
+          type="button"
+          onClick={() => setAuthMode(problem.action === "reset" ? "forgot" : "signin")}
+          className="mt-2.5 text-[13px] font-black text-[var(--rita-green-deep)] underline underline-offset-2"
+        >
+          {problem.action === "reset" ? "Reset your password" : "Sign in instead"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function Label({ children }: { children: React.ReactNode }) {
   return (
     <span className="mb-1.5 block text-[12px] font-black uppercase tracking-[0.08em] text-[#6b655c]">
@@ -403,22 +454,37 @@ function SignUpPanel() {
   const [showPw, setShowPw] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(false);
 
   function update<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  /** Friendly alternatives when the chosen username is gone. */
+  function usernameIdeas(base: string) {
+    const clean = base.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 20) || "student";
+    const n = new Date().getFullYear() % 100;
+    return [`${clean}${n}`, `${clean}_${Math.floor(10 + Math.random() * 89)}`, `real${clean}`];
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setProblem(null);
     if (!accepted) {
-      setError("Please accept the Terms and Privacy Policy to continue.");
+      setProblem({
+        title: "One last step",
+        hint: "Tick the box to accept the Terms and Privacy Policy, then create your account.",
+      });
       return;
     }
     const parsed = signupSchema.safeParse(form);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Please check your information.");
+      setProblem({
+        title: "Let's fix one thing",
+        hint: parsed.error.issues[0]?.message ?? "Please check your information.",
+      });
       return;
     }
     const data = parsed.data;
@@ -428,12 +494,20 @@ function SignUpPanel() {
     try {
       const taken = await checkIdentity({ data: { username: data.username, phone: phone ?? "" } });
       if (taken?.username) {
-        setError("This username is already taken.");
+        setProblem({
+          title: "That username is already in use",
+          hint: "Usernames are unique on RitaJet. Here are a few that are free right now:",
+          suggestions: usernameIdeas(data.username),
+        });
         setLoading(false);
         return;
       }
       if (taken?.phone) {
-        setError("This phone number is already registered.");
+        setProblem({
+          title: "This phone number already has an account",
+          hint: "You can sign in with that account, or leave the phone field empty and add a different number later.",
+          action: "signin",
+        });
         setLoading(false);
         return;
       }
@@ -452,11 +526,25 @@ function SignUpPanel() {
       });
       if (signUpError) {
         const msg = signUpError.message.toLowerCase();
-        setError(
-          msg.includes("registered") || msg.includes("exists")
-            ? "This email is already registered."
-            : signUpError.message,
-        );
+        if (msg.includes("registered") || msg.includes("exists")) {
+          setProblem({
+            title: "You already have an account with this email",
+            hint: "Sign in to pick up where you left off, or reset your password if you don't remember it.",
+            action: "signin",
+          });
+        } else if (msg.includes("password")) {
+          setProblem({
+            title: "Choose a stronger password",
+            hint: "Use at least 8 characters and mix in a number or symbol — common passwords are not accepted.",
+          });
+        } else if (msg.includes("email")) {
+          setProblem({
+            title: "That email address didn't work",
+            hint: "Double-check the spelling, or try another address you can open right now.",
+          });
+        } else {
+          setProblem({ title: "We couldn't create the account", hint: signUpError.message });
+        }
         setLoading(false);
         return;
       }
@@ -464,7 +552,15 @@ function SignUpPanel() {
       setLoading(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong.";
-      setError(/duplicate|unique/i.test(msg) ? "That username or phone is already in use." : msg);
+      setProblem(
+        /duplicate|unique/i.test(msg)
+          ? {
+              title: "That username or phone is already in use",
+              hint: "Try a different username, or sign in to the account that already has it.",
+              action: "signin",
+            }
+          : { title: "Something went wrong", hint: msg },
+      );
       setLoading(false);
     }
   }
@@ -526,6 +622,15 @@ function SignUpPanel() {
   return (
     <div>
       {error && <Err message={error} />}
+      {problem && (
+        <ProblemNote
+          problem={problem}
+          onPick={(v) => {
+            update("username", v);
+            setProblem(null);
+          }}
+        />
+      )}
 
       <GoogleButton label="Sign up with Google" onClick={() => void googleSignUp()} disabled={loading} />
       <p className="mt-2 text-center text-xs font-medium text-muted-foreground">
