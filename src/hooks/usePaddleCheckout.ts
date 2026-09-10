@@ -25,7 +25,8 @@ export function usePaddleCheckout() {
       await initializePaddle(environment);
 
       const inline = !!options.frameTarget;
-      if (inline && !document.getElementsByClassName(options.frameTarget!)[0]) {
+      const frameTarget = options.frameTarget;
+      if (inline && (!frameTarget || !document.getElementsByClassName(frameTarget)[0])) {
         throw new Error("The payment form could not start. Please refresh the page.");
       }
       window.Paddle.Checkout.open({
@@ -38,7 +39,7 @@ export function usePaddleCheckout() {
           displayMode: inline ? "inline" : "overlay",
           ...(inline
             ? {
-                frameTarget: options.frameTarget,
+                frameTarget,
                 frameInitialHeight: 460,
                 frameStyle:
                   "width:100%; min-width:312px; background-color:transparent; border:none;",

@@ -3,17 +3,21 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Check, Plus, Save, Trash2, UserPlus } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Plus, Save, Search, ShieldCheck, Trash2, UserPlus, XCircle } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { guardRedirect } from "@/lib/guard-redirect";
 import {
-  adminAssignPlan,
+  adminCreatePlanGrant,
   adminDeletePlan,
+  adminFindGrantStudent,
   adminListPlans,
+  adminListPlanGrants,
+  adminRevokePlanGrant,
   adminSavePlan,
   adminSyncPlanPrices,
   type AdminPlan,
+  type ManualPlanGrant,
 } from "@/lib/plans-admin.functions";
 import { OfferRibbon, discountPercent, offerLive } from "@/components/pricing/offer";
 
@@ -94,7 +98,10 @@ function AdminPlansPage() {
   const save = useServerFn(adminSavePlan);
   const syncPrices = useServerFn(adminSyncPlanPrices);
   const remove = useServerFn(adminDeletePlan);
-  const assign = useServerFn(adminAssignPlan);
+  const findStudent = useServerFn(adminFindGrantStudent);
+  const createGrant = useServerFn(adminCreatePlanGrant);
+  const listGrants = useServerFn(adminListPlanGrants);
+  const revokeGrant = useServerFn(adminRevokePlanGrant);
 
   const [drafts, setDrafts] = useState<AdminPlan[]>([]);
   const [saved, setSaved] = useState<Record<string, string>>({});
@@ -102,6 +109,10 @@ function AdminPlansPage() {
   const [busy, setBusy] = useState(false);
   const [who, setWho] = useState("");
   const [whoPlan, setWhoPlan] = useState("");
+  const [grantMatch, setGrantMatch] = useState<any>(null);
+  const [grantExpiry, setGrantExpiry] = useState("");
+  const [grantReason, setGrantReason] = useState("");
+  const [grantOverride, setGrantOverride] = useState(true);
   const editorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -111,6 +122,11 @@ function AdminPlansPage() {
   const { data } = useQuery({
     queryKey: ["admin-plans"],
     queryFn: () => list({}) as Promise<AdminPlan[]>,
+    enabled: isAdmin,
+  });
+  const { data: grants = [] } = useQuery({
+    queryKey: ["admin-plan-grants"],
+    queryFn: () => listGrants({}) as Promise<ManualPlanGrant[]>,
     enabled: isAdmin,
   });
 
@@ -726,13 +742,30 @@ function AdminPlansPage() {
         </div>
 
         <section className="mt-10 rounded-[26px] border border-black/[0.07] bg-white p-6">
-          <h2 className="text-[18px] font-black">Put a student on a plan</h2>
-          <div className="mt-4 flex flex-wrap items-end gap-3">
-            <div className="min-w-[16rem] flex-1">
-              <p className={label}>Email or username</p>
-              <input className={input} value={who} onChange={(e) => setWho(e.target.value)} />
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-1 text-[#4c9a2a]" size={22} />
+            <div>
+              <h2 className="text-[20px] font-black">Manual access</h2>
+              <p className="mt-1 text-[13.5px] font-semibold text-[#7a736a]">Give free, dated access without changing or canceling a payment.</p>
             </div>
-            <div className="min-w-[10rem]">
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+            <div className="min-w-[16rem] flex-1">
+              <p className={label}>Exact email or username</p>
+              <input className={input} value={who} onChange={(e) => { setWho(e.target.value); setGrantMatch(null); }} />
+            </div>
+            <button type="button" disabled={!who.trim()} onClick={async () => {
+              try { setGrantMatch(await findStudent({ data: { query: who.trim() } })); }
+              catch (e) { setGrantMatch(null); toast.error(e instanceof Error ? e.message : "Account not found"); }
+            }} className="rita-btn rita-btn-secondary disabled:opacity-50"><Search size={15} /> Find account</button>
+          </div>
+          {grantMatch && <div className="mt-4 rounded-2xl bg-[#f5f2eb] p-4">
+            <p className="font-black">{grantMatch.student.full_name || grantMatch.student.username}</p>
+            <p className="text-[13px] font-semibold text-[#7a736a]">@{grantMatch.student.username} · {grantMatch.student.email}</p>
+            <p className="mt-2 text-[12.5px] font-bold text-[#7a736a]">Paid access: {grantMatch.paid?.plan_slug ?? "starter"}{grantMatch.manual ? ` · Current manual access: ${grantMatch.manual.plan_slug}` : ""}</p>
+          </div>}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
               <p className={label}>Plan</p>
               <select className={input} value={whoPlan} onChange={(e) => setWhoPlan(e.target.value)}>
                 <option value="">Choose…</option>
@@ -743,22 +776,36 @@ function AdminPlansPage() {
                 ))}
               </select>
             </div>
+            <div><p className={label}>Expires (optional)</p><input type="datetime-local" className={input} value={grantExpiry} onChange={(e) => setGrantExpiry(e.target.value)} /></div>
+            <div className="sm:col-span-2"><p className={label}>Internal reason</p><input className={input} maxLength={500} value={grantReason} onChange={(e) => setGrantReason(e.target.value)} placeholder="Why this access was provided" /></div>
+          </div>
+          <label className="mt-4 flex items-center gap-2 text-[13px] font-bold text-[#5c554b]"><input type="checkbox" checked={grantOverride} onChange={(e) => setGrantOverride(e.target.checked)} /> Override paid access while this grant is active</label>
+          <div className="mt-4">
             <button
               type="button"
               onClick={async () => {
                 try {
-                  const r = (await assign({ data: { query: who.trim(), slug: whoPlan } })) as { who: string };
-                  toast.success(`${r.who} moved to that plan`);
+                   const r = (await createGrant({ data: { query: who.trim(), slug: whoPlan, startsAt: new Date().toISOString(), expiresAt: grantExpiry ? new Date(grantExpiry).toISOString() : null, reason: grantReason, overridesPaid: grantOverride } })) as { who: string };
+                   toast.success(`${r.who} now has manual access`);
                   setWho("");
+                   setGrantMatch(null); setGrantExpiry(""); setGrantReason("");
+                   await qc.invalidateQueries({ queryKey: ["admin-plan-grants"] });
                 } catch (e) {
                   toast.error(e instanceof Error ? e.message : "Could not assign");
                 }
               }}
-              disabled={!who.trim() || !whoPlan}
+              disabled={!grantMatch || !whoPlan}
               className="inline-flex items-center gap-2 rounded-full bg-[#23201d] px-5 py-3 text-[14px] font-black text-white disabled:opacity-50"
             >
-              <UserPlus size={15} /> Assign
+              <UserPlus size={15} /> Grant access
             </button>
+          </div>
+          <div className="mt-8 border-t border-black/10 pt-6">
+            <h3 className="text-[15px] font-black">Grant history</h3>
+            <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[720px] text-left text-[13px]"><thead className="text-[#8a8378]"><tr><th className="pb-2">Student</th><th>Plan</th><th>Status</th><th>Expires</th><th>Reason</th><th></th></tr></thead><tbody>
+              {grants.map((g) => { const now = Date.now(); const upcoming = new Date(g.starts_at).getTime() > now; const expired = !!g.expires_at && new Date(g.expires_at).getTime() <= now; const status = g.revoked_at ? "Revoked" : upcoming ? "Upcoming" : expired ? "Expired" : "Active"; return <tr key={g.id} className="border-t border-black/[0.07]"><td className="py-3 font-bold">{g.student?.username ?? g.student?.email ?? "Account"}</td><td>{g.plan_slug}</td><td>{status}</td><td>{g.expires_at ? new Date(g.expires_at).toLocaleString() : "No expiry"}</td><td className="max-w-[240px] truncate">{g.reason || "—"}</td><td className="text-right">{!g.revoked_at && !expired && <button type="button" aria-label="Revoke grant" onClick={async () => { await revokeGrant({ data: { id: g.id, reason: "Revoked by administrator" } }); await qc.invalidateQueries({ queryKey: ["admin-plan-grants"] }); toast.success("Access revoked"); }} className="inline-flex items-center gap-1 font-black text-[#a4423a]"><XCircle size={14} /> Revoke</button>}</td></tr>; })}
+              {!grants.length && <tr><td colSpan={6} className="py-6 text-center font-semibold text-[#8a8378]">No manual access grants yet.</td></tr>}
+            </tbody></table></div>
           </div>
         </section>
       </main>

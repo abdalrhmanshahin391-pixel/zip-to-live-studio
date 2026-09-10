@@ -1876,6 +1876,83 @@ export type Database = {
           },
         ]
       }
+      manual_plan_grants: {
+        Row: {
+          expires_at: string | null
+          granted_at: string
+          granted_by: string
+          id: string
+          overrides_paid: boolean
+          plan_slug: string
+          reason: string
+          revoke_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          starts_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          granted_at?: string
+          granted_by: string
+          id?: string
+          overrides_paid?: boolean
+          plan_slug: string
+          reason?: string
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          starts_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string
+          id?: string
+          overrides_paid?: boolean
+          plan_slug?: string
+          reason?: string
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          starts_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_plan_grants_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_plan_grants_plan_slug_fkey"
+            columns: ["plan_slug"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "manual_plan_grants_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_plan_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes: {
         Row: {
           course_id: string
@@ -4674,6 +4751,7 @@ export type Database = {
         Returns: Json
       }
       effective_plan: { Args: { _user_id: string }; Returns: Json }
+      effective_plan_slug: { Args: { _user_id: string }; Returns: string }
       ensure_lq_default_bucket: { Args: never; Returns: Json }
       get_course_real_counts: {
         Args: { _course_ids: string[] }

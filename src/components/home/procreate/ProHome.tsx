@@ -1,10 +1,12 @@
+import { lazy, Suspense } from "react";
 import { ProHeader } from "./ProHeader";
 import { IpadStage } from "./IpadStage";
-import { ShareBand } from "./ShareBand";
-import { ProductShowcase } from "./ProductShowcase";
-import { FeatureTriptych } from "./FeatureTriptych";
-import { GermanLabFeature } from "./GermanLabFeature";
 import { StartLearningLink } from "@/components/StartLearningLink";
+
+const ProductShowcase = lazy(() => import("./ProductShowcase").then((m) => ({ default: m.ProductShowcase })));
+const FeatureTriptych = lazy(() => import("./FeatureTriptych").then((m) => ({ default: m.FeatureTriptych })));
+const GermanLabFeature = lazy(() => import("./GermanLabFeature").then((m) => ({ default: m.GermanLabFeature })));
+const ShareBand = lazy(() => import("./ShareBand").then((m) => ({ default: m.ShareBand })));
 
 /** Black, single-screen home page. */
 export function ProHome() {
@@ -39,10 +41,12 @@ export function ProHome() {
         <p className="mt-5 text-[15px] text-white/45">Free to start. No card needed.</p>
       </div>
 
-      <ProductShowcase />
-      <FeatureTriptych />
-      <GermanLabFeature />
-      <ShareBand />
+      <Suspense fallback={<div className="min-h-[45vh]" aria-hidden="true" />}>
+        <ProductShowcase />
+        <FeatureTriptych />
+        <GermanLabFeature />
+        <ShareBand />
+      </Suspense>
     </main>
   );
 }

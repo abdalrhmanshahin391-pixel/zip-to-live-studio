@@ -89,6 +89,7 @@ import { Route as AdminSpacesSpaceIdRouteImport } from './routes/admin.spaces.$s
 import { Route as ApiGermanScoreRouteImport } from './routes/api/german/score'
 import { Route as ApiGermanTtsRouteImport } from './routes/api/german/tts'
 import { Route as ApiPublicArchiveSolverRouteImport } from './routes/api/public/archive-solver'
+import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicPushDispatchRouteImport } from './routes/api/public/push-dispatch'
 import { Route as ApiPublicRitaWorkerRouteImport } from './routes/api/public/rita-worker'
 import { Route as CoursesCourseIdIndexRouteImport } from './routes/courses.$courseId.index'
@@ -516,6 +517,11 @@ const ApiPublicArchiveSolverRoute = ApiPublicArchiveSolverRouteImport.update({
   path: '/api/public/archive-solver',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPushDispatchRoute = ApiPublicPushDispatchRouteImport.update({
   id: '/api/public/push-dispatch',
   path: '/api/public/push-dispatch',
@@ -715,6 +721,7 @@ export interface FileRoutesByFullPath {
   '/api/german/score': typeof ApiGermanScoreRoute
   '/api/german/tts': typeof ApiGermanTtsRoute
   '/api/public/archive-solver': typeof ApiPublicArchiveSolverRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
@@ -816,6 +823,7 @@ export interface FileRoutesByTo {
   '/api/german/score': typeof ApiGermanScoreRoute
   '/api/german/tts': typeof ApiGermanTtsRoute
   '/api/public/archive-solver': typeof ApiPublicArchiveSolverRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
@@ -921,6 +929,7 @@ export interface FileRoutesById {
   '/api/german/score': typeof ApiGermanScoreRoute
   '/api/german/tts': typeof ApiGermanTtsRoute
   '/api/public/archive-solver': typeof ApiPublicArchiveSolverRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
@@ -1028,6 +1037,7 @@ export interface FileRouteTypes {
     | '/api/german/score'
     | '/api/german/tts'
     | '/api/public/archive-solver'
+    | '/api/public/health'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
     | '/courses/$courseId/add-questions'
@@ -1129,6 +1139,7 @@ export interface FileRouteTypes {
     | '/api/german/score'
     | '/api/german/tts'
     | '/api/public/archive-solver'
+    | '/api/public/health'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
     | '/courses/$courseId/add-questions'
@@ -1233,6 +1244,7 @@ export interface FileRouteTypes {
     | '/api/german/score'
     | '/api/german/tts'
     | '/api/public/archive-solver'
+    | '/api/public/health'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
     | '/courses/$courseId/add-questions'
@@ -1324,6 +1336,7 @@ export interface RootRouteChildren {
   ApiGermanScoreRoute: typeof ApiGermanScoreRoute
   ApiGermanTtsRoute: typeof ApiGermanTtsRoute
   ApiPublicArchiveSolverRoute: typeof ApiPublicArchiveSolverRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicPushDispatchRoute: typeof ApiPublicPushDispatchRoute
   ApiPublicRitaWorkerRoute: typeof ApiPublicRitaWorkerRoute
   AdminSpacesIndexRoute: typeof AdminSpacesIndexRoute
@@ -1894,6 +1907,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicArchiveSolverRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/push-dispatch': {
       id: '/api/public/push-dispatch'
       path: '/api/public/push-dispatch'
@@ -2255,6 +2275,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGermanScoreRoute: ApiGermanScoreRoute,
   ApiGermanTtsRoute: ApiGermanTtsRoute,
   ApiPublicArchiveSolverRoute: ApiPublicArchiveSolverRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicPushDispatchRoute: ApiPublicPushDispatchRoute,
   ApiPublicRitaWorkerRoute: ApiPublicRitaWorkerRoute,
   AdminSpacesIndexRoute: AdminSpacesIndexRoute,
