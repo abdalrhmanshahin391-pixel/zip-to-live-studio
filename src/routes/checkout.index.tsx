@@ -118,15 +118,11 @@ function CheckoutPage() {
     },
   });
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      navigate({
-        to: "/login",
-        search: { next: `/checkout?plan=${slug}&billing=${billing}` } as any,
-      });
-    }
-  }, [authLoading, user, navigate, slug, billing]);
+  const goSignIn = () =>
+    navigate({
+      to: "/login",
+      search: { next: `/checkout?plan=${slug}&billing=${billing}` } as any,
+    });
 
   const priceId: string | null = plan
     ? billing === "once"
