@@ -46,7 +46,41 @@ export const Route = createFileRoute("/checkout/")({
       s.billing === "yearly" || s.billing === "once" ? (s.billing as "yearly" | "once") : "monthly",
   }),
   component: CheckoutPage,
+  errorComponent: CheckoutFallback,
 });
+
+/** The checkout must never fall through to the global "page didn't load" screen. */
+function CheckoutFallback() {
+  return (
+    <div className="rita-cream min-h-screen bg-background text-foreground">
+      <ProHeader variant="solid" />
+      <main className="mx-auto grid min-h-[70vh] max-w-[38rem] place-items-center px-6 text-center">
+        <div>
+          <h1 className="text-[28px] font-semibold">We could not open the payment form</h1>
+          <p className="mt-3 text-[15px] text-muted-foreground">
+            Nothing was charged. Refresh this page to try again, or email{" "}
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="rita-accent underline">
+              {SUPPORT_EMAIL}
+            </a>{" "}
+            and we will help you finish.
+          </p>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="rita-btn rita-btn-primary"
+            >
+              Try again
+            </button>
+            <Link to="/pricing" className="rita-btn rita-btn-secondary">
+              Back to plans
+            </Link>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
 
 const FRAME = "rita-checkout-frame";
 const SYMBOL: Record<string, string> = { USD: "$", EUR: "€", GBP: "£", JOD: "JD " };
