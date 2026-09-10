@@ -252,6 +252,19 @@ function CheckoutPage() {
               <LockKeyhole size={14} className="rita-accent" /> Card payment
             </div>
 
+            {!authLoading && !user && (
+              <div className="mt-5 rounded-[14px] border border-border bg-muted/60 px-5 py-5">
+                <p className="text-[15px] font-semibold">Sign in to pay</p>
+                <p className="mt-1 text-[14px] text-muted-foreground">
+                  Your plan is added to your RitaJet account, so we need to know who you are before
+                  the card form opens.
+                </p>
+                <button type="button" onClick={goSignIn} className="rita-btn rita-btn-primary mt-4">
+                  Sign in and continue
+                </button>
+              </div>
+            )}
+
             {error && (
               <div className="mt-5 rounded-[14px] border border-destructive/25 bg-destructive/10 px-5 py-4 text-[14px] font-semibold text-destructive">
                 {error}{" "}
