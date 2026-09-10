@@ -32,7 +32,7 @@ const SIMPLE_LINKS: { to: string; label: string }[] = [
 export function ProHeader({ variant = "transparent" }: { variant?: "transparent" | "solid" } = {}) {
   const { t } = useTranslation();
   const { user, profile, isAdmin, isRealAdmin, isGolden, loading: authLoading } = useAuth();
-  const settings = useSiteSettings();
+  
   const navigate = useNavigate();
   const [accountOpen, setAccountOpen] = useState(false);
   const [sheet, setSheet] = useState(false);
