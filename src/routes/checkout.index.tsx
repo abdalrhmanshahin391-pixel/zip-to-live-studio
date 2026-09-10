@@ -276,13 +276,25 @@ function CheckoutPage() {
               </div>
             )}
 
-            {!error && user && (isLoading || !ready) && (
+            {!isLoading && !plan && (
+              <div className="mt-5 rounded-[14px] border border-border bg-muted/60 px-5 py-5">
+                <p className="text-[15px] font-semibold">Choose a plan first</p>
+                <p className="mt-1 text-[14px] text-muted-foreground">
+                  We could not match this link to one of our plans.
+                </p>
+                <Link to="/pricing" className="rita-btn rita-btn-primary mt-4">
+                  See the plans
+                </Link>
+              </div>
+            )}
+
+            {!error && user && plan && (isLoading || !ready) && (
               <p className="mt-6 flex items-center gap-2 text-[15px] font-semibold text-muted-foreground">
                 <Loader2 size={16} className="animate-spin" /> Preparing your secure payment form…
               </p>
             )}
 
-            <div className={`${FRAME} mt-5 min-h-[26rem]`} />
+            <div className={`${FRAME} mt-5 ${user && plan ? "min-h-[26rem]" : ""}`} />
 
             <p className="mt-6 border-t border-border pt-5 text-[13px] leading-relaxed text-muted-foreground">
               By paying you agree to our{" "}
