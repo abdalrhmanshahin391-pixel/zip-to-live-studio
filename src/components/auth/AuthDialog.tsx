@@ -42,6 +42,57 @@ function Err({ message }: { message: string }) {
   );
 }
 
+type Problem = {
+  title: string;
+  hint?: string;
+  suggestions?: string[];
+  action?: "signin" | "reset";
+};
+
+/** A calm, explanatory message with a way forward — used when sign-up can't continue. */
+function ProblemNote({
+  problem,
+  onPick,
+}: {
+  problem: Problem;
+  onPick?: (value: string) => void;
+}) {
+  return (
+    <div
+      role="alert"
+      className="mb-4 rounded-2xl border border-destructive/25 bg-destructive/[0.07] px-4 py-3.5"
+    >
+      <p className="text-[14px] font-black text-destructive">{problem.title}</p>
+      {problem.hint && (
+        <p className="mt-1 text-[13px] font-medium leading-relaxed text-[#6b655c]">{problem.hint}</p>
+      )}
+      {!!problem.suggestions?.length && (
+        <div className="mt-2.5 flex flex-wrap gap-2">
+          {problem.suggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => onPick?.(s)}
+              className="rounded-full border border-black/[0.08] bg-white px-3 py-1.5 text-[13px] font-black text-foreground transition hover:-translate-y-0.5"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+      {problem.action && (
+        <button
+          type="button"
+          onClick={() => setAuthMode(problem.action === "reset" ? "forgot" : "signin")}
+          className="mt-2.5 text-[13px] font-black text-[var(--rita-green-deep)] underline underline-offset-2"
+        >
+          {problem.action === "reset" ? "Reset your password" : "Sign in instead"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function Label({ children }: { children: React.ReactNode }) {
   return (
     <span className="mb-1.5 block text-[12px] font-black uppercase tracking-[0.08em] text-[#6b655c]">
