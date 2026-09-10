@@ -35,7 +35,13 @@ async function api(env: Env, path: string, init?: RequestInit) {
     body = null;
   }
   if (!res.ok) {
-    const detail = body?.error?.detail || body?.error?.code || `Request failed (${res.status})`;
+    const fieldErrors = Array.isArray(body?.error?.errors)
+      ? body.error.errors
+          .map((e: any) => (e.field ? `${e.field}: ${e.message}` : e.message))
+          .join("; ")
+      : null;
+    const detail =
+      fieldErrors || body?.error?.detail || body?.error?.code || `Request failed (${res.status})`;
     throw new Error(detail);
   }
   return body;
@@ -109,7 +115,7 @@ export const adminListDiscounts = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const body = await api(
       data.environment,
-      "/discounts?status=active,archived,expired,used&per_page=200&order_by=created_at[DESC]",
+      "/discounts?status=active,archived&per_page=200&order_by=created_at[DESC]",
     );
     return (body?.data ?? []) as Discount[];
   });
@@ -149,12 +155,22 @@ export const adminCreateDiscount = createServerFn({ method: "POST" })
           : String(Math.round(data.amount * 100)),
       enabled_for_checkout: true,
       recur: data.recur,
-      maximum_recurring_intervals: data.recur ? data.maximum_recurring_intervals : null,
-      usage_limit: data.usage_limit,
-      expires_at: data.expires_at,
-      restrict_to: data.restrict_to.length ? data.restrict_to : null,
     };
-    if (data.type !== "percentage") payload.currency_code = data.currency_code.toUpperCase();
+    if (data.type !== "percentage") {
+      payload.currency_code = data.currency_code.toUpperCase();
+    }
+    if (data.recur && data.maximum_recurring_intervals) {
+      payload.maximum_recurring_intervals = data.maximum_recurring_intervals;
+    }
+    if (data.usage_limit) {
+      payload.usage_limit = data.usage_limit;
+    }
+    if (data.expires_at) {
+      payload.expires_at = data.expires_at;
+    }
+    if (data.restrict_to && data.restrict_to.length > 0) {
+      payload.restrict_to = data.restrict_to;
+    }
     const body = await api(data.environment, "/discounts", {
       method: "POST",
       body: JSON.stringify(payload),

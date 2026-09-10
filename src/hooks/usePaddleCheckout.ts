@@ -34,7 +34,6 @@ export function usePaddleCheckout() {
         customer: options.customerEmail ? { email: options.customerEmail } : undefined,
         customData: options.customData,
         discountCode: options.discountCode || undefined,
-        allowedPaymentMethods: ["card"],
         settings: {
           displayMode: inline ? "inline" : "overlay",
           ...(inline
