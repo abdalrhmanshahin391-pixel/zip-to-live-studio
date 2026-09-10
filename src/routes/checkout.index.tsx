@@ -239,17 +239,17 @@ function CheckoutPage() {
         </Link>
 
         <h1 className="mt-7 text-center text-[32px] font-semibold leading-[1.08] md:text-[44px]">
-          Secure card checkout
+          Secure checkout
         </h1>
         <p className="mx-auto mt-4 max-w-[36rem] text-center text-[15.5px] leading-[1.6] text-muted-foreground md:text-[16.5px]">
-          Debit and credit cards only. Your card details are encrypted and sent directly to our payment partner.
+          Pay with Apple Pay, card, or PayPal. Your details are encrypted and handled by Paddle, our secure payment partner.
         </p>
 
         <div className="mt-11 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22.5rem]">
           {/* ---------------------------------------------- payment form */}
           <section className="overflow-hidden rounded-[20px] border border-border bg-card p-6 shadow-sm md:p-9">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2 text-[13px] font-semibold">
-              <LockKeyhole size={14} className="rita-accent" /> Card payment
+              <LockKeyhole size={14} className="rita-accent" /> Secure payment
             </div>
 
             {!authLoading && !user && (

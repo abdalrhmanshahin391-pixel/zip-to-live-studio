@@ -47,7 +47,8 @@ export function usePaddleCheckout() {
           successUrl: options.successUrl || `${window.location.origin}/pricing?checkout=success`,
           allowLogout: false,
           showAddTaxId: false,
-          variant: "one-page",
+          showAddDiscounts: false,
+          variant: "express",
         },
       });
     } finally {
