@@ -20,6 +20,7 @@ const EMPTY: BootstrapData = { settings: null, siteImages: {} };
  * which is the single biggest backend saving as traffic grows.
  */
 const CACHE_TTL_MS = 60_000;
+const LOAD_TIMEOUT_MS = 1800;
 let cached: { at: number; data: BootstrapData } | null = null;
 let inFlight: Promise<BootstrapData> | null = null;
 
@@ -77,7 +78,10 @@ export async function loadSiteBootstrap(): Promise<BootstrapData> {
   if (cached && now - cached.at < CACHE_TTL_MS) return cached.data;
   // Collapse concurrent misses into a single database round-trip.
   if (!inFlight) {
-    inFlight = load()
+    const timeout = new Promise<BootstrapData>((resolve) => {
+      setTimeout(() => resolve(cached?.data ?? EMPTY), LOAD_TIMEOUT_MS);
+    });
+    inFlight = Promise.race([load(), timeout])
       .then((data) => {
         cached = { at: Date.now(), data };
         return data;

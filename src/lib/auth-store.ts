@@ -55,10 +55,18 @@ function emit(next: Partial<AuthSnapshot>) {
 async function loadExtras(uid: string) {
   if (extrasFor === uid) return;
   extrasFor = uid;
-  const [{ data: prof }, { data: roles }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
-    supabase.from("user_roles").select("role").eq("user_id", uid),
-  ]);
+  let prof: unknown = null;
+  let roles: unknown[] | null = null;
+  try {
+    const results = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", uid),
+    ]);
+    prof = results[0].data;
+    roles = results[1].data;
+  } catch {
+    // An account request must never prevent the public page from painting.
+  }
   // A newer auth event may have landed while we were fetching.
   if (snapshot.user?.id !== uid) return;
   extrasLoaded.add(uid);
@@ -80,7 +88,8 @@ function start() {
   if (started || typeof window === "undefined") return;
   started = true;
 
-  supabase.auth.onAuthStateChange((event, s) => {
+  try {
+    supabase.auth.onAuthStateChange((event, s) => {
     // TOKEN_REFRESHED / INITIAL_SESSION carry the same identity; re-emitting
     // on those churns every subscriber for no reason.
     if (event === "TOKEN_REFRESHED") return;
@@ -100,9 +109,14 @@ function start() {
       }
       void loadExtras(uid);
     }
-  });
+    });
+  } catch {
+    emit({ loading: false });
+    return;
+  }
 
   void (async () => {
+    try {
     const { data } = await supabase.auth.getSession();
     let s = data.session ?? null;
     // A stored session whose access token expired while the app was closed must
@@ -124,6 +138,9 @@ function start() {
     }
     emit({ session: s, user: s.user, loading: !extrasLoaded.has(s.user.id) });
     await loadExtras(s.user.id);
+    } catch {
+      emit({ session: null, user: null, loading: false });
+    }
   })();
 }
 

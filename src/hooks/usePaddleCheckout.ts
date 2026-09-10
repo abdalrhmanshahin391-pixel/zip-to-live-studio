@@ -33,6 +33,7 @@ export function usePaddleCheckout() {
         customer: options.customerEmail ? { email: options.customerEmail } : undefined,
         customData: options.customData,
         discountCode: options.discountCode || undefined,
+        allowedPaymentMethods: ["card"],
         settings: {
           displayMode: inline ? "inline" : "overlay",
           ...(inline
@@ -45,6 +46,7 @@ export function usePaddleCheckout() {
             : {}),
           successUrl: options.successUrl || `${window.location.origin}/pricing?checkout=success`,
           allowLogout: false,
+          showAddTaxId: false,
           variant: "one-page",
         },
       });

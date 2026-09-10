@@ -9,6 +9,18 @@ const FACES = [face1.url, face2.url, face3.url];
 /** Wide dark panel inviting students to share their flashcard decks. */
 export function ShareBand() {
   return (
+    <>
+    <section className="mx-auto w-full max-w-[1120px] px-5 pb-14 pt-4 md:px-8 md:pb-20">
+      <p className="text-[12px] font-bold uppercase text-muted-foreground">A better review loop</p>
+      <div className="mt-5 grid gap-8 border-t border-border pt-8 md:grid-cols-[1.2fr_0.8fr] md:items-end">
+        <h2 className="max-w-[720px] text-[34px] font-semibold leading-[1.08] text-foreground md:text-[54px]">
+          From lecture notes to knowledge you can recall.
+        </h2>
+        <p className="max-w-[430px] text-[16px] font-medium leading-[1.65] text-muted-foreground md:text-[18px]">
+          Build cards from your own material, review the ideas that need attention, then publish a useful deck for classmates to study and save.
+        </p>
+      </div>
+    </section>
     <section className="mx-auto w-full max-w-[1240px] px-5 pb-24 md:px-8">
       <div className="rounded-[28px] bg-[#131313] p-8 md:rounded-[36px] md:p-14">
         <h2
@@ -60,5 +72,6 @@ export function ShareBand() {
         </div>
       </div>
     </section>
+    </>
   );
 }
