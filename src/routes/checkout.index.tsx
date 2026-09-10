@@ -276,7 +276,7 @@ function CheckoutPage() {
               </div>
             )}
 
-            {!error && (isLoading || !ready) && (
+            {!error && user && (isLoading || !ready) && (
               <p className="mt-6 flex items-center gap-2 text-[15px] font-semibold text-muted-foreground">
                 <Loader2 size={16} className="animate-spin" /> Preparing your secure payment form…
               </p>
