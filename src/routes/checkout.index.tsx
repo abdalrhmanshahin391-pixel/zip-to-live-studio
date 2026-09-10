@@ -46,7 +46,41 @@ export const Route = createFileRoute("/checkout/")({
       s.billing === "yearly" || s.billing === "once" ? (s.billing as "yearly" | "once") : "monthly",
   }),
   component: CheckoutPage,
+  errorComponent: CheckoutFallback,
 });
+
+/** The checkout must never fall through to the global "page didn't load" screen. */
+function CheckoutFallback() {
+  return (
+    <div className="rita-cream min-h-screen bg-background text-foreground">
+      <ProHeader variant="solid" />
+      <main className="mx-auto grid min-h-[70vh] max-w-[38rem] place-items-center px-6 text-center">
+        <div>
+          <h1 className="text-[28px] font-semibold">We could not open the payment form</h1>
+          <p className="mt-3 text-[15px] text-muted-foreground">
+            Nothing was charged. Refresh this page to try again, or email{" "}
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="rita-accent underline">
+              {SUPPORT_EMAIL}
+            </a>{" "}
+            and we will help you finish.
+          </p>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="rita-btn rita-btn-primary"
+            >
+              Try again
+            </button>
+            <Link to="/pricing" className="rita-btn rita-btn-secondary">
+              Back to plans
+            </Link>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
 
 const FRAME = "rita-checkout-frame";
 const SYMBOL: Record<string, string> = { USD: "$", EUR: "€", GBP: "£", JOD: "JD " };
@@ -84,15 +118,11 @@ function CheckoutPage() {
     },
   });
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      navigate({
-        to: "/login",
-        search: { next: `/checkout?plan=${slug}&billing=${billing}` } as any,
-      });
-    }
-  }, [authLoading, user, navigate, slug, billing]);
+  const goSignIn = () =>
+    navigate({
+      to: "/login",
+      search: { next: `/checkout?plan=${slug}&billing=${billing}` } as any,
+    });
 
   const priceId: string | null = plan
     ? billing === "once"
@@ -222,6 +252,19 @@ function CheckoutPage() {
               <LockKeyhole size={14} className="rita-accent" /> Card payment
             </div>
 
+            {!authLoading && !user && (
+              <div className="mt-5 rounded-[14px] border border-border bg-muted/60 px-5 py-5">
+                <p className="text-[15px] font-semibold">Sign in to pay</p>
+                <p className="mt-1 text-[14px] text-muted-foreground">
+                  Your plan is added to your RitaJet account, so we need to know who you are before
+                  the card form opens.
+                </p>
+                <button type="button" onClick={goSignIn} className="rita-btn rita-btn-primary mt-4">
+                  Sign in and continue
+                </button>
+              </div>
+            )}
+
             {error && (
               <div className="mt-5 rounded-[14px] border border-destructive/25 bg-destructive/10 px-5 py-4 text-[14px] font-semibold text-destructive">
                 {error}{" "}
@@ -233,13 +276,25 @@ function CheckoutPage() {
               </div>
             )}
 
-            {!error && (isLoading || !ready) && (
+            {!isLoading && !plan && (
+              <div className="mt-5 rounded-[14px] border border-border bg-muted/60 px-5 py-5">
+                <p className="text-[15px] font-semibold">Choose a plan first</p>
+                <p className="mt-1 text-[14px] text-muted-foreground">
+                  We could not match this link to one of our plans.
+                </p>
+                <Link to="/pricing" className="rita-btn rita-btn-primary mt-4">
+                  See the plans
+                </Link>
+              </div>
+            )}
+
+            {!error && user && plan && (isLoading || !ready) && (
               <p className="mt-6 flex items-center gap-2 text-[15px] font-semibold text-muted-foreground">
                 <Loader2 size={16} className="animate-spin" /> Preparing your secure payment form…
               </p>
             )}
 
-            <div className={`${FRAME} mt-5 min-h-[26rem]`} />
+            <div className={`${FRAME} mt-5 ${user && plan ? "min-h-[26rem]" : ""}`} />
 
             <p className="mt-6 border-t border-border pt-5 text-[13px] leading-relaxed text-muted-foreground">
               By paying you agree to our{" "}
