@@ -196,55 +196,52 @@ function CheckoutPage() {
   const period = billing === "once" ? "one-time" : billing === "yearly" ? "per year" : "per month";
 
   return (
-    <div
-      className="rita-cream min-h-screen bg-black text-white"
-      style={{ fontFamily: "var(--font-grotesk)" }}
-    >
+    <div className="rita-cream min-h-screen bg-background text-foreground">
       <PaymentTestModeBanner />
       <ProHeader variant="solid" />
 
-      <main className="mx-auto max-w-[1080px] px-6 pb-28 pt-24 md:px-10 md:pt-28">
+      <main className="mx-auto max-w-[1120px] px-5 pb-28 pt-24 md:px-10 md:pt-28">
         <Link
           to="/pricing"
-          className="inline-flex items-center gap-2 text-[13.5px] font-semibold text-white/45 transition-colors hover:text-white"
+          className="inline-flex items-center gap-2 text-[13.5px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft size={15} /> Back to plans
         </Link>
 
-        <h1 className="mt-7 text-center text-[30px] font-bold leading-[1.08] md:text-[40px]">
-          Complete your purchase
+        <h1 className="mt-7 text-center text-[32px] font-semibold leading-[1.08] md:text-[44px]">
+          Secure card checkout
         </h1>
-        <p className="mx-auto mt-4 max-w-[34rem] text-center text-[15.5px] leading-[1.6] text-white/50 md:text-[16.5px]">
-          Pay by card right here. Your card details go straight to our payment partner — we never
-          see or store them.
+        <p className="mx-auto mt-4 max-w-[36rem] text-center text-[15.5px] leading-[1.6] text-muted-foreground md:text-[16.5px]">
+          Debit and credit cards only. Your card details are encrypted and sent directly to our payment partner.
         </p>
 
         <div className="mt-11 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22.5rem]">
           {/* ---------------------------------------------- payment form */}
-          <section className="overflow-hidden rounded-[28px] border border-white/10 bg-[#131313] p-6 md:rounded-[34px] md:p-9">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-[13px] font-semibold">
+          <section className="overflow-hidden rounded-[20px] border border-border bg-card p-6 shadow-sm md:p-9">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2 text-[13px] font-semibold">
               <LockKeyhole size={14} className="rita-accent" /> Card payment
             </div>
 
             {error && (
-              <p className="mt-5 rounded-[20px] border border-[#a4321f]/40 bg-[#a4321f]/10 px-5 py-4 text-[15px] font-semibold text-[#ff9f8f]">
+              <div className="mt-5 rounded-[14px] border border-destructive/25 bg-destructive/10 px-5 py-4 text-[14px] font-semibold text-destructive">
                 {error}{" "}
                 <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">
                   Email support
                 </a>{" "}
                 and we will sort it out.
-              </p>
+                <button type="button" onClick={() => void start(promo?.code)} className="rita-btn rita-btn-secondary ml-3 mt-3">Try again</button>
+              </div>
             )}
 
             {!error && (isLoading || !ready) && (
-              <p className="mt-6 flex items-center gap-2 text-[15px] font-semibold text-white/45">
+              <p className="mt-6 flex items-center gap-2 text-[15px] font-semibold text-muted-foreground">
                 <Loader2 size={16} className="animate-spin" /> Preparing your secure payment form…
               </p>
             )}
 
             <div className={`${FRAME} mt-5 min-h-[26rem]`} />
 
-            <p className="mt-6 border-t border-white/10 pt-5 text-[13px] leading-relaxed text-white/40">
+            <p className="mt-6 border-t border-border pt-5 text-[13px] leading-relaxed text-muted-foreground">
               By paying you agree to our{" "}
               <Link to="/terms" className="rita-accent hover:underline">
                 Terms
@@ -266,15 +263,15 @@ function CheckoutPage() {
           </section>
 
           {/* --------------------------------------------- order summary */}
-          <aside className="rounded-[28px] border border-white/10 bg-[#131313] p-7 md:rounded-[34px] lg:sticky lg:top-24">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">
+          <aside className="rounded-[20px] border border-border bg-card p-7 shadow-sm lg:sticky lg:top-24">
+            <p className="text-[11px] font-bold uppercase text-muted-foreground">
               Order details
             </p>
 
-            {isLoading && <div className="mt-5 h-24 animate-pulse rounded-[20px] bg-white/[0.07]" />}
+            {isLoading && <div className="mt-5 h-24 animate-pulse rounded-[14px] bg-muted" />}
 
             {!isLoading && !plan && (
-              <p className="mt-4 text-[15px] font-semibold text-white/50">
+              <p className="mt-4 text-[15px] font-semibold text-muted-foreground">
                 We could not find that plan.{" "}
                 <Link to="/pricing" className="rita-accent underline">
                   Choose one here

@@ -1,56 +1,7 @@
-- [x] Replace the toolkit code with YSMU and verify the active code
-- [x] Publish the AquaQBank summary as the read-only shared example
-- [x] Simplify subject and sub-subject creation in Lecture Lab
-- [x] Repair PDF validation, AI generation access, quotas, and safe saving
-- [x] Verify the data changes and public Lecture Lab, summary, and toolkit pages
-- [x] Separate and center the home-page header controls
-- [x] Redesign pricing in the saved dark RitaJet style with new artwork
-- [x] Verify the updated header and pricing page on desktop and phone
-- [x] Add the Plans and Toolkit product boxes to the home page
-- [x] Verify both product boxes and pricing links on desktop and phone
-- [x] Add asymmetric Classrooms & groups and Flashcards feature boxes to the home page
-- [x] Make the existing Plans and Toolkit cards 30% taller
-- [x] Verify the four-box home section on desktop and phone
-- [x] Return the three study-mode cards to a spacious cream editorial section
-- [x] Redesign pricing choices and plan cards in the RitaJet Toolkit style
-- [x] Add premium green artwork for monthly plans and credit packs
-- [x] Simplify the desktop and mobile account menus into clean lists
-- [x] Verify the home, pricing, mobile, and authenticated admin-menu states
-- [x] Open sign-in directly from Start learning for signed-out visitors
-- [x] Replace requested old Rita marks with the new green-background face
-- [x] Remove pricing introduction text and the decorative pricing-menu sparkle
-- [x] Verify the signed-out desktop and phone flows and pricing layout
-- [x] Fix signed-in account-name contrast across transparent and cream headers
-- [x] Add the spacious animated German Lab iPad feature after the three study cards
-- [x] Rebuild Google sign-in and registration with the fresh managed RitaJet connection
-- [x] Connect Rita and shared study AI to one protected Gemini key
-- [x] Make published question-bank outlines visible while keeping questions protected
-- [ ] Import the original courses, subjects, questions, and answers (waiting for old-data upload)
-- [x] Redesign the RitaJet home-screen install prompt
-- [x] Refine and reduce the German Lab iPad with camera details
-- [x] Optimize priority and file weight for home-page pictures
-- [x] Fix the sample question-bank card so it opens the real public course
-- [x] Verify the public sample hierarchy and complete question-session path
-- [ ] Import the original full question bank (blocked until the old export is uploaded)
-- [x] Surface the real Google sign-in error instead of hiding provider failures
-- [x] Replace the legacy Google setup with the managed RitaJet sign-in flow
-- [x] Replace every browser/search icon with the green Rita header face and request a Google refresh
-- [x] Match Lecture Lab study, session, and exam questions to the archive runner design
-- [x] Give Google one stable newly named Rita search icon
-- [x] Remove image-changing controls and the Admin mode switch everywhere
-- [x] Repair registration, move agreement above account creation, and require email verification
-- [x] Remove obsolete AquaQBank branding while preserving the intentional toolkit code
-- [x] Add working Terms, Privacy, and Refund pages and verify account screens on desktop and phone
-- [x] Move the flashcard Smart review button below Study mode and Shuffle
-- [x] Remove "Ask this lecture" from All-in-one and its backend helper
-- [x] Keep only the RitaJet example lectures and add the Tuberculosis sample for everyone
-- [x] Fix the account password change and remove the reset/verification controls from settings
-- [x] Require email verification for new email sign-ups
-- [x] Share lecture questions separately from flashcards, publicly and inside classrooms
-- [x] Page shared questions and sets so very large collections stay fast
-- [x] Remove question sharing entirely and keep flashcard sharing only
-- [x] Rebuild checkout in the two-column style with a promo-code box and fix the payment frame error
-- [x] Add an admin Promo codes page backed by real payment-provider discounts
-- [x] Send plan price/name changes to the checkout catalog for new buyers
-- [x] Confirm plan limits are checked before any AI request or file is processed
-- [x] Make sign-up problem messages clear, with username ideas and a sign-in shortcut
+# Roadmap
+
+- [ ] Restrict checkout to debit/credit cards and hide optional business tax-ID controls
+- [ ] Refine checkout and home typography/content
+- [ ] Diagnose and fix blank-page reliability and first-load performance
+- [ ] Add safe manual plan grants with expiry, audit history, revocation, and paid-plan fallback
+- [ ] Verify payments, access limits, metadata, and desktop/mobile behavior

@@ -19,7 +19,11 @@ export function DeferredOverlays() {
         import("@/components/tutorials/WelcomeTour"),
         import("@/components/auth/AuthDialog"),
         import("@/components/ui/sonner"),
-      ]);
+      ]).catch((error) => {
+        console.warn("Optional tools could not be loaded", error);
+        return [];
+      });
+      if (!banner || !announce || !ritax || !help || !tour || !auth || !toaster) return;
       if (cancelled) return;
       const Toasts = () => <toaster.Toaster richColors position="top-right" />;
       setParts([
