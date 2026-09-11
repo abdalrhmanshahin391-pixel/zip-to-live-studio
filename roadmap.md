@@ -7,4 +7,5 @@
 - [ ] Verify payments, access limits, metadata, and desktop/mobile behavior
 
 - [x] Recover the three saved homepage pictures and replace stale fallbacks
-- [ ] Verify restored homepage images on fresh visits and reloads
+- [x] Verify restored homepage images on fresh visits and reloads (all images loaded; no browser errors)
+- [ ] Authenticated homepage verification — blocked: no matching managed account/session; public artwork verified without login
