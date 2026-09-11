@@ -7,5 +7,13 @@ export type SampleSubject = {
   subs: SampleSubSubject[];
 };
 
-/** The board starts empty — every subject is created by the user. */
-export const SAMPLE_SUBJECTS: SampleSubject[] = [];
+/** Built-in sample subject available to all students on RitaJet. */
+export const SAMPLE_SUBJECTS: SampleSubject[] = [
+  {
+    name: "Sample subject — Cardiology",
+    subs: [
+      { name: "Sample · Myocardial infarction" },
+      { name: "Sample · Heart failure" },
+    ],
+  },
+];

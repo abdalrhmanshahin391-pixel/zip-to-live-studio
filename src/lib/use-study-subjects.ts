@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import type { SampleSubject } from "@/lib/study-sample-data";
+import { SAMPLE_SUBJECTS, type SampleSubject } from "@/lib/study-sample-data";
+import { ensureSampleFlashcards } from "@/lib/demo-seed";
 
 export const FLASHCARD_SUBJECTS_KEY = "rita_study_subjects";
 export const QUESTION_SUBJECTS_KEY = "rita_question_subjects";
@@ -12,20 +13,27 @@ export type Selection =
 function load(storageKey: string): SampleSubject[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(storageKey);
-    if (!raw) return [];
+    let raw = window.localStorage.getItem(storageKey);
+    if (!raw && storageKey === FLASHCARD_SUBJECTS_KEY) {
+      ensureSampleFlashcards();
+      raw = window.localStorage.getItem(storageKey);
+    }
+    if (!raw) return storageKey === FLASHCARD_SUBJECTS_KEY ? SAMPLE_SUBJECTS : [];
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      // Older saves carried a typed "cards" number — drop it, counts are derived now.
+    if (Array.isArray(parsed) && parsed.length > 0) {
       return (parsed as SampleSubject[]).map((s) => ({
         name: s.name,
         subs: (s.subs ?? []).map((x) => ({ name: x.name })),
       }));
     }
+    if (storageKey === FLASHCARD_SUBJECTS_KEY) {
+      ensureSampleFlashcards();
+      return SAMPLE_SUBJECTS;
+    }
   } catch {
     /* ignore */
   }
-  return [];
+  return storageKey === FLASHCARD_SUBJECTS_KEY ? SAMPLE_SUBJECTS : [];
 }
 
 function move<T>(list: T[], from: number, to: number): T[] {

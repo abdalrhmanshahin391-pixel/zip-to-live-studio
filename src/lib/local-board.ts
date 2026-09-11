@@ -1,5 +1,6 @@
 import { readCards, writeCards, type FlashCardItem } from "@/lib/use-flashcards";
 import { FLASHCARD_SUBJECTS_KEY } from "@/lib/use-study-subjects";
+import { ensureSampleFlashcards } from "@/lib/demo-seed";
 
 export type BoardSubject = { name: string; subs: { name: string }[] };
 
@@ -7,8 +8,13 @@ export type BoardSubject = { name: string; subs: { name: string }[] };
 export function readBoard(): BoardSubject[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(FLASHCARD_SUBJECTS_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
+    let raw = window.localStorage.getItem(FLASHCARD_SUBJECTS_KEY);
+    let parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      ensureSampleFlashcards();
+      raw = window.localStorage.getItem(FLASHCARD_SUBJECTS_KEY);
+      parsed = raw ? JSON.parse(raw) : [];
+    }
     if (!Array.isArray(parsed)) return [];
     return (parsed as BoardSubject[]).map((s) => ({
       name: s.name,

@@ -155,22 +155,47 @@ function put(key: string, value: unknown) {
   window.localStorage.setItem(key, JSON.stringify(value));
 }
 
+export const SAMPLE_CARDS_A = toCards(CARDS_A);
+export const SAMPLE_CARDS_B = toCards(CARDS_B);
+export const ALL_SAMPLE_CARDS: FlashCardItem[] = [...toCards(CARDS_A), ...toCards(CARDS_B)];
+
+/** Ensures the sample cardiology flashcards and subject exist in localStorage if the user has 0 subjects. */
+export function ensureSampleFlashcards() {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(FLASHCARD_SUBJECTS_KEY);
+    let hasValidSubjects = false;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      hasValidSubjects = Array.isArray(parsed) && parsed.length > 0;
+    }
+
+    if (!hasValidSubjects) {
+      const board = [
+        { name: SAMPLE_SUBJECT, subs: [{ name: SAMPLE_SUB_A }, { name: SAMPLE_SUB_B }] },
+      ];
+      put(FLASHCARD_SUBJECTS_KEY, board);
+      put(topicKey(SAMPLE_SUBJECT, SAMPLE_SUB_A), toCards(CARDS_A));
+      put(topicKey(SAMPLE_SUBJECT, SAMPLE_SUB_B), toCards(CARDS_B));
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Seeds the sample content once. Safe to call on every page load. */
 export function seedDemoContent() {
   if (typeof window === "undefined") return;
   try {
+    // Always guarantee sample flashcards if the board is empty
+    ensureSampleFlashcards();
+
     if (window.localStorage.getItem(DEMO_FLAG)) return;
     window.localStorage.setItem(DEMO_FLAG, new Date().toISOString());
 
     const board = [
       { name: SAMPLE_SUBJECT, subs: [{ name: SAMPLE_SUB_A }, { name: SAMPLE_SUB_B }] },
     ];
-
-    if (empty(FLASHCARD_SUBJECTS_KEY)) {
-      put(FLASHCARD_SUBJECTS_KEY, board);
-      put(topicKey(SAMPLE_SUBJECT, SAMPLE_SUB_A), toCards(CARDS_A));
-      put(topicKey(SAMPLE_SUBJECT, SAMPLE_SUB_B), toCards(CARDS_B));
-    }
 
     if (empty(QUESTION_SUBJECTS_KEY)) {
       put(QUESTION_SUBJECTS_KEY, board);

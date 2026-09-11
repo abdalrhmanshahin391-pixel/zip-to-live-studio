@@ -88,6 +88,33 @@ export async function getDailyShareQuota(userId: string): Promise<DailyShareQuot
 
 export const DECK_PAGE_SIZE = 24;
 
+export const SAMPLE_PUBLIC_DECK_ID = "sample-cardiology";
+
+export const SAMPLE_PUBLIC_DECK: SharedDeck = {
+  id: SAMPLE_PUBLIC_DECK_ID,
+  owner_id: "ritajet-official",
+  title: "Sample subject — Cardiology",
+  description: "High-yield cardiology essentials: STEMI biomarkers, ECG leads & heart failure survival pillars.",
+  cover: "apricot",
+  emoji: "🫀",
+  tags: ["cardiology", "sample", "medicine", "ecg"],
+  card_count: 10,
+  save_count: 52,
+  published: true,
+  audience: "public",
+  created_at: "2026-09-01T00:00:00Z",
+  rating_avg: 4.9,
+  rating_count: 24,
+};
+
+export const SAMPLE_DECK_AUTHOR: DeckAuthor = {
+  id: "ritajet-official",
+  username: "ritajet",
+  full_name: "RitaJet Medical",
+  avatar_url: null,
+  bio: "Official RitaJet sample clinical study deck",
+};
+
 /** Public feed of shared decks with range pagination and flexible sorting. */
 export async function fetchFeed(opts: {
   search?: string;
@@ -116,8 +143,18 @@ export async function fetchFeed(opts: {
     page * DECK_PAGE_SIZE + DECK_PAGE_SIZE - 1,
   );
   if (error) throw error;
-  const decks = (data ?? []) as SharedDeck[];
+  let decks = (data ?? []) as SharedDeck[];
   const authors = await fetchAuthors(decks.map((d) => d.owner_id));
+
+  // If no decks exist in the database or page 0 without search filter,
+  // ensure the sample Cardiology deck is always available for students to browse and study!
+  if (!opts.search?.trim() && !opts.tag && page === 0) {
+    if (!decks.some((d) => d.id === SAMPLE_PUBLIC_DECK_ID)) {
+      decks = [SAMPLE_PUBLIC_DECK, ...decks];
+      authors[SAMPLE_DECK_AUTHOR.id] = SAMPLE_DECK_AUTHOR;
+    }
+  }
+
   return { decks, authors, hasMore: decks.length === DECK_PAGE_SIZE, page };
 }
 
@@ -133,6 +170,33 @@ export async function fetchAuthors(ids: string[]): Promise<Record<string, DeckAu
 }
 
 export async function fetchDeck(id: string) {
+  if (id === SAMPLE_PUBLIC_DECK_ID) {
+    const { SAMPLE_CARDS_A, SAMPLE_CARDS_B, SAMPLE_SUB_A, SAMPLE_SUB_B } = await import("@/lib/demo-seed");
+    const cards: SharedDeckCard[] = [
+      ...SAMPLE_CARDS_A.map((c, i) => ({
+        id: `sample-a-${i}`,
+        deck_id: SAMPLE_PUBLIC_DECK_ID,
+        group_name: SAMPLE_SUB_A,
+        front: c.front,
+        back: c.back,
+        sort: i,
+      })),
+      ...SAMPLE_CARDS_B.map((c, i) => ({
+        id: `sample-b-${i}`,
+        deck_id: SAMPLE_PUBLIC_DECK_ID,
+        group_name: SAMPLE_SUB_B,
+        front: c.front,
+        back: c.back,
+        sort: SAMPLE_CARDS_A.length + i,
+      })),
+    ];
+    return {
+      deck: SAMPLE_PUBLIC_DECK,
+      cards,
+      author: SAMPLE_DECK_AUTHOR,
+    };
+  }
+
   const { data, error } = await db("shared_decks").select("*").eq("id", id).maybeSingle();
   if (error) throw error;
   if (!data) return null;
@@ -266,6 +330,17 @@ export async function saveDeckToMySubjects(deckId: string, deckTitle: string) {
   const { data: auth } = await supabase.auth.getUser();
   const uid = auth.user?.id;
   if (!uid) throw new Error("Not signed in");
+
+  if (deckId === SAMPLE_PUBLIC_DECK_ID) {
+    const { SAMPLE_CARDS_A, SAMPLE_CARDS_B, SAMPLE_SUB_A, SAMPLE_SUB_B } = await import("@/lib/demo-seed");
+    const groups = [
+      { name: SAMPLE_SUB_A, cards: SAMPLE_CARDS_A.map((c) => ({ front: c.front, back: c.back })) },
+      { name: SAMPLE_SUB_B, cards: SAMPLE_CARDS_B.map((c) => ({ front: c.front, back: c.back })) },
+    ];
+    const { addDeckToBoard } = await import("@/lib/local-board");
+    const subject = addDeckToBoard(deckTitle, groups);
+    return subject;
+  }
 
   const { data: cards, error } = await db("shared_deck_cards")
     .select("front,back,sort,group_name")
