@@ -6,7 +6,6 @@ import {
   BadgeCheck,
   Check,
   Clock3,
-  CreditCard,
   Loader2,
   LockKeyhole,
   RefreshCcw,
@@ -156,7 +155,6 @@ function CheckoutPage() {
     ) => {
       if (!plan || !user || !priceId) return;
       setLocalError(null);
-      const isTouch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
       try {
         closeCheckout();
         await openCheckout({
@@ -165,8 +163,8 @@ function CheckoutPage() {
           customData: { userId: user.id, planSlug: plan.slug },
           successUrl: `${window.location.origin}/checkout/success?plan=${plan.slug}`,
           discountCode,
-          frameTarget: isTouch ? undefined : FRAME,
-          displayMode: isTouch ? "overlay" : "inline",
+          frameTarget: FRAME,
+          displayMode: "inline",
           methodRestriction,
         });
       } catch (e: any) {
@@ -180,7 +178,7 @@ function CheckoutPage() {
     [plan, user, priceId, openCheckout, closeCheckout],
   );
 
-  // Auto-open on desktop if inline frame target exists; on touch devices, user clicks Continue
+  // Auto-open inline checkout on all devices (PC, iPad, mobile)
   useEffect(() => {
     if (!plan || !user) return;
     if (!priceId) {
@@ -191,10 +189,7 @@ function CheckoutPage() {
     if (opened.current === key) return;
     opened.current = key;
 
-    const isTouch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
-    if (!isTouch) {
-      void start();
-    }
+    void start();
   }, [plan, user, priceId, billing, start]);
 
   const applyCode = async () => {
@@ -291,16 +286,9 @@ function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => void start(promo?.code, "all")}
-                    className="rita-btn rita-btn-secondary text-[13px] py-2 px-4"
-                  >
-                    <RotateCcw size={14} /> Try again
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void start(promo?.code, "card_only")}
                     className="rita-btn rita-btn-primary text-[13px] py-2 px-4"
                   >
-                    <CreditCard size={14} /> Pay by card
+                    <RotateCcw size={14} /> Try again
                   </button>
                   <Link to="/pricing" className="text-[13px] text-muted-foreground underline ml-2">
                     Back to plans
@@ -328,32 +316,17 @@ function CheckoutPage() {
               </p>
             )}
 
-            {/* Explicit CTA button for mobile / closed states */}
-            {!activeError && user && plan && (checkoutStatus === "idle" || checkoutClosed) && (
-              <div className="mt-6 rounded-[18px] border border-border bg-muted/30 p-7 text-center">
-                <LockKeyhole size={28} className="rita-accent mx-auto mb-2" />
-                <p className="text-[16px] font-bold text-foreground">
-                  {checkoutClosed ? "Payment sheet was closed" : "Ready for payment"}
-                </p>
-                <p className="mt-1 text-[13.5px] text-muted-foreground max-w-sm mx-auto">
-                  Complete your purchase safely with Apple Pay, card, or PayPal.
-                </p>
-                <div className="mt-5 flex flex-col sm:flex-row w-full max-w-sm mx-auto gap-3 justify-center">
-                  <button
-                    type="button"
-                    onClick={() => void start(promo?.code, "all")}
-                    className="rita-btn rita-btn-primary flex-1 py-3 text-[14.5px] font-bold active:scale-95 touch-manipulation shadow-md"
-                  >
-                    Continue to secure payment
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void start(promo?.code, "card_only")}
-                    className="rita-btn rita-btn-secondary flex-1 py-3 text-[14px] font-bold active:scale-95 touch-manipulation"
-                  >
-                    Pay by card only
-                  </button>
-                </div>
+            {/* Reopen action if checkout was ever closed */}
+            {!activeError && user && plan && checkoutClosed && (
+              <div className="mt-6 rounded-[18px] border border-border bg-muted/30 p-6 text-center">
+                <p className="text-[15px] font-bold text-foreground">Payment form was closed</p>
+                <button
+                  type="button"
+                  onClick={() => void start(promo?.code, "all")}
+                  className="rita-btn rita-btn-primary mt-3 py-2.5 px-5 text-[14px] font-bold"
+                >
+                  <RotateCcw size={14} className="inline mr-1.5" /> Re-open payment form
+                </button>
               </div>
             )}
 
