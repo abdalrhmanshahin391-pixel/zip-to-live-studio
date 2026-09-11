@@ -185,7 +185,54 @@ export const adminCreateDiscount = createServerFn({ method: "POST" })
       payload.expires_at = data.expires_at;
     }
     if (data.restrict_to && data.restrict_to.length > 0) {
-      payload.restrict_to = data.restrict_to;
+      const resolvedRestrictions: string[] = [];
+      for (const rawId of data.restrict_to) {
+        if (!rawId) continue;
+        if (rawId.startsWith("pri_")) {
+          resolvedRestrictions.push(rawId);
+        } else {
+          // Resolve external price ID to Paddle's internal pri_ ID
+          try {
+            const found = await api(
+              data.environment,
+              `/prices?external_id=${encodeURIComponent(rawId)}`,
+            );
+            const priId = found?.data?.[0]?.id;
+            if (priId) {
+              resolvedRestrictions.push(priId);
+            } else {
+              // Try fallback environment lookup
+              const other: Env = data.environment === "sandbox" ? "live" : "sandbox";
+              try {
+                const foundOther = await api(
+                  other,
+                  `/prices?external_id=${encodeURIComponent(rawId)}`,
+                );
+                const priIdOther = foundOther?.data?.[0]?.id;
+                if (priIdOther) {
+                  resolvedRestrictions.push(priIdOther);
+                } else {
+                  throw new Error(
+                    `Price "${rawId}" is not found in Paddle ${data.environment}. Please ensure this price exists in Paddle or sync it in Admin > Plans.`,
+                  );
+                }
+              } catch {
+                throw new Error(
+                  `Price "${rawId}" is not found in Paddle ${data.environment}. Please ensure this price exists in Paddle or sync it in Admin > Plans.`,
+                );
+              }
+            }
+          } catch (err: any) {
+            throw new Error(
+              err.message ||
+                `Could not resolve price "${rawId}" in Paddle. Please check your Paddle catalog.`,
+            );
+          }
+        }
+      }
+      if (resolvedRestrictions.length > 0) {
+        payload.restrict_to = resolvedRestrictions;
+      }
     }
     const body = await api(data.environment, "/discounts", {
       method: "POST",

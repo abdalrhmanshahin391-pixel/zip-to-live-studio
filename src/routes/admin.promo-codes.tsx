@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -20,8 +20,10 @@ import { guardRedirect } from "@/lib/guard-redirect";
 import {
   adminCreateDiscount,
   adminListDiscounts,
+  adminListPaddlePrices,
   adminUpdateDiscount,
 } from "@/lib/promo.functions";
+import { adminListPlans } from "@/lib/plans-admin.functions";
 
 export const Route = createFileRoute("/admin/promo-codes")({
   head: () => ({
@@ -29,7 +31,7 @@ export const Route = createFileRoute("/admin/promo-codes")({
       { title: "Promo codes — RitaJet admin" },
       {
         name: "description",
-        content: "Create fast, simple discount codes that apply across all plans at checkout.",
+        content: "Create fast, simple discount codes that apply across all plans or specific plans at checkout.",
       },
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "Promo codes — RitaJet admin" },
@@ -40,6 +42,10 @@ export const Route = createFileRoute("/admin/promo-codes")({
 
 type Env = "sandbox" | "live";
 
+const SYMBOL: Record<string, string> = { USD: "$", EUR: "€", GBP: "£", JOD: "JD " };
+const money = (cents: number, currency = "USD") =>
+  `${SYMBOL[currency] ?? `${currency} `}${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
+
 function PromoCodesPage() {
   const { isAdmin, loading } = useAuth();
   const navigate = useNavigate();
@@ -49,6 +55,8 @@ function PromoCodesPage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const list = useServerFn(adminListDiscounts);
+  const listPlans = useServerFn(adminListPlans);
+  const listPrices = useServerFn(adminListPaddlePrices);
   const create = useServerFn(adminCreateDiscount);
   const update = useServerFn(adminUpdateDiscount);
 
@@ -61,6 +69,108 @@ function PromoCodesPage() {
     queryFn: () => list({ data: { environment: env } }),
     enabled: isAdmin,
   });
+
+  const { data: plans = [] } = useQuery({
+    queryKey: ["admin-plans"],
+    queryFn: () => listPlans({}),
+    enabled: isAdmin,
+  });
+
+  const { data: paddlePrices = [] } = useQuery({
+    queryKey: ["admin-paddle-prices", env],
+    queryFn: () => listPrices({ data: { environment: env } }),
+    enabled: isAdmin,
+  });
+
+  const [selectedTargetKey, setSelectedTargetKey] = useState("all");
+  const [planDropdownOpen, setPlanDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setPlanDropdownOpen(false);
+      }
+    }
+    if (planDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [planDropdownOpen]);
+
+  const planOptions = useMemo(() => {
+    const list: Array<{
+      key: string;
+      label: string;
+      planName: string;
+      interval: "All" | "3 Months" | "Yearly" | "One-Time";
+      priceFormatted: string;
+      paddlePriceId: string | null;
+      category: "all" | "three_months" | "yearly" | "once";
+    }> = [
+      {
+        key: "all",
+        label: "All plans (Universal)",
+        planName: "All plans",
+        interval: "All",
+        priceFormatted: "Any plan",
+        paddlePriceId: null,
+        category: "all",
+      },
+    ];
+
+    // 3-Month Subscription Plans
+    plans
+      .filter((p) => (p.billing_kind ?? "monthly") !== "lifetime" && p.price_cents > 0)
+      .forEach((p) => {
+        list.push({
+          key: `${p.slug}:three_months`,
+          label: `${p.name} — 3 Months`,
+          planName: p.name,
+          interval: "3 Months",
+          priceFormatted: `${money(p.price_cents, p.currency)} / 3 mo`,
+          paddlePriceId: p.paddle_price_monthly,
+          category: "three_months",
+        });
+      });
+
+    // Yearly Subscription Plans
+    plans
+      .filter((p) => (p.billing_kind ?? "monthly") !== "lifetime" && p.yearly_cents > 0)
+      .forEach((p) => {
+        list.push({
+          key: `${p.slug}:yearly`,
+          label: `${p.name} — Yearly`,
+          planName: p.name,
+          interval: "Yearly",
+          priceFormatted: `${money(p.yearly_cents, p.currency)} / year`,
+          paddlePriceId: p.paddle_price_yearly,
+          category: "yearly",
+        });
+      });
+
+    // One-time Credit Packs
+    plans
+      .filter((p) => (p.billing_kind ?? "monthly") === "lifetime" && (p.once_cents ?? 0) > 0)
+      .forEach((p) => {
+        list.push({
+          key: `${p.slug}:once`,
+          label: `${p.name} — One-Time Pack`,
+          planName: p.name,
+          interval: "One-Time",
+          priceFormatted: `${money(p.once_cents ?? 0, p.currency)} once`,
+          paddlePriceId: p.paddle_price_once,
+          category: "once",
+        });
+      });
+
+    return list;
+  }, [plans]);
+
+  const selectedTarget = planOptions.find((o) => o.key === selectedTargetKey) || planOptions[0]!;
+  const threeMonthsOptions = planOptions.filter((o) => o.category === "three_months");
+  const yearlyOptions = planOptions.filter((o) => o.category === "yearly");
+  const onceOptions = planOptions.filter((o) => o.category === "once");
 
   const [form, setForm] = useState({
     code: "",
@@ -80,13 +190,31 @@ function PromoCodesPage() {
       return;
     }
 
+    const target = planOptions.find((o) => o.key === selectedTargetKey);
+    const restrictTo =
+      target && target.key !== "all" && target.paddlePriceId
+        ? [target.paddlePriceId]
+        : [];
+
+    if (selectedTargetKey !== "all" && (!target || !target.paddlePriceId)) {
+      toast.error(
+        `The selected plan (${target?.planName || "plan"}) does not have a checkout price ID set yet. Please set one in Admin > Plans first.`,
+      );
+      return;
+    }
+
     setSaving(true);
     try {
+      const description =
+        selectedTargetKey !== "all" && target
+          ? `${cleanCode} (${target.planName} - ${target.interval})`
+          : `${cleanCode} discount`;
+
       await create({
         data: {
           environment: env,
           code: cleanCode,
-          description: `${cleanCode} discount`,
+          description,
           type: form.type,
           amount: Number(form.amount),
           currency_code: "USD",
@@ -94,10 +222,14 @@ function PromoCodesPage() {
           maximum_recurring_intervals: null,
           usage_limit: form.usage_limit ? Number(form.usage_limit) : null,
           expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
-          restrict_to: [], // Empty array = applies universally to ALL plans
+          restrict_to: restrictTo,
         },
       });
-      toast.success(`Promo code ${cleanCode} created for all plans!`);
+      toast.success(
+        selectedTargetKey !== "all" && target
+          ? `Promo code ${cleanCode} created for ${target.planName} (${target.interval})!`
+          : `Promo code ${cleanCode} created for all plans!`,
+      );
       setForm({
         code: "",
         type: "percentage",
@@ -106,6 +238,7 @@ function PromoCodesPage() {
         usage_limit: "",
         expires_at: "",
       });
+      setSelectedTargetKey("all");
       setShowAdvanced(false);
       qc.invalidateQueries({ queryKey: ["promo-codes", env] });
     } catch (err) {
@@ -171,9 +304,15 @@ function PromoCodesPage() {
               </div>
               <h2 className="font-display text-xl font-black">Quick create code</h2>
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eaf4dd] px-3 py-1 text-[12px] font-bold text-[#3d6515]">
-              <Layers size={13} /> Applies to all plans
-            </span>
+            {selectedTarget.category === "all" ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eaf4dd] px-3 py-1 text-[12px] font-bold text-[#3d6515]">
+                <Layers size={13} /> Applies to all plans
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fff4e5] px-3 py-1 text-[12px] font-bold text-[#a4540d]">
+                <Layers size={13} /> Restricted to {selectedTarget.planName} ({selectedTarget.interval})
+              </span>
+            )}
           </div>
 
           <form onSubmit={submit} className="mt-6">
@@ -246,6 +385,197 @@ function PromoCodesPage() {
               </div>
             </div>
 
+            {/* Applies to Plan Dropdown Selector */}
+            <div ref={dropdownRef} className="relative mt-4">
+              <label className="text-[11px] font-black uppercase tracking-[0.16em] text-[#a29a8d]">
+                Applies to plan
+              </label>
+              <button
+                type="button"
+                onClick={() => setPlanDropdownOpen((v) => !v)}
+                className="mt-1.5 flex w-full items-center justify-between rounded-xl border-2 border-black/10 bg-white px-3.5 py-3 text-left text-sm font-bold outline-none transition-colors hover:border-black/20 focus:border-[#8ec63f]"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {selectedTarget.category === "all" ? (
+                    <>
+                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-emerald-100 text-emerald-800 text-[13px]">
+                        🌐
+                      </span>
+                      <span className="text-[14.5px] font-black text-[#23201d] truncate">All plans (Universal)</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-black/5 text-[13px]">
+                        📦
+                      </span>
+                      <span className="text-[14.5px] font-black text-[#23201d] truncate">
+                        RitaJet {selectedTarget.planName}
+                      </span>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-black shrink-0 ${
+                          selectedTarget.category === "three_months"
+                            ? "bg-amber-100 text-amber-900 border border-amber-200"
+                            : selectedTarget.category === "yearly"
+                              ? "bg-emerald-100 text-emerald-900 border border-emerald-200"
+                              : "bg-blue-100 text-blue-900 border border-blue-200"
+                        }`}
+                      >
+                        {selectedTarget.interval}
+                      </span>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center gap-2.5 text-[#7a736a] shrink-0 ms-2">
+                  {selectedTarget.category !== "all" && (
+                    <span className="text-[13px] font-semibold text-[#8c8275]">{selectedTarget.priceFormatted}</span>
+                  )}
+                  <ChevronDown
+                    size={17}
+                    className={`transition-transform duration-200 ${planDropdownOpen ? "rotate-180" : ""}`}
+                  />
+                </div>
+              </button>
+
+              {/* Dropdown Menu */}
+              {planDropdownOpen && (
+                <div className="absolute left-0 right-0 top-full z-40 mt-2 max-h-80 overflow-y-auto rounded-2xl border border-black/10 bg-white p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+                  {/* Universal Option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedTargetKey("all");
+                      setPlanDropdownOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors ${
+                      selectedTargetKey === "all" ? "bg-[#f3efe6]" : "hover:bg-black/[0.04]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-100 text-emerald-800 text-[13px]">
+                        🌐
+                      </span>
+                      <div>
+                        <p className="text-[14px] font-black text-[#23201d]">All plans (Universal)</p>
+                        <p className="text-[11.5px] text-[#7a736a]">Valid on any plan or pack at checkout</p>
+                      </div>
+                    </div>
+                    {selectedTargetKey === "all" && <Check size={16} className="text-[#3d5c14]" />}
+                  </button>
+
+                  {/* 3-Month Plans */}
+                  {threeMonthsOptions.length > 0 && (
+                    <>
+                      <div className="my-2 border-t border-black/[0.06]" />
+                      <p className="px-3 py-1 text-[10.5px] font-black uppercase tracking-wider text-[#a29a8d]">
+                        3-Month Subscription Plans
+                      </p>
+                      {threeMonthsOptions.map((opt) => (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTargetKey(opt.key);
+                            setPlanDropdownOpen(false);
+                          }}
+                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition-colors ${
+                            selectedTargetKey === opt.key ? "bg-[#f3efe6]" : "hover:bg-black/[0.04]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-[13.5px] font-bold text-[#23201d]">RitaJet {opt.planName}</span>
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10.5px] font-black text-amber-900 border border-amber-200">
+                              3 Months
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[12px] font-semibold text-[#8c8275]">{opt.priceFormatted}</span>
+                            {selectedTargetKey === opt.key && <Check size={15} className="text-[#3d5c14]" />}
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Yearly Plans */}
+                  {yearlyOptions.length > 0 && (
+                    <>
+                      <div className="my-2 border-t border-black/[0.06]" />
+                      <p className="px-3 py-1 text-[10.5px] font-black uppercase tracking-wider text-[#a29a8d]">
+                        Yearly Subscription Plans
+                      </p>
+                      {yearlyOptions.map((opt) => (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTargetKey(opt.key);
+                            setPlanDropdownOpen(false);
+                          }}
+                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition-colors ${
+                            selectedTargetKey === opt.key ? "bg-[#f3efe6]" : "hover:bg-black/[0.04]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-[13.5px] font-bold text-[#23201d]">RitaJet {opt.planName}</span>
+                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10.5px] font-black text-emerald-900 border border-emerald-200">
+                              Yearly
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[12px] font-semibold text-[#8c8275]">{opt.priceFormatted}</span>
+                            {selectedTargetKey === opt.key && <Check size={15} className="text-[#3d5c14]" />}
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  )}
+
+                  {/* One-Time Packs */}
+                  {onceOptions.length > 0 && (
+                    <>
+                      <div className="my-2 border-t border-black/[0.06]" />
+                      <p className="px-3 py-1 text-[10.5px] font-black uppercase tracking-wider text-[#a29a8d]">
+                        One-Time Credit Packs
+                      </p>
+                      {onceOptions.map((opt) => (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTargetKey(opt.key);
+                            setPlanDropdownOpen(false);
+                          }}
+                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition-colors ${
+                            selectedTargetKey === opt.key ? "bg-[#f3efe6]" : "hover:bg-black/[0.04]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-[13.5px] font-bold text-[#23201d]">RitaJet {opt.planName}</span>
+                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10.5px] font-black text-blue-900 border border-blue-200">
+                              Pack
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[12px] font-semibold text-[#8c8275]">{opt.priceFormatted}</span>
+                            {selectedTargetKey === opt.key && <Check size={15} className="text-[#3d5c14]" />}
+                          </div>
+                        </button>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Note */}
+              <p className="mt-1.5 text-[12px] font-medium text-[#6b655c]">
+                {selectedTarget.category === "all" ? (
+                  <span>🌐 <strong>Universal:</strong> Students can use this promo code on any RitaJet plan at checkout.</span>
+                ) : (
+                  <span>🎯 <strong>Single-Plan Target:</strong> This code will ONLY work when purchasing <strong>RitaJet {selectedTarget.planName} ({selectedTarget.interval})</strong>. It will be rejected on any other plan or billing cycle.</span>
+                )}
+              </p>
+            </div>
+
             {/* Recur checkbox */}
             <div className="mt-4">
               <label className="flex items-center gap-2 text-[13.5px] font-bold text-[#4a453d] cursor-pointer select-none">
@@ -310,7 +640,12 @@ function PromoCodesPage() {
                 disabled={saving || form.code.trim().length < 3}
                 className="inline-flex items-center gap-2 rounded-full bg-[#23201d] px-6 py-3 text-[14px] font-black text-white transition-opacity hover:opacity-90 active:scale-95 disabled:opacity-40"
               >
-                <Plus size={16} /> {saving ? "Creating…" : "Create code for all plans"}
+                <Plus size={16} />{" "}
+                {saving
+                  ? "Creating…"
+                  : selectedTargetKey !== "all" && selectedTarget
+                    ? `Create code for ${selectedTarget.planName} (${selectedTarget.interval})`
+                    : "Create code for all plans"}
               </button>
             </div>
           </form>
@@ -337,36 +672,84 @@ function PromoCodesPage() {
             </div>
           ) : (
             <div className="mt-4 space-y-3">
-              {codes.data!.map((d) => (
-                <div
-                  key={d.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/[0.07] bg-white px-5 py-4 shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="font-display text-[18px] font-black tracking-wider text-[#23201d]">
-                      {d.code ?? "—"}
+              {codes.data!.map((d) => {
+                const badge = (() => {
+                  if (!d.restrict_to || d.restrict_to.length === 0) {
+                    return (
+                      <span className="hidden rounded-full bg-black/[0.05] px-2.5 py-0.5 text-[11px] font-bold text-[#6b655c] sm:inline-block">
+                        All plans
+                      </span>
+                    );
+                  }
+                  const id = d.restrict_to[0]!;
+                  const pp = paddlePrices.find((p) => p.id === id || p.externalId === id);
+                  const extId = pp?.externalId || id;
+                  const matchedPlan = plans.find(
+                    (p) =>
+                      p.paddle_price_monthly === extId ||
+                      p.paddle_price_yearly === extId ||
+                      p.paddle_price_once === extId ||
+                      p.paddle_price_monthly === id ||
+                      p.paddle_price_yearly === id ||
+                      p.paddle_price_once === id,
+                  );
+                  if (matchedPlan) {
+                    const is3m =
+                      matchedPlan.paddle_price_monthly === extId ||
+                      matchedPlan.paddle_price_monthly === id;
+                    const isYearly =
+                      matchedPlan.paddle_price_yearly === extId ||
+                      matchedPlan.paddle_price_yearly === id;
+                    const intervalLabel = is3m ? "3 Months" : isYearly ? "Yearly" : "Pack";
+                    const bgClass = is3m
+                      ? "bg-amber-100 text-amber-900 border border-amber-300/70"
+                      : isYearly
+                        ? "bg-emerald-100 text-emerald-900 border border-emerald-300/70"
+                        : "bg-blue-100 text-blue-900 border border-blue-300/70";
+
+                    return (
+                      <span
+                        className={`hidden rounded-full px-2.5 py-0.5 text-[11px] font-black sm:inline-block ${bgClass}`}
+                      >
+                        {matchedPlan.name} · {intervalLabel}
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="hidden rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[11px] font-bold text-amber-800 sm:inline-block">
+                      Single plan
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => copyCode(d.code, d.id)}
-                      className="grid h-7 w-7 place-items-center rounded-lg text-[#7a736a] transition-colors hover:bg-black/[0.06] hover:text-black"
-                      title="Copy code"
-                    >
-                      {copiedId === d.id ? (
-                        <Check size={14} className="text-green-600" />
-                      ) : (
-                        <Copy size={14} />
-                      )}
-                    </button>
-                    <span className="rounded-full bg-[#e6f4d8] px-3 py-1 text-[12px] font-black text-[#3d5c14]">
-                      {d.type === "percentage"
-                        ? `${d.amount}% off`
-                        : `$${(Number(d.amount) / 100).toFixed(2)} off`}
-                    </span>
-                    <span className="hidden rounded-full bg-black/[0.05] px-2.5 py-0.5 text-[11px] font-bold text-[#6b655c] sm:inline-block">
-                      All plans
-                    </span>
-                  </div>
+                  );
+                })();
+
+                return (
+                  <div
+                    key={d.id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/[0.07] bg-white px-5 py-4 shadow-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="font-display text-[18px] font-black tracking-wider text-[#23201d]">
+                        {d.code ?? "—"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => copyCode(d.code ?? "", d.id)}
+                        className="grid h-7 w-7 place-items-center rounded-lg text-[#7a736a] transition-colors hover:bg-black/[0.06] hover:text-black"
+                        title="Copy code"
+                      >
+                        {copiedId === d.id ? (
+                          <Check size={14} className="text-green-600" />
+                        ) : (
+                          <Copy size={14} />
+                        )}
+                      </button>
+                      <span className="rounded-full bg-[#e6f4d8] px-3 py-1 text-[12px] font-black text-[#3d5c14]">
+                        {d.type === "percentage"
+                          ? `${d.amount}% off`
+                          : `$${(Number(d.amount) / 100).toFixed(2)} off`}
+                      </span>
+                      {badge}
+                    </div>
 
                   <div className="flex items-center gap-3">
                     <span className="text-[13px] font-medium text-[#6b655c]">
