@@ -6,7 +6,6 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { LangSwitch, useTutorialLang } from "@/components/tutorials/ToolTutorial";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import ritaAvatar from "@/assets/rita-avatar.jpeg.asset.json";
 
 const LOCAL_KEY = (uid: string) => `ritajet.tour.seen.${uid}`;
 
@@ -77,11 +76,17 @@ export function WelcomeTour() {
       >
         <DialogTitle className="sr-only">{t.title}</DialogTitle>
         <div className="bg-[color:var(--band-cream)] px-6 pb-6 pt-7 text-center">
-          <img
-            src={ritaAvatar.url}
-            alt="Rita"
-            className="mx-auto h-20 w-20 rounded-full border-4 border-white object-cover shadow-sm"
-          />
+          <div className="mx-auto flex justify-center">
+            <span className="block h-20 w-20 shrink-0 overflow-hidden rounded-full border-4 border-white bg-[color:var(--rita-green-soft,#e6f4d8)] shadow-sm">
+              <img
+                src="/brand-rita.png"
+                alt="RitaJet"
+                width={80}
+                height={80}
+                className="h-full w-full object-cover object-[50%_30%]"
+              />
+            </span>
+          </div>
           <div className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-primary">
             <Sparkles size={13} /> {t.eyebrow}
           </div>
