@@ -2,18 +2,22 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { refreshSpace } from "@/lib/spaces";
-import { ArrowLeft, Check, Loader2, Send, HelpCircle, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Send, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { SiteHeader } from "@/components/SiteHeader";
+import { openAuth } from "@/lib/auth-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { readBoardWithCounts, readTopicCards } from "@/lib/local-board";
 import { DECK_COVERS, coverOf, publishDeck, getDailyShareQuota } from "@/lib/share-decks";
 
 export const Route = createFileRoute("/share/new")({
   // ?space=<id> builds a deck that lives only inside that classroom or group.
-  validateSearch: (search: Record<string, unknown>) => ({
-    space: typeof search.space === "string" ? search.space : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { space?: string } => {
+    const raw = typeof search.space === "string" ? search.space.trim() : "";
+    return {
+      space: raw && raw !== "undefined" && raw !== "null" ? raw : undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Share your flashcards | RitaJet" },
@@ -31,11 +35,7 @@ export const Route = createFileRoute("/share/new")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: () => (
-    <RequireAuth what="your shared decks">
-      <ShareNew />
-    </RequireAuth>
-  ),
+  component: ShareNew,
 });
 
 const EMOJIS = ["🃏", "🧠", "💊", "🫀", "🦴", "🔬", "📚", "🇩🇪", "⚡️", "🌿"];
@@ -60,27 +60,73 @@ function ShareNew() {
 
   const quotaQuery = useQuery({
     queryKey: ["daily-share-quota", user?.id],
-    queryFn: () => getDailyShareQuota(user!.id),
+    queryFn: () =>
+      getDailyShareQuota(user!.id).catch(() => ({
+        decksToday: 0,
+        questionsToday: 0,
+        usedToday: 0,
+        limit: 5,
+        remaining: 5,
+        isBlocked: false,
+      })),
     enabled: !!user,
   });
   const quota = quotaQuery.data;
 
   useEffect(() => {
-    if (!loading && !user) navigate({ to: "/login" });
-  }, [loading, user, navigate]);
-
-  useEffect(() => {
-    setBoard(readBoardWithCounts());
+    try {
+      setBoard(readBoardWithCounts() ?? []);
+    } catch {
+      setBoard([]);
+    }
   }, []);
 
   const total = useMemo(
     () =>
-      board.reduce(
-        (n, s) => n + s.subs.reduce((m, x) => m + (picked.has(keyOf(s.name, x.name)) ? x.count : 0), 0),
+      (board ?? []).reduce(
+        (n, s) =>
+          n +
+          (s.subs ?? []).reduce(
+            (m, x) => m + (picked.has(keyOf(s.name, x.name)) ? x.count : 0),
+            0,
+          ),
         0,
       ),
     [board, picked],
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#fbf5e9]">
+        <SiteHeader />
+        <div className="mx-auto flex max-w-5xl items-center justify-center py-32">
+          <Loader2 className="h-8 w-8 animate-spin text-[#8ec63f]" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#fbf5e9] text-[#23201d]">
+        <SiteHeader />
+        <main className="mx-auto max-w-3xl px-4 py-20 text-center">
+          <span className="text-5xl">🃏</span>
+          <h1 className="mt-4 font-display text-3xl font-black">Sign in to share flashcards</h1>
+          <p className="mx-auto mt-2 max-w-md text-sm text-[#6b655c]">
+            Rita saves your decks to your account so students across RitaJet can learn from your work.
+          </p>
+          <button
+            type="button"
+            onClick={() => openAuth("signin", "/share/new")}
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#8ec63f] px-6 py-3 text-sm font-black text-white shadow-sm transition hover:brightness-105"
+          >
+            Sign in
+          </button>
+        </main>
+      </div>
+    );
+  }
 
   function toggle(keys: string[]) {
     setPicked((prev) => {
@@ -224,9 +270,29 @@ function ShareNew() {
           <section className="rounded-[26px] border border-black/[0.07] bg-white p-6">
             <h2 className="font-display text-lg font-black">Pick subjects</h2>
             {board.length === 0 ? (
-              <p className="mt-4 text-sm text-[#6b655c]">
-                You have no flashcard subjects yet. Create some in the study workspace first.
-              </p>
+              <div className="mt-4 rounded-2xl border border-dashed border-black/15 bg-[#fbf5e9] p-8 text-center">
+                <span className="text-3xl">🃏</span>
+                <p className="mt-2 font-display text-base font-black text-[#23201d]">
+                  No flashcards found
+                </p>
+                <p className="mt-1 text-xs text-[#6b655c]">
+                  Create subjects and flashcards in your Study Workspace first, or share exam questions.
+                </p>
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
+                  <Link
+                    to="/study"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#23201d] px-4 py-2 text-xs font-black text-white hover:bg-black"
+                  >
+                    Open Study Workspace
+                  </Link>
+                  <Link
+                    to="/share/questions/new"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-black text-[#23201d] hover:bg-black/5"
+                  >
+                    Share Exam Questions Instead →
+                  </Link>
+                </div>
+              </div>
             ) : (
               <div className="mt-4 max-h-[520px] space-y-2 overflow-y-auto pr-1">
                 {board.map((s) => {

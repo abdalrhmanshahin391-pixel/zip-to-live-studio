@@ -12,7 +12,6 @@ import {
   ListChecks,
   ChevronLeft,
   ChevronRight,
-  BookOpen,
   Star,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -118,7 +117,7 @@ function SharePage() {
             </h1>
             <p className="mt-3 text-lg leading-relaxed text-[#4a453d]">
               {mode === "questions"
-                ? "Browse questions from Question Bank, Past Exam Archives, and Lecture Lab quizzes. Test your skills in practice mode or save them directly."
+                ? "Browse questions from Question Bank and Lecture Lab quizzes. Test your skills in practice mode or save them directly."
                 : "Pick a deck, flip through it, and copy it straight into your own subjects — or share yours and let the whole class use it."}
             </p>
           </div>
@@ -126,7 +125,6 @@ function SharePage() {
           {mode === "questions" ? (
             <Link
               to="/share/questions/new"
-              search={{ space: undefined, source: "lecture" }}
               className="inline-flex items-center gap-2 rounded-full bg-[#8ec63f] px-6 py-3.5 text-[15px] font-black text-white shadow-[0_14px_30px_-16px_rgba(142,198,63,0.9)] transition hover:-translate-y-0.5"
             >
               <Plus size={17} /> Share questions
@@ -134,7 +132,6 @@ function SharePage() {
           ) : (
             <Link
               to="/share/new"
-              search={{ space: undefined }}
               className="inline-flex items-center gap-2 rounded-full bg-[#8ec63f] px-6 py-3.5 text-[15px] font-black text-white shadow-[0_14px_30px_-16px_rgba(142,198,63,0.9)] transition hover:-translate-y-0.5"
             >
               <Plus size={17} /> Share flashcards
@@ -223,7 +220,7 @@ function SharePage() {
                   setSourceFilter("all");
                   setPage(0);
                 }}
-                className={`rounded-full px-3 py-1.5 text-[12px] font-black transition ${
+                className={`rounded-full px-3.5 py-1.5 text-[12px] font-black transition ${
                   sourceFilter === "all" ? "bg-[#23201d] text-white" : "text-[#6b655c] hover:bg-black/[0.04]"
                 }`}
               >
@@ -232,38 +229,26 @@ function SharePage() {
               <button
                 type="button"
                 onClick={() => {
-                  setSourceFilter("bank");
-                  setPage(0);
-                }}
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-black transition ${
-                  sourceFilter === "bank" ? "bg-[#23201d] text-white" : "text-[#6b655c] hover:bg-black/[0.04]"
-                }`}
-              >
-                <span>📚</span> Question Bank
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSourceFilter("archive");
-                  setPage(0);
-                }}
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-black transition ${
-                  sourceFilter === "archive" ? "bg-[#23201d] text-white" : "text-[#6b655c] hover:bg-black/[0.04]"
-                }`}
-              >
-                <span>🏛️</span> Archive Exam
-              </button>
-              <button
-                type="button"
-                onClick={() => {
                   setSourceFilter("lecture");
                   setPage(0);
                 }}
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-black transition ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-black transition ${
                   sourceFilter === "lecture" ? "bg-[#23201d] text-white" : "text-[#6b655c] hover:bg-black/[0.04]"
                 }`}
               >
                 <span>🎓</span> Lecture Lab
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSourceFilter("bank");
+                  setPage(0);
+                }}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-black transition ${
+                  sourceFilter === "bank" ? "bg-[#23201d] text-white" : "text-[#6b655c] hover:bg-black/[0.04]"
+                }`}
+              >
+                <span>📚</span> Question Bank
               </button>
             </div>
           )}
@@ -632,7 +617,6 @@ function Empty({ mine }: { mine?: boolean }) {
       </p>
       <Link
         to="/share/new"
-        search={{ space: undefined }}
         className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#8ec63f] px-6 py-3 text-sm font-black text-white"
       >
         <Plus size={16} /> Share flashcards
@@ -649,11 +633,10 @@ function EmptyQuestions({ mine }: { mine?: boolean }) {
         {mine ? "You haven't shared a question set yet" : "No shared question sets yet"}
       </h2>
       <p className="mx-auto mt-2 max-w-md text-[15px] text-[#6b655c]">
-        Select questions from Question Bank, Past Exam Archives, or Lecture Lab and share them with the RitaJet community.
+        Select questions from Question Bank or Lecture Lab and share them with the RitaJet community.
       </p>
       <Link
         to="/share/questions/new"
-        search={{ space: undefined, source: "lecture" }}
         className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#8ec63f] px-6 py-3 text-sm font-black text-white"
       >
         <Plus size={16} /> Share questions

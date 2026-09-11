@@ -62,7 +62,6 @@ export function ShareBand() {
             </Link>
             <Link
               to="/share/new"
-              search={{ space: undefined }}
               className="rita-btn rita-btn-primary"
             >
               Share a deck

@@ -428,50 +428,8 @@ export async function fetchUserQuestionSources(userId: string): Promise<{
     }
   }
 
-  // 2. Fetch Archive Questions
-  const { data: archiveQs } = await db("study_questions")
-    .select("id, subject, subtopic, stem, options, explanation")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(1500);
-
+  // 2. Archive source disabled per user directive (archive removed)
   const archiveNodes: QuestionSubjectNode[] = [];
-  if (archiveQs && archiveQs.length > 0) {
-    const bySubject: Record<string, Record<string, any[]>> = {};
-    for (const q of archiveQs as any[]) {
-      const subj = q.subject || "General Archive";
-      const subtop = q.subtopic || "Questions";
-      if (!bySubject[subj]) bySubject[subj] = {};
-      if (!bySubject[subj][subtop]) bySubject[subj][subtop] = [];
-      bySubject[subj][subtop].push(q);
-    }
-
-    for (const [subjName, subtopics] of Object.entries(bySubject)) {
-      const items: SelectableItem[] = [];
-      let total = 0;
-      for (const [subtopName, qList] of Object.entries(subtopics)) {
-        total += qList.length;
-        items.push({
-          id: `${subjName}:::${subtopName}`,
-          title: subtopName,
-          questionCount: qList.length,
-          questions: qList.map((q) => ({
-            id: q.id,
-            stem: q.stem,
-            options: q.options || [],
-            explanation: q.explanation || "",
-          })),
-        });
-      }
-      archiveNodes.push({
-        id: subjName,
-        name: subjName,
-        sourceType: "archive",
-        items,
-        totalQuestions: total,
-      });
-    }
-  }
 
   // 3. Fetch Lecture Lab questions
   const { data: lqSubs } = await db("lq_subjects")
