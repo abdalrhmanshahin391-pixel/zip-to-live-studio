@@ -5,10 +5,12 @@ import { verifyWebhook, EventName, type PaddleEnv } from "@/lib/paddle.server";
 let _supabase: ReturnType<typeof createClient> | null = null;
 function getSupabase() {
   if (!_supabase) {
-    _supabase = createClient(
-      process.env["SUPABASE_URL"]!,
-      process.env["SUPABASE_SERVICE_ROLE_KEY"]!,
-    );
+    const url = process.env["SUPABASE_URL"] || process.env["VITE_SUPABASE_URL"]!;
+    const key =
+      process.env["SUPABASE_SERVICE_ROLE_KEY"] ||
+      process.env["SUPABASE_PUBLISHABLE_KEY"] ||
+      process.env["VITE_SUPABASE_PUBLISHABLE_KEY"]!;
+    _supabase = createClient(url, key, { auth: { persistSession: false } });
   }
   return _supabase;
 }
@@ -25,9 +27,18 @@ const GRANT_COLUMNS = [
   ["groups", "max_groups"],
 ] as const;
 
-/** Finds the plan a purchased price belongs to, by its human-readable price id. */
-async function planForPrice(priceId: string) {
+/** Finds the plan a purchased price belongs to, by its price id or slug. */
+async function planForPrice(priceId?: string | null, planSlug?: string | null) {
   const db = getSupabase();
+  if (planSlug) {
+    const { data } = await (db as any)
+      .from("plans")
+      .select("*")
+      .eq("slug", planSlug)
+      .maybeSingle();
+    if (data) return data as Record<string, any>;
+  }
+  if (!priceId) return null;
   const { data } = await (db as any)
     .from("plans")
     .select("*")
@@ -39,9 +50,14 @@ async function planForPrice(priceId: string) {
 }
 
 async function putOnPlan(userId: string, slug: string) {
-  await (getSupabase() as any)
-    .from("user_plans")
-    .upsert({ user_id: userId, plan_slug: slug }, { onConflict: "user_id" });
+  const db = getSupabase();
+  const { error } = await (db as any).rpc("activate_user_plan", { _user_id: userId, _plan_slug: slug });
+  if (error) {
+    console.warn("RPC activate_user_plan error, trying direct upsert:", error);
+    await (db as any)
+      .from("user_plans")
+      .upsert({ user_id: userId, plan_slug: slug, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+  }
 }
 
 /** A one-time pack: add its allowances on top of whatever the student had. */
@@ -70,27 +86,31 @@ async function grantPack(
 async function handleTransactionCompleted(data: any, env: PaddleEnv) {
   const userId = data?.customData?.userId;
   if (!userId) return;
-  const priceId = data?.items?.[0]?.price?.importMeta?.externalId;
-  if (!priceId) return;
+  const item = data?.items?.[0];
+  const priceId = item?.price?.id || item?.price?.importMeta?.externalId;
+  const planSlug = data?.customData?.planSlug;
 
-  const plan = await planForPrice(priceId);
-  if (!plan) return;
+  const plan = await planForPrice(priceId, planSlug);
+  const targetSlug = planSlug || plan?.slug;
+  if (!targetSlug) return;
 
-  if (plan.billing_kind === "lifetime") {
+  if (plan?.billing_kind === "lifetime") {
     await grantPack(userId, plan, data.id, env);
   } else {
-    await putOnPlan(userId, plan.slug);
+    await putOnPlan(userId, targetSlug);
   }
 }
 
 async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
   const userId = data?.customData?.userId;
   const item = data?.items?.[0];
-  const priceId = item?.price?.importMeta?.externalId;
-  const productId = item?.product?.importMeta?.externalId;
-  if (!userId || !priceId) return;
+  const priceId = item?.price?.id || item?.price?.importMeta?.externalId;
+  const productId = item?.product?.id || item?.product?.importMeta?.externalId;
+  const planSlug = data?.customData?.planSlug;
+  if (!userId) return;
 
-  const plan = await planForPrice(priceId);
+  const plan = await planForPrice(priceId, planSlug);
+  const targetSlug = planSlug || plan?.slug;
 
   await (getSupabase() as any).from("subscriptions").upsert(
     {
@@ -98,8 +118,8 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
       paddle_subscription_id: data.id,
       paddle_customer_id: data.customerId,
       product_id: productId ?? null,
-      price_id: priceId,
-      plan_slug: plan?.slug ?? null,
+      price_id: priceId ?? null,
+      plan_slug: targetSlug ?? null,
       status: data.status,
       current_period_start: data.currentBillingPeriod?.startsAt,
       current_period_end: data.currentBillingPeriod?.endsAt,
@@ -109,7 +129,7 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
     { onConflict: "paddle_subscription_id" },
   );
 
-  if (plan?.slug) await putOnPlan(userId, plan.slug);
+  if (targetSlug) await putOnPlan(userId, targetSlug);
 }
 
 async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {

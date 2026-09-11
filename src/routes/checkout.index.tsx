@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  ArrowRight,
   BadgeCheck,
   Check,
   Clock3,
@@ -10,6 +11,7 @@ import {
   LockKeyhole,
   RefreshCcw,
   RotateCcw,
+  Sparkles,
   Tag,
   X,
 } from "lucide-react";
@@ -20,6 +22,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePaddleCheckout, type PaymentMethodSelection } from "@/hooks/usePaddleCheckout";
 import { getPaddlePriceId } from "@/lib/paddle";
 import { checkPromoCode } from "@/lib/promo.functions";
+import { claimFreePlanWithPromo } from "@/lib/plans.functions";
 import { SUPPORT_EMAIL } from "@/lib/legal-content";
 
 export const Route = createFileRoute("/checkout/")({
@@ -111,6 +114,7 @@ function CheckoutPage() {
   const [promo, setPromo] = useState<Promo | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  const [claimingFree, setClaimingFree] = useState(false);
   const opened = useRef("");
 
   const { data: plan, isLoading } = useQuery({
@@ -204,12 +208,41 @@ function CheckoutPage() {
       });
       setPromo(result);
       setCodeInput("");
-      await start(result.code);
+      if (result.totalCents === 0) {
+        closeCheckout();
+      } else {
+        await start(result.code);
+      }
     } catch (e) {
       setPromo(null);
       setPromoError(e instanceof Error ? e.message : "That code could not be used.");
     } finally {
       setChecking(false);
+    }
+  };
+
+  const claimFreeAccess = async () => {
+    if (!promo || !plan || !user) return;
+    setClaimingFree(true);
+    setLocalError(null);
+    try {
+      await claimFreePlanWithPromo({
+        data: {
+          code: promo.code,
+          planSlug: plan.slug,
+          billing: (billing as any) || "monthly",
+        },
+      });
+      navigate({
+        to: "/checkout/success",
+        search: { plan: plan.slug, free: "true" } as any,
+      });
+    } catch (e: any) {
+      setLocalError(
+        e instanceof Error ? e.message : "Could not activate free plan. Please try again.",
+      );
+    } finally {
+      setClaimingFree(false);
     }
   };
 
@@ -309,29 +342,67 @@ function CheckoutPage() {
               </div>
             )}
 
-            {/* Loading state indicator */}
-            {!activeError && user && plan && checkoutLoading && (
-              <p className="mt-6 flex items-center gap-2 text-[15px] font-semibold text-muted-foreground">
-                <Loader2 size={16} className="animate-spin text-primary" /> Preparing your secure payment form…
-              </p>
-            )}
+            {/* Free 100% Promo Claim Banner */}
+            {promo && promo.totalCents === 0 ? (
+              <div className="mt-6 rounded-[20px] border border-primary/30 bg-primary/5 p-6 md:p-8 text-center">
+                <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/15 text-primary">
+                  <Sparkles size={28} />
+                </div>
+                <h2 className="mt-4 text-[22px] font-bold text-foreground">
+                  100% Free Plan Unlocked!
+                </h2>
+                <p className="mx-auto mt-2 max-w-[28rem] text-[14.5px] leading-relaxed text-muted-foreground">
+                  Promo code <strong className="text-foreground">{promo.code}</strong> covers 100% of this plan. No credit card, PayPal, or payment details are required.
+                </p>
 
-            {/* Reopen action if checkout was ever closed */}
-            {!activeError && user && plan && checkoutClosed && (
-              <div className="mt-6 rounded-[18px] border border-border bg-muted/30 p-6 text-center">
-                <p className="text-[15px] font-bold text-foreground">Payment form was closed</p>
+                {localError && (
+                  <p className="mt-3 text-[14px] font-semibold text-destructive">{localError}</p>
+                )}
+
                 <button
                   type="button"
-                  onClick={() => void start(promo?.code, "all")}
-                  className="rita-btn rita-btn-primary mt-3 py-2.5 px-5 text-[14px] font-bold"
+                  onClick={claimFreeAccess}
+                  disabled={claimingFree}
+                  className="rita-btn rita-btn-primary mt-6 mx-auto py-3 px-8 text-[15px] font-bold gap-2"
                 >
-                  <RotateCcw size={14} className="inline mr-1.5" /> Re-open payment form
+                  {claimingFree ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Activating your access…
+                    </>
+                  ) : (
+                    <>
+                      Claim free access <ArrowRight size={16} />
+                    </>
+                  )}
                 </button>
               </div>
-            )}
+            ) : (
+              <>
+                {/* Loading state indicator */}
+                {!activeError && user && plan && checkoutLoading && (
+                  <p className="mt-6 flex items-center gap-2 text-[15px] font-semibold text-muted-foreground">
+                    <Loader2 size={16} className="animate-spin text-primary" /> Preparing your secure payment form…
+                  </p>
+                )}
 
-            {/* Paddle inline container (active when inline checkout is rendered) */}
-            <div className={`${FRAME} mt-5 ${user && plan && checkoutLoaded ? "min-h-[26rem]" : ""}`} />
+                {/* Reopen action if checkout was ever closed */}
+                {!activeError && user && plan && checkoutClosed && (
+                  <div className="mt-6 rounded-[18px] border border-border bg-muted/30 p-6 text-center">
+                    <p className="text-[15px] font-bold text-foreground">Payment form was closed</p>
+                    <button
+                      type="button"
+                      onClick={() => void start(promo?.code, "all")}
+                      className="rita-btn rita-btn-primary mt-3 py-2.5 px-5 text-[14px] font-bold"
+                    >
+                      <RotateCcw size={14} className="inline mr-1.5" /> Re-open payment form
+                    </button>
+                  </div>
+                )}
+
+                {/* Paddle inline container (active when inline checkout is rendered) */}
+                <div className={`${FRAME} mt-5 ${user && plan && checkoutLoaded ? "min-h-[26rem]" : ""}`} />
+              </>
+            )}
 
             <p className="mt-6 border-t border-border pt-5 text-[13px] leading-relaxed text-muted-foreground">
               By paying you agree to our{" "}

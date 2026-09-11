@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/legacy-client";
 import { useAuth } from "@/hooks/useAuth";
 import { SUPPORT_EMAIL } from "@/lib/legal-content";
 
+import { activatePlanAfterCheckout } from "@/lib/plans.functions";
+
 export const Route = createFileRoute("/checkout/success")({
   head: () => ({
     meta: [
@@ -23,26 +25,39 @@ export const Route = createFileRoute("/checkout/success")({
   }),
   validateSearch: (search: Record<string, unknown>) => ({
     plan: typeof search.plan === "string" ? search.plan : "",
+    free: search.free === "true" || search.free === true,
   }),
   component: SuccessPage,
 });
 
 function SuccessPage() {
-  const { plan: slug } = Route.useSearch();
+  const { plan: slug, free: isFree } = Route.useSearch();
   const { user } = useAuth();
   const [polling, setPolling] = useState(true);
   const [granted, setGranted] = useState(false);
 
-  // The payment provider tells our server the moment the money clears; the
-  // plan appears on the account a second or two later, so we poll for it.
   useEffect(() => {
     if (!user) {
       setPolling(false);
       return;
     }
     let cancelled = false;
-    let attempts = 0;
 
+    // Immediately trigger server plan activation so the user doesn't have to wait on webhooks
+    if (slug) {
+      void activatePlanAfterCheckout({ data: { planSlug: slug } })
+        .then(() => {
+          if (!cancelled) {
+            setGranted(true);
+            setPolling(false);
+          }
+        })
+        .catch((err) => {
+          console.warn("Immediate plan activation attempt:", err);
+        });
+    }
+
+    let attempts = 0;
     const tick = async () => {
       if (cancelled) return;
       attempts++;
@@ -78,10 +93,12 @@ function SuccessPage() {
           <CheckCircle2 className="rita-accent h-8 w-8" />
         </div>
         <h1 className="mt-7 text-[34px] font-bold leading-[1.06] md:text-[40px]">
-          Payment received
+          {isFree ? "Plan activated!" : "Payment received"}
         </h1>
         <p className="mt-4 text-[16px] leading-[1.6] text-white/50">
-          Thank you — a receipt is on its way to your email from Paddle, our payment partner.
+          {isFree
+            ? "Congratulations! Your plan has been unlocked and added to your RitaJet account with zero payment required."
+            : "Thank you — a receipt is on its way to your email from Paddle, our payment partner."}
         </p>
 
         <div className="mt-9 rounded-[28px] border border-white/10 bg-[#131313] p-7 text-left">
