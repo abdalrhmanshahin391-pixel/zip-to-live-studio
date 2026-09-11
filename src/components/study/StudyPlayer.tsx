@@ -21,28 +21,30 @@ const MUTE_KEY = "rita_study_muted";
 let ctx: AudioContext | null = null;
 function blip(kind: "flip" | "next" | "done", muted: boolean) {
   if (muted || typeof window === "undefined") return;
-  try {
-    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    ctx = ctx ?? new AC();
-    void ctx.resume();
-    const now = ctx.currentTime;
-    const notes = kind === "done" ? [523.25, 659.25, 783.99] : kind === "flip" ? [660] : [440];
-    notes.forEach((f, i) => {
-      const osc = ctx!.createOscillator();
-      const gain = ctx!.createGain();
-      osc.type = "sine";
-      osc.frequency.value = f;
-      const t = now + i * 0.09;
-      gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(kind === "done" ? 0.09 : 0.05, t + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
-      osc.connect(gain).connect(ctx!.destination);
-      osc.start(t);
-      osc.stop(t + 0.24);
-    });
-  } catch {
-    /* audio is a nicety, never a blocker */
-  }
+  setTimeout(() => {
+    try {
+      const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      ctx = ctx ?? new AC();
+      if (ctx.state === "suspended") void ctx.resume();
+      const now = ctx.currentTime;
+      const notes = kind === "done" ? [523.25, 659.25, 783.99] : kind === "flip" ? [660] : [440];
+      notes.forEach((f, i) => {
+        const osc = ctx!.createOscillator();
+        const gain = ctx!.createGain();
+        osc.type = "sine";
+        osc.frequency.value = f;
+        const t = now + i * 0.09;
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(kind === "done" ? 0.09 : 0.05, t + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+        osc.connect(gain).connect(ctx!.destination);
+        osc.start(t);
+        osc.stop(t + 0.24);
+      });
+    } catch {
+      /* audio is a nicety, never a blocker */
+    }
+  }, 0);
 }
 
 /* ---------------------------- player ---------------------------- */
@@ -195,7 +197,7 @@ export function StudyPlayer({
         <button
           type="button"
           onClick={onClose}
-          className="grid h-10 w-10 place-items-center rounded-full border border-black/10 bg-white text-[#5c554b] transition-colors hover:bg-black/[0.04]"
+          className="grid h-10 w-10 place-items-center rounded-full border border-black/10 bg-white text-[#5c554b] transition-all duration-100 hover:bg-black/[0.04] active:scale-95 touch-manipulation select-none"
           aria-label="Close study session"
         >
           <X size={18} />
@@ -232,7 +234,7 @@ export function StudyPlayer({
         <button
           type="button"
           onClick={toggleMute}
-          className="grid h-10 w-10 place-items-center rounded-full border border-black/10 bg-white text-[#5c554b] transition-colors hover:bg-black/[0.04]"
+          className="grid h-10 w-10 place-items-center rounded-full border border-black/10 bg-white text-[#5c554b] transition-all duration-100 hover:bg-black/[0.04] active:scale-95 touch-manipulation select-none"
           aria-label={muted ? "Turn sound on" : "Turn sound off"}
         >
           {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
@@ -244,7 +246,7 @@ export function StudyPlayer({
             reset([...queue].sort(() => Math.random() - 0.5));
             setAnim((a) => a + 1);
           }}
-          className="hidden h-10 items-center gap-2 rounded-full border border-black/10 bg-white px-4 text-[13px] font-extrabold text-[#5c554b] transition-colors hover:bg-black/[0.04] sm:flex"
+          className="hidden h-10 items-center gap-2 rounded-full border border-black/10 bg-white px-4 text-[13px] font-extrabold text-[#5c554b] transition-all duration-100 hover:bg-black/[0.04] active:scale-95 touch-manipulation select-none sm:flex"
         >
           <Shuffle size={15} /> Shuffle
         </button>
@@ -314,7 +316,19 @@ export function StudyPlayer({
               if (Math.abs(dx) > 60) step(dx < 0 ? 1 : -1);
             }}
           >
-            <button type="button" onClick={flip} className="group block w-full" aria-label="Flip card">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={flip}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  flip();
+                }
+              }}
+              className="group block w-full cursor-pointer select-none touch-manipulation focus:outline-none"
+              aria-label="Flip card"
+            >
               <FlipCard
                 flipped={flipped}
                 className="h-[52vh] min-h-[320px] w-full"
@@ -337,7 +351,7 @@ export function StudyPlayer({
                   />
                 }
               />
-            </button>
+            </div>
 
             <p className="mt-4 text-center text-[12.5px] font-bold text-[#b3aa9c]">
               Tap the card or press Space to flip · ← → to move
@@ -352,7 +366,7 @@ export function StudyPlayer({
           <button
             type="button"
             onClick={() => step(-1)}
-            className="grid h-12 w-12 place-items-center rounded-2xl border border-black/10 bg-white text-[#5c554b] transition-colors hover:bg-black/[0.04]"
+            className="grid h-12 w-12 place-items-center rounded-2xl border border-black/10 bg-white text-[#5c554b] transition-all duration-100 hover:bg-black/[0.04] active:scale-95 touch-manipulation select-none"
             aria-label="Previous card"
           >
             <ArrowLeft size={18} />
@@ -363,14 +377,14 @@ export function StudyPlayer({
               <button
                 type="button"
                 onClick={() => grade(false)}
-                className="flex h-12 items-center gap-2 rounded-2xl bg-[#d1795e] px-6 text-[14px] font-extrabold text-white transition-opacity hover:opacity-90"
+                className="flex h-12 items-center gap-2 rounded-2xl bg-[#d1795e] px-6 text-[14px] font-extrabold text-white transition-all duration-100 hover:opacity-90 active:scale-95 touch-manipulation select-none"
               >
                 <RotateCcw size={16} /> Again
               </button>
               <button
                 type="button"
                 onClick={() => grade(true)}
-                className="rita-pill flex h-12 items-center gap-2 rounded-2xl px-7 text-[14px] font-extrabold"
+                className="rita-pill flex h-12 items-center gap-2 rounded-2xl px-7 text-[14px] font-extrabold transition-all duration-100 active:scale-95 touch-manipulation select-none"
               >
                 <Check size={17} /> Got it
               </button>
@@ -379,7 +393,7 @@ export function StudyPlayer({
             <button
               type="button"
               onClick={flip}
-              className="rita-pill flex h-12 items-center gap-2 rounded-2xl px-8 text-[14px] font-extrabold"
+              className="rita-pill flex h-12 items-center gap-2 rounded-2xl px-8 text-[14px] font-extrabold transition-all duration-100 active:scale-95 touch-manipulation select-none"
             >
               Show answer
             </button>
@@ -388,7 +402,7 @@ export function StudyPlayer({
           <button
             type="button"
             onClick={() => step(1)}
-            className="grid h-12 w-12 place-items-center rounded-2xl border border-black/10 bg-white text-[#5c554b] transition-colors hover:bg-black/[0.04]"
+            className="grid h-12 w-12 place-items-center rounded-2xl border border-black/10 bg-white text-[#5c554b] transition-all duration-100 hover:bg-black/[0.04] active:scale-95 touch-manipulation select-none"
             aria-label="Next card"
           >
             <ArrowRight size={18} />
@@ -414,7 +428,7 @@ function Face({
 }) {
   return (
     <div
-      className={`absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-hidden rounded-[28px] border border-black/[0.06] bg-white px-8 py-10 text-center shadow-[0_28px_60px_-40px_rgba(35,32,29,0.55)] ${className}`}
+      className={`h-full w-full flex flex-col items-center justify-center gap-4 rounded-[28px] border border-black/[0.06] bg-white px-8 py-10 text-center shadow-[0_20px_50px_-30px_rgba(35,32,29,0.45)] select-none ${className}`}
     >
       <span className="absolute left-6 top-5 text-[11px] font-bold uppercase tracking-[0.2em] text-[#c8c0b2]">
         {side}
@@ -423,11 +437,11 @@ function Face({
         <img
           src={image}
           alt=""
-          className="max-h-[58%] w-auto max-w-full rounded-2xl object-contain"
+          className="max-h-[58%] w-auto max-w-full rounded-2xl object-contain pointer-events-none"
         />
       )}
       <p
-        className={`max-w-[46rem] whitespace-pre-wrap px-2 text-[#23201d] ${style ? "" : scaleText(text)}`}
+        className={`max-w-[46rem] whitespace-pre-wrap px-2 text-[#23201d] select-none ${style ? "" : scaleText(text)}`}
         style={styleToCss(style)}
       >
         {text}

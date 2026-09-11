@@ -2,9 +2,22 @@ import { useState } from "react";
 import { initializePaddle, getPaddlePriceId } from "@/lib/paddle";
 
 /**
+ * Returns true when Paddle inline checkout is reliable — desktop browsers.
+ * iOS Safari and Android WebView can't host cross-origin inline iframes
+ * properly, so we fall back to Paddle's native overlay on mobile.
+ */
+export function canUseInline(): boolean {
+  if (typeof window === "undefined") return false;
+  // Any touch-primary device gets the overlay (covers all phones + iPads)
+  if (window.matchMedia("(pointer: coarse)").matches) return false;
+  return true;
+}
+
+/**
  * Opens the hosted checkout for one price.
  * Pass `frameTarget` to embed the payment form inside our own page
  * (the branded /checkout screen) instead of the provider overlay.
+ * On mobile/iOS the inline iframe is unreliable, so we always use overlay.
  */
 export function usePaddleCheckout() {
   const [loading, setLoading] = useState(false);
@@ -24,7 +37,8 @@ export function usePaddleCheckout() {
       const { paddlePriceId, environment } = await getPaddlePriceId(options.priceId);
       await initializePaddle(environment);
 
-      const inline = !!options.frameTarget;
+      // On mobile/iOS the inline iframe is unreliable — always use overlay there.
+      const inline = !!options.frameTarget && canUseInline();
       const frameTarget = options.frameTarget;
       if (inline && (!frameTarget || !document.getElementsByClassName(frameTarget)[0])) {
         throw new Error("The payment form could not start. Please refresh the page.");

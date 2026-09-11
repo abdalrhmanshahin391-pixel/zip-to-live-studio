@@ -16,7 +16,7 @@ import { ProHeader } from "@/components/home/procreate/ProHeader";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import { useAuth } from "@/hooks/useAuth";
-import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { usePaddleCheckout, canUseInline } from "@/hooks/usePaddleCheckout";
 import { getPaddlePriceId } from "@/lib/paddle";
 import { checkPromoCode } from "@/lib/promo.functions";
 import { SUPPORT_EMAIL } from "@/lib/legal-content";
@@ -294,7 +294,24 @@ function CheckoutPage() {
               </p>
             )}
 
-            <div className={`${FRAME} mt-5 ${user && plan ? "min-h-[26rem]" : ""}`} />
+            <div className={`${FRAME} mt-5 ${user && plan && canUseInline() ? "min-h-[26rem]" : ""}`} />
+
+            {!canUseInline() && ready && !error && (
+              <div className="mt-5 flex flex-col items-center justify-center rounded-[18px] border border-border bg-muted/40 p-8 text-center">
+                <LockKeyhole size={28} className="rita-accent mb-2" />
+                <p className="text-[15px] font-bold text-foreground">Complete your payment</p>
+                <p className="mt-1 text-[13.5px] text-muted-foreground max-w-sm">
+                  The secure payment window is ready with Apple Pay, cards, and PayPal.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void start(promo?.code)}
+                  className="rita-btn rita-btn-primary mt-4 active:scale-95 touch-manipulation shadow-md"
+                >
+                  Open payment window
+                </button>
+              </div>
+            )}
 
             <p className="mt-6 border-t border-border pt-5 text-[13px] leading-relaxed text-muted-foreground">
               By paying you agree to our{" "}
