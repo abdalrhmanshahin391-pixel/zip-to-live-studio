@@ -51,6 +51,7 @@ export const DEFAULT_LAYOUT: HubLayout = {
       tiles: [
         t("/admin/ritax-announcements", "RitaX Announcements", "Megaphone"),
         t("/admin/plans", "Rita Prices", "Ticket"),
+        t("/admin/paddle-sync", "Paddle Sync", "Zap"),
         t("/admin/promo-codes", "Promo Codes", "Tag"),
         t("/admin/toolkit", "Free Toolkit", "Gift"),
         t("/admin/notifications", "Notifications", "Bell"),

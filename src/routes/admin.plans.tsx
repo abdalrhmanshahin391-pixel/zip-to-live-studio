@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   AlertTriangle,
   ArrowDown,
+  ArrowRight,
   ArrowUp,
   Check,
   CheckCircle2,
@@ -19,6 +20,7 @@ import {
   Trash2,
   UserPlus,
   XCircle,
+  Zap,
 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useAuth } from "@/hooks/useAuth";
@@ -368,6 +370,29 @@ function AdminPlansPage() {
             <Plus size={16} /> New plan
           </button>
         </header>
+
+        {/* Prominent Paddle Sync Center Banner */}
+        <div className="mt-6 flex flex-col items-start justify-between gap-4 rounded-2xl border-2 border-[#8ec63f]/40 bg-[#f4fbe9] p-4 sm:flex-row sm:items-center shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#8ec63f] text-white">
+              <Zap size={20} />
+            </span>
+            <div>
+              <p className="text-sm font-black text-[#23201d]">
+                Dedicated Paddle Catalog Sync Center
+              </p>
+              <p className="text-xs font-semibold text-[#5c554b]">
+                Looking for the global 1-click sync button or need to migrate 1-month prices to 3-month subscriptions across all plans?
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/admin/paddle-sync"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#23201d] px-5 py-2.5 text-xs font-black text-white shadow transition-all hover:bg-black hover:shadow-md active:scale-95"
+          >
+            Open Paddle Sync Center <ArrowRight size={14} />
+          </Link>
+        </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[19rem_minmax(0,1fr)]">
           {/* -------------------------------------------------- plan list */}
