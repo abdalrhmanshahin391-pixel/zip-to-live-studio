@@ -6,9 +6,11 @@ import {
   BadgeCheck,
   Check,
   Clock3,
+  CreditCard,
   Loader2,
   LockKeyhole,
   RefreshCcw,
+  RotateCcw,
   Tag,
   X,
 } from "lucide-react";
@@ -16,7 +18,7 @@ import { ProHeader } from "@/components/home/procreate/ProHeader";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import { useAuth } from "@/hooks/useAuth";
-import { usePaddleCheckout, canUseInline } from "@/hooks/usePaddleCheckout";
+import { usePaddleCheckout, type PaymentMethodSelection } from "@/hooks/usePaddleCheckout";
 import { getPaddlePriceId } from "@/lib/paddle";
 import { checkPromoCode } from "@/lib/promo.functions";
 import { SUPPORT_EMAIL } from "@/lib/legal-content";
@@ -43,7 +45,7 @@ export const Route = createFileRoute("/checkout/")({
   validateSearch: (s: Record<string, unknown>) => ({
     plan: typeof s.plan === "string" ? s.plan : "",
     billing:
-      s.billing === "yearly" || s.billing === "once" ? (s.billing as "yearly" | "once") : "monthly",
+      s.billing === "yearly" || s.billing === "once" ? s.billing : "monthly",
   }),
   component: CheckoutPage,
   errorComponent: CheckoutFallback,
@@ -95,10 +97,17 @@ function CheckoutPage() {
   const { plan: slug, billing } = Route.useSearch();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { openCheckout, closeCheckout } = usePaddleCheckout();
+  const {
+    openCheckout,
+    closeCheckout,
+    status: checkoutStatus,
+    loading: checkoutLoading,
+    isLoaded: checkoutLoaded,
+    isClosed: checkoutClosed,
+    error: paddleError,
+  } = usePaddleCheckout();
 
-  const [error, setError] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
   const [codeInput, setCodeInput] = useState("");
   const [promo, setPromo] = useState<Promo | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
@@ -141,10 +150,12 @@ function CheckoutPage() {
     : 0;
 
   const start = useCallback(
-    async (discountCode?: string, cardsOnly = false) => {
+    async (
+      discountCode?: string,
+      methodRestriction: PaymentMethodSelection = "all",
+    ) => {
       if (!plan || !user || !priceId) return;
-      setReady(false);
-      setError(null);
+      setLocalError(null);
       try {
         closeCheckout();
         await openCheckout({
@@ -154,33 +165,33 @@ function CheckoutPage() {
           successUrl: `${window.location.origin}/checkout/success?plan=${plan.slug}`,
           discountCode,
           frameTarget: FRAME,
-          cardsOnly,
+          methodRestriction,
         });
-        setReady(true);
-      } catch (e) {
-        setError(
+      } catch (e: any) {
+        setLocalError(
           e instanceof Error && e.message
             ? e.message
-            : "We could not open the payment form. Please refresh the page and try again.",
+            : "We could not open the payment form. Please try again.",
         );
       }
     },
     [plan, user, priceId, openCheckout, closeCheckout],
   );
 
+  // Auto-open on desktop if inline frame target exists; on touch devices, user clicks Continue
   useEffect(() => {
     if (!plan || !user) return;
     if (!priceId) {
-      setError("This plan is not on sale yet. Please try another one or contact support.");
+      setLocalError("This plan is not on sale yet. Please try another one or contact support.");
       return;
     }
     const key = `${plan.slug}:${billing}`;
     if (opened.current === key) return;
     opened.current = key;
-    if (canUseInline()) {
+
+    const isTouch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+    if (!isTouch) {
       void start();
-    } else {
-      setReady(true);
     }
   }, [plan, user, priceId, billing, start]);
 
@@ -229,13 +240,14 @@ function CheckoutPage() {
 
   const total = promo ? promo.totalCents : cents;
   const period = billing === "once" ? "one-time" : billing === "yearly" ? "per year" : "per month";
+  const activeError = localError || paddleError;
 
   return (
     <div className="rita-cream min-h-screen bg-background text-foreground">
       <PaymentTestModeBanner />
       <ProHeader variant="solid" />
 
-      <main className="mx-auto max-w-[1120px] px-5 pb-28 pt-24 md:px-10 md:pt-28">
+      <main className="mx-auto max-w-[1120px] w-full px-5 pb-28 pt-24 md:px-10 md:pt-28">
         <Link
           to="/pricing"
           className="inline-flex items-center gap-2 text-[13.5px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
@@ -270,14 +282,28 @@ function CheckoutPage() {
               </div>
             )}
 
-            {error && (
+            {activeError && (
               <div className="mt-5 rounded-[14px] border border-destructive/25 bg-destructive/10 px-5 py-4 text-[14px] font-semibold text-destructive">
-                {error}{" "}
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">
-                  Email support
-                </a>{" "}
-                and we will sort it out.
-                <button type="button" onClick={() => void start(promo?.code)} className="rita-btn rita-btn-secondary ml-3 mt-3">Try again</button>
+                <p>{activeError}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => void start(promo?.code, "all")}
+                    className="rita-btn rita-btn-secondary text-[13px] py-2 px-4"
+                  >
+                    <RotateCcw size={14} /> Try again
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void start(promo?.code, "card_only")}
+                    className="rita-btn rita-btn-primary text-[13px] py-2 px-4"
+                  >
+                    <CreditCard size={14} /> Pay by card
+                  </button>
+                  <Link to="/pricing" className="text-[13px] text-muted-foreground underline ml-2">
+                    Back to plans
+                  </Link>
+                </div>
               </div>
             )}
 
@@ -293,39 +319,44 @@ function CheckoutPage() {
               </div>
             )}
 
-            {!error && user && plan && (isLoading || !ready) && (
+            {/* Loading state indicator */}
+            {!activeError && user && plan && checkoutLoading && (
               <p className="mt-6 flex items-center gap-2 text-[15px] font-semibold text-muted-foreground">
-                <Loader2 size={16} className="animate-spin" /> Preparing your secure payment form…
+                <Loader2 size={16} className="animate-spin text-primary" /> Preparing your secure payment form…
               </p>
             )}
 
-            <div className={`${FRAME} mt-5 ${user && plan && canUseInline() ? "min-h-[26rem]" : ""}`} />
-
-            {!canUseInline() && (
-              <div className="mt-5 flex flex-col items-center justify-center rounded-[20px] border border-border bg-muted/40 p-7 text-center">
-                <LockKeyhole size={28} className="rita-accent mb-2" />
-                <p className="text-[16px] font-bold text-foreground">Choose how you want to pay</p>
-                <p className="mt-1 text-[13.5px] text-muted-foreground max-w-sm">
-                  Your payment is encrypted and processed securely by Paddle.
+            {/* Explicit CTA button for mobile / closed states */}
+            {!activeError && user && plan && (checkoutStatus === "idle" || checkoutClosed) && (
+              <div className="mt-6 rounded-[18px] border border-border bg-muted/30 p-7 text-center">
+                <LockKeyhole size={28} className="rita-accent mx-auto mb-2" />
+                <p className="text-[16px] font-bold text-foreground">
+                  {checkoutClosed ? "Payment sheet was closed" : "Ready for payment"}
                 </p>
-                <div className="mt-5 flex flex-col sm:flex-row w-full max-w-sm gap-3 justify-center">
+                <p className="mt-1 text-[13.5px] text-muted-foreground max-w-sm mx-auto">
+                  Complete your purchase safely with Apple Pay, card, or PayPal.
+                </p>
+                <div className="mt-5 flex flex-col sm:flex-row w-full max-w-sm mx-auto gap-3 justify-center">
                   <button
                     type="button"
-                    onClick={() => void start(promo?.code, true)}
-                    className="rita-btn rita-btn-primary flex-1 py-3.5 text-[14.5px] font-bold active:scale-95 touch-manipulation shadow-md"
+                    onClick={() => void start(promo?.code, "all")}
+                    className="rita-btn rita-btn-primary flex-1 py-3 text-[14.5px] font-bold active:scale-95 touch-manipulation shadow-md"
                   >
-                    Pay with Card or PayPal
+                    Continue to secure payment
                   </button>
                   <button
                     type="button"
-                    onClick={() => void start(promo?.code, false)}
-                    className="rita-btn rita-btn-secondary flex-1 py-3.5 text-[14.5px] font-bold active:scale-95 touch-manipulation"
+                    onClick={() => void start(promo?.code, "card_only")}
+                    className="rita-btn rita-btn-secondary flex-1 py-3 text-[14px] font-bold active:scale-95 touch-manipulation"
                   >
-                     Pay with Apple Pay
+                    Pay by card only
                   </button>
                 </div>
               </div>
             )}
+
+            {/* Paddle inline container (active when inline checkout is rendered) */}
+            <div className={`${FRAME} mt-5 ${user && plan && checkoutLoaded ? "min-h-[26rem]" : ""}`} />
 
             <p className="mt-6 border-t border-border pt-5 text-[13px] leading-relaxed text-muted-foreground">
               By paying you agree to our{" "}
@@ -433,16 +464,24 @@ function CheckoutPage() {
                 </div>
 
                 <div className="mt-5 flex items-end justify-between border-t border-border pt-5">
-                  <span className="text-[14px] font-semibold text-muted-foreground">Total due today</span>
+                  <div>
+                    <span className="text-[14px] font-semibold text-muted-foreground">Total due today</span>
+                    <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+                      Paddle calculates applicable taxes at checkout.
+                    </p>
+                  </div>
                   <span className="text-[26px] font-bold leading-none">
                     {money(total, plan.currency)}
                   </span>
                 </div>
 
-                {billing === "once" && (
-                  <p className="mt-5 rounded-[14px] border border-border bg-muted px-5 py-4 text-[13.5px] font-medium text-muted-foreground">
-                    Yours for life — use the credits at your own pace. When the pack runs out you
-                    can buy it again and the credits add on top.
+                {billing === "once" ? (
+                  <p className="mt-5 rounded-[14px] border border-border bg-muted/60 px-4 py-3 text-[13px] font-medium text-muted-foreground">
+                    One-time payment. Lifetime access with no recurring charges.
+                  </p>
+                ) : (
+                  <p className="mt-5 rounded-[14px] border border-border bg-muted/60 px-4 py-3 text-[13px] font-medium text-muted-foreground">
+                    Renews automatically {billing === "yearly" ? "every year" : "every month"}. Cancel anytime in your account.
                   </p>
                 )}
               </>
