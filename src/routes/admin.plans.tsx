@@ -3,7 +3,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Check, Plus, Save, Search, ShieldCheck, Trash2, UserPlus, XCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  Check,
+  CheckCircle2,
+  ExternalLink,
+  Plus,
+  RefreshCw,
+  Save,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  UserPlus,
+  XCircle,
+} from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { guardRedirect } from "@/lib/guard-redirect";
@@ -11,6 +27,7 @@ import {
   adminCreatePlanGrant,
   adminDeletePlan,
   adminFindGrantStudent,
+  adminInspectPaddlePrices,
   adminListPlans,
   adminListPlanGrants,
   adminRevokePlanGrant,
@@ -18,6 +35,7 @@ import {
   adminSyncPlanPrices,
   type AdminPlan,
   type ManualPlanGrant,
+  type PaddlePlanInspection,
 } from "@/lib/plans-admin.functions";
 import { OfferRibbon, discountPercent, offerLive } from "@/components/pricing/offer";
 
@@ -97,6 +115,7 @@ function AdminPlansPage() {
   const list = useServerFn(adminListPlans);
   const save = useServerFn(adminSavePlan);
   const syncPrices = useServerFn(adminSyncPlanPrices);
+  const inspectPaddle = useServerFn(adminInspectPaddlePrices);
   const remove = useServerFn(adminDeletePlan);
   const findStudent = useServerFn(adminFindGrantStudent);
   const createGrant = useServerFn(adminCreatePlanGrant);
@@ -142,37 +161,74 @@ function AdminPlansPage() {
   const plan = index >= 0 ? drafts[index]! : null;
   const dirty = plan ? saved[plan.slug] !== JSON.stringify(plan) : false;
 
+  const {
+    data: paddleInspection,
+    isLoading: inspectLoading,
+    isFetching: inspectFetching,
+    refetch: refetchInspection,
+  } = useQuery({
+    queryKey: ["admin-paddle-inspect", plan?.slug],
+    queryFn: () =>
+      plan?.slug
+        ? (inspectPaddle({ data: { slug: plan.slug } }) as Promise<PaddlePlanInspection>)
+        : null,
+    enabled: isAdmin && !!plan?.slug,
+    staleTime: 10_000,
+  });
+
   const patch = (p: Partial<AdminPlan>) =>
     setDrafts((d) => d.map((row) => (row.slug === selected ? { ...row, ...p } : row)));
 
   const persist = async (row: AdminPlan, quiet = false) => {
-    const res = (await save({ data: row })) as { sync?: { done: string[]; failed: string[] } };
+    const res = (await save({ data: row })) as {
+      sync?: {
+        done: string[];
+        failed: Array<{ id: string; reason: string }>;
+        env?: string;
+      };
+    };
     setSaved((s) => ({ ...s, [row.slug]: JSON.stringify(row) }));
     await qc.invalidateQueries({ queryKey: ["plans"] });
     if (!quiet) {
       const done = res?.sync?.done?.length ?? 0;
       toast.success(
         done > 0
-          ? `${row.name} saved — new price sent to checkout for new buyers`
+          ? `${row.name} saved — new price synced to Paddle (${res?.sync?.env ?? "live"}) for new buyers`
           : `${row.name} saved`,
       );
       if (res?.sync?.failed?.length) {
-        toast.error(`Checkout price not updated for: ${res.sync.failed.join(", ")}`);
+        const failedMsg = res.sync.failed
+          .map((f: any) => (typeof f === "string" ? f : `${f.id}: ${f.reason}`))
+          .join(", ");
+        toast.error(`Checkout price not updated in Paddle: ${failedMsg}`);
       }
     }
+    void refetchInspection();
   };
 
   const onSyncPrices = async () => {
     if (!plan) return;
     setBusy(true);
     try {
-      const r = await syncPrices({ data: { slug: plan.slug, environment: "sandbox" } });
-      toast.success(
-        r.done.length
-          ? `Checkout prices updated (${r.done.join(", ")})`
-          : "Nothing to update — add the checkout price ids first.",
-      );
-      if (r.failed.length) toast.error(`Could not update: ${r.failed.join(", ")}`);
+      const r = (await syncPrices({ data: { slug: plan.slug, environment: "auto" } })) as {
+        done: string[];
+        failed: Array<{ id: string; reason: string }>;
+        env: string;
+      };
+      if (r.done?.length) {
+        toast.success(
+          `Live Paddle catalog updated (${r.env} mode): ${r.done.join(", ")}`,
+        );
+      } else if (!r.failed?.length) {
+        toast.info("No prices needed updating — verify that price IDs are set.");
+      }
+      if (r.failed?.length) {
+        const failedMsg = r.failed
+          .map((f: any) => (typeof f === "string" ? f : `${f.id}: ${f.reason}`))
+          .join(", ");
+        toast.error(`Could not update: ${failedMsg}`);
+      }
+      await refetchInspection();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not reach the payment catalog");
     } finally {
@@ -534,6 +590,20 @@ function AdminPlansPage() {
                       );
                     })()}
 
+                    <PaddleCoordinationPanel
+                      plan={plan}
+                      inspection={paddleInspection}
+                      loading={inspectLoading || inspectFetching}
+                      onRefresh={() => void refetchInspection()}
+                      onSync={onSyncPrices}
+                      onAdoptPrice={(field, cents) => {
+                        patch({ [field]: cents });
+                        toast.info(
+                          `Updated price in draft to ${money(cents, plan.currency)}. Click "Save plan" to persist.`,
+                        );
+                      }}
+                      busy={busy}
+                    />
                   </Block>
 
                   <Block title="Offer">
@@ -722,9 +792,10 @@ function AdminPlansPage() {
                         type="button"
                         disabled={busy}
                         onClick={onSyncPrices}
-                        className="inline-flex items-center justify-center gap-2 rounded-full border border-black/10 px-4 py-2.5 text-[14px] font-black text-[#23201d] disabled:opacity-60"
+                        className="inline-flex items-center justify-center gap-2 rounded-full border border-black/10 px-4 py-2.5 text-[14px] font-black text-[#23201d] hover:bg-black/5 disabled:opacity-60"
                       >
-                        Send price to checkout
+                        <RefreshCw size={14} className={busy ? "animate-spin" : ""} />
+                        Sync to Paddle ({paddleInspection?.activeEnv ?? "live"})
                       </button>
                       <button
                         type="button"
@@ -1017,5 +1088,217 @@ function Toggle({ on, label: text, onClick }: { on: boolean; label: string; onCl
       {on ? "✓ " : "○ "}
       {text}
     </button>
+  );
+}
+
+function PaddleCoordinationPanel({
+  plan,
+  inspection,
+  loading,
+  onRefresh,
+  onSync,
+  onAdoptPrice,
+  busy,
+}: {
+  plan: AdminPlan;
+  inspection: PaddlePlanInspection | null | undefined;
+  loading: boolean;
+  onRefresh: () => void;
+  onSync: () => void;
+  onAdoptPrice: (field: "price_cents" | "yearly_cents" | "once_cents", cents: number) => void;
+  busy: boolean;
+}) {
+  const env = inspection?.activeEnv ?? "live";
+  const vendorDashboardUrl =
+    env === "sandbox"
+      ? "https://sandbox-vendors.paddle.com/prices"
+      : "https://vendors.paddle.com/prices";
+
+  return (
+    <div className="mt-4 rounded-2xl border border-black/10 bg-[#fbfaf8] p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/[0.06] pb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-[11.5px] font-black uppercase tracking-[0.16em] text-[#5c554b]">
+            Paddle Catalog Coordination
+          </span>
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-[10.5px] font-extrabold uppercase tracking-wider ${
+              env === "live"
+                ? "border border-[#2e7d32]/20 bg-[#e8f5e9] text-[#2e7d32]"
+                : "border border-[#e65100]/20 bg-[#fff3e0] text-[#e65100]"
+            }`}
+          >
+            {env === "live" ? "● Live Production" : "● Sandbox"}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={loading || busy}
+            aria-label="Refresh Paddle Status"
+            className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-2.5 py-1 text-[11.5px] font-bold text-[#5c554b] hover:bg-black/5 disabled:opacity-50"
+          >
+            <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
+            Refresh
+          </button>
+          <a
+            href={vendorDashboardUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-2.5 py-1 text-[11.5px] font-bold text-[#5c554b] hover:bg-black/5"
+          >
+            <ExternalLink size={12} />
+            Paddle Dashboard
+          </a>
+        </div>
+      </div>
+
+      {loading && !inspection && (
+        <div className="py-4 text-center text-[12.5px] font-semibold text-[#8a8378]">
+          Checking Paddle catalog prices…
+        </div>
+      )}
+
+      {inspection && inspection.overallStatus === "in_sync" && (
+        <div className="mt-3 flex items-start gap-2.5 rounded-xl bg-[#eaf5ea] p-3 text-[12.5px] font-bold text-[#2e7d32]">
+          <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-[#2e7d32]" />
+          <div>
+            <p>In Sync: Website and Paddle prices match perfectly ({env} mode).</p>
+            <p className="text-[11.5px] font-normal text-[#3d703e]">
+              Students checking out will be charged the exact prices listed on this card.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {inspection && inspection.overallStatus === "desynced" && (
+        <div className="mt-3 rounded-xl border border-amber-300 bg-[#fff9eb] p-3.5 text-[12.5px]">
+          <div className="flex items-start gap-2.5 text-[#92400e]">
+            <AlertTriangle size={18} className="mt-0.5 shrink-0 text-[#b45309]" />
+            <div>
+              <p className="text-[13px] font-black">Price Desync Detected!</p>
+              <p className="mt-0.5 text-[12px] font-medium text-[#78350f]">
+                The price configured on RitaJet does not match what Paddle charges buyers. Push your
+                updated price to Paddle or adopt the existing Paddle price to avoid discrepancies.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onSync}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#b45309] px-3.5 py-1.5 text-[12px] font-black text-white hover:bg-[#92400e] disabled:opacity-60"
+            >
+              <Sparkles size={13} />
+              Push Website Price to Live Paddle
+            </button>
+          </div>
+        </div>
+      )}
+
+      {inspection && inspection.overallStatus === "not_found" && (
+        <div className="mt-3 flex items-start gap-2.5 rounded-xl bg-[#f0f4f8] p-3 text-[12px] font-medium text-[#334155]">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[#64748b]" />
+          <div>
+            <p className="font-bold text-[#1e293b]">Checkout price ID not found in Paddle catalog</p>
+            <p className="mt-0.5 text-[11.5px] text-[#64748b]">
+              Verify that the price ID (pri_... or external ID) exists in your Paddle{" "}
+              <a
+                href={vendorDashboardUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-bold underline"
+              >
+                vendor catalog
+              </a>
+              . You can also click "Sync to Paddle" to send your price.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {inspection && inspection.targets.length > 0 && (
+        <div className="mt-3 divide-y divide-black/[0.05] rounded-xl border border-black/[0.07] bg-white">
+          {inspection.targets.map((t) => {
+            const fieldKey =
+              t.key === "monthly"
+                ? "price_cents"
+                : t.key === "yearly"
+                  ? "yearly_cents"
+                  : "once_cents";
+            return (
+              <div
+                key={t.key}
+                className="flex flex-wrap items-center justify-between gap-3 p-3 text-[12.5px]"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-[#23201d]">{t.label}</span>
+                    <span className="font-mono text-[11px] text-[#8a8378]">({t.configuredId})</span>
+                  </div>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[12px]">
+                    <span className="font-bold text-[#5c554b]">
+                      Site: {money(t.expectedCents, t.currency)}
+                    </span>
+                    <span>→</span>
+                    <span
+                      className={`font-black ${
+                        t.status === "in_sync"
+                          ? "text-[#2e7d32]"
+                          : t.status === "desynced"
+                            ? "text-[#b45309]"
+                            : "text-[#8a8378]"
+                      }`}
+                    >
+                      Paddle:{" "}
+                      {t.paddleCents !== undefined
+                        ? money(t.paddleCents, t.paddleCurrency || t.currency)
+                        : "Not in catalog"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {t.status === "in_sync" && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#e8f5e9] px-2.5 py-1 text-[11px] font-black text-[#2e7d32]">
+                      <Check size={12} /> In Sync
+                    </span>
+                  )}
+                  {t.status === "desynced" && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={onSync}
+                        className="rounded-full bg-[#23201d] px-2.5 py-1 text-[11px] font-black text-white hover:bg-black disabled:opacity-50"
+                      >
+                        Push {money(t.expectedCents, t.currency)} to Paddle
+                      </button>
+                      {t.paddleCents !== undefined && (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => onAdoptPrice(fieldKey, t.paddleCents!)}
+                          className="rounded-full border border-black/10 bg-white px-2.5 py-1 text-[11px] font-black text-[#5c554b] hover:bg-black/5"
+                        >
+                          Use Paddle’s {money(t.paddleCents, t.paddleCurrency || t.currency)}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {t.status === "not_found" && (
+                    <span className="rounded-full bg-[#f1eee8] px-2.5 py-1 text-[11px] font-bold text-[#8a8378]">
+                      ID Missing
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

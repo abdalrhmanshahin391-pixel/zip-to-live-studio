@@ -136,9 +136,14 @@ export async function initializePaddle(
 /** Resolves our price id and says which environment the form must open in. */
 export async function getPaddlePriceId(
   priceId: string,
-): Promise<{ paddlePriceId: string; environment: PayEnv }> {
+): Promise<{ paddlePriceId: string; environment: PayEnv; amountCents?: number; currency?: string }> {
   const environment = getPaddleEnvironment();
   const result = await resolvePaddlePrice({ data: { priceId, environment } });
   if (!result.ok) throw new Error(result.error);
-  return { paddlePriceId: result.paddlePriceId, environment: result.environment };
+  return {
+    paddlePriceId: result.paddlePriceId,
+    environment: result.environment,
+    amountCents: result.amountCents,
+    currency: result.currency,
+  };
 }

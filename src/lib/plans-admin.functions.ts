@@ -66,6 +66,15 @@ export const adminListPlans = createServerFn({ method: "GET" })
 
 type Env = "sandbox" | "live";
 
+export function getActiveServerPaddleEnv(): Env {
+  const forceTest = String(process.env.VITE_PAYMENTS_FORCE_TEST ?? "") === "1";
+  if (forceTest) return "sandbox";
+  const liveToken = process.env.VITE_PAYMENTS_CLIENT_TOKEN;
+  if (liveToken?.startsWith("live_")) return "live";
+  if (process.env.PADDLE_LIVE_API_KEY) return "live";
+  return "sandbox";
+}
+
 async function pay(env: Env, path: string, init?: RequestInit) {
   const { gatewayFetch } = await import("@/lib/paddle.server");
   const res = await gatewayFetch(env, path, init);
@@ -77,43 +86,64 @@ async function pay(env: Env, path: string, init?: RequestInit) {
     body = null;
   }
   if (!res.ok) {
-    throw new Error(body?.error?.detail || `Payment catalog request failed (${res.status})`);
+    const detail =
+      body?.error?.detail ||
+      body?.error?.message ||
+      body?.message ||
+      `Payment catalog request failed (${res.status})`;
+    throw new Error(detail);
   }
   return body;
 }
 
+export type SyncResult = {
+  done: string[];
+  failed: { id: string; reason: string }[];
+  env: Env;
+};
+
 /**
  * Pushes a plan's name and prices to the payment catalog so the amount a
- * student is charged always matches what the pricing page shows. Students who
- * already bought keep the price they signed up on.
+ * student is charged always matches what the pricing page shows.
+ * Supports both internal Paddle IDs (pri_...) and human external IDs (e.g. toolkit_monthly).
  */
-async function syncPlanToPaddle(plan: AdminPlan, env: Env) {
-  const targets: { externalId: string | null; cents: number }[] = [
-    { externalId: plan.paddle_price_monthly, cents: plan.price_cents },
-    { externalId: plan.paddle_price_yearly, cents: plan.yearly_cents },
-    { externalId: plan.paddle_price_once, cents: plan.once_cents },
+async function syncPlanToPaddle(plan: AdminPlan, env: Env): Promise<SyncResult> {
+  const targets: { label: string; externalId: string | null; cents: number }[] = [
+    { label: "monthly", externalId: plan.paddle_price_monthly, cents: plan.price_cents },
+    { label: "yearly", externalId: plan.paddle_price_yearly, cents: plan.yearly_cents },
+    { label: "lifetime", externalId: plan.paddle_price_once, cents: plan.once_cents },
   ];
   const done: string[] = [];
-  const failed: string[] = [];
+  const failed: { id: string; reason: string }[] = [];
   let productSynced = false;
 
   for (const t of targets) {
     if (!t.externalId || !t.cents) continue;
     try {
-      const found = await pay(env, `/prices?external_id=${encodeURIComponent(t.externalId)}`);
-      const price = found?.data?.[0];
-      if (!price) {
-        failed.push(t.externalId);
+      const isPri = t.externalId.startsWith("pri_");
+      const found = isPri
+        ? await pay(env, `/prices/${encodeURIComponent(t.externalId)}`)
+        : await pay(env, `/prices?external_id=${encodeURIComponent(t.externalId)}`);
+
+      const price = isPri ? found?.data : found?.data?.[0];
+      if (!price || !price.id) {
+        failed.push({
+          id: t.externalId,
+          reason: `Price identifier "${t.externalId}" not found in Paddle ${env} catalog`,
+        });
         continue;
       }
+
+      // Update unit price on Paddle
       await pay(env, `/prices/${price.id}`, {
         method: "PATCH",
         body: JSON.stringify({
           unit_price: { amount: String(t.cents), currency_code: plan.currency.toUpperCase() },
         }),
       });
-      done.push(t.externalId);
+      done.push(`${t.externalId} -> ${(t.cents / 100).toFixed(2)} ${plan.currency} (${env})`);
 
+      // Keep product title aligned
       if (!productSynced && price.product_id) {
         await pay(env, `/products/${price.product_id}`, {
           method: "PATCH",
@@ -124,12 +154,146 @@ async function syncPlanToPaddle(plan: AdminPlan, env: Env) {
         }).catch(() => null);
         productSynced = true;
       }
-    } catch {
-      failed.push(t.externalId);
+    } catch (err: any) {
+      failed.push({
+        id: t.externalId,
+        reason: err?.message || "Paddle update failed",
+      });
     }
   }
-  return { done, failed };
+  return { done, failed, env };
 }
+
+export type PaddleTargetInspection = {
+  key: "monthly" | "yearly" | "once";
+  label: string;
+  configuredId: string;
+  expectedCents: number;
+  currency: string;
+  foundInPaddle: boolean;
+  paddlePriceId?: string;
+  paddleCents?: number;
+  paddleCurrency?: string;
+  paddleStatus?: string;
+  status: "in_sync" | "desynced" | "not_found" | "error";
+  message: string;
+};
+
+export type PaddlePlanInspection = {
+  slug: string;
+  name: string;
+  activeEnv: Env;
+  targets: PaddleTargetInspection[];
+  overallStatus: "in_sync" | "desynced" | "not_found" | "not_configured";
+};
+
+/** Inspect real-time prices directly from the Paddle API. */
+export const adminInspectPaddlePrices = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        slug: z.string().min(1),
+        environment: z.enum(["sandbox", "live", "auto"]).default("auto"),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<PaddlePlanInspection> => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+    const { data: row, error } = await (supabaseAdmin as any)
+      .from("plans")
+      .select("*")
+      .eq("slug", data.slug)
+      .maybeSingle();
+    if (error || !row) throw new Error("Plan not found");
+
+    const plan = row as AdminPlan;
+    const env: Env = data.environment === "auto" ? getActiveServerPaddleEnv() : data.environment;
+
+    const list: { key: "monthly" | "yearly" | "once"; label: string; id: string | null; cents: number }[] = [
+      { key: "monthly", label: "Monthly / 3-Month", id: plan.paddle_price_monthly, cents: plan.price_cents },
+      { key: "yearly", label: "Yearly", id: plan.paddle_price_yearly, cents: plan.yearly_cents },
+      { key: "once", label: "One-time / Lifetime", id: plan.paddle_price_once, cents: plan.once_cents },
+    ];
+
+    const targets: PaddleTargetInspection[] = [];
+
+    for (const item of list) {
+      if (!item.id) continue;
+      const expectedCents = item.cents;
+      try {
+        const isPri = item.id.startsWith("pri_");
+        const res = isPri
+          ? await pay(env, `/prices/${encodeURIComponent(item.id)}`)
+          : await pay(env, `/prices?external_id=${encodeURIComponent(item.id)}`);
+
+        const price = isPri ? res?.data : res?.data?.[0];
+        if (!price || !price.id) {
+          targets.push({
+            key: item.key,
+            label: item.label,
+            configuredId: item.id,
+            expectedCents,
+            currency: plan.currency,
+            foundInPaddle: false,
+            status: "not_found",
+            message: `Not found in Paddle (${env}) catalog`,
+          });
+          continue;
+        }
+
+        const paddleCents = price.unit_price?.amount ? Number(price.unit_price.amount) : 0;
+        const paddleCurrency = price.unit_price?.currency_code || plan.currency;
+        const inSync = paddleCents === expectedCents;
+
+        targets.push({
+          key: item.key,
+          label: item.label,
+          configuredId: item.id,
+          expectedCents,
+          currency: plan.currency,
+          foundInPaddle: true,
+          paddlePriceId: price.id,
+          paddleCents,
+          paddleCurrency,
+          paddleStatus: price.status,
+          status: inSync ? "in_sync" : "desynced",
+          message: inSync
+            ? `In sync ($${(paddleCents / 100).toFixed(2)} ${paddleCurrency})`
+            : `Desynced: Paddle has $${(paddleCents / 100).toFixed(2)} ${paddleCurrency}, website has $${(expectedCents / 100).toFixed(2)} ${plan.currency}`,
+        });
+      } catch (err: any) {
+        targets.push({
+          key: item.key,
+          label: item.label,
+          configuredId: item.id,
+          expectedCents,
+          currency: plan.currency,
+          foundInPaddle: false,
+          status: "error",
+          message: err?.message || "Paddle lookup failed",
+        });
+      }
+    }
+
+    let overallStatus: PaddlePlanInspection["overallStatus"] = "in_sync";
+    if (targets.length === 0) {
+      overallStatus = "not_configured";
+    } else if (targets.some((t) => t.status === "desynced")) {
+      overallStatus = "desynced";
+    } else if (targets.some((t) => t.status === "not_found" || t.status === "error")) {
+      overallStatus = "not_found";
+    }
+
+    return {
+      slug: plan.slug,
+      name: plan.name,
+      activeEnv: env,
+      targets,
+      overallStatus,
+    };
+  });
 
 /** Create or update one plan, and keep the payment catalog in step. */
 export const adminSavePlan = createServerFn({ method: "POST" })
@@ -143,12 +307,25 @@ export const adminSavePlan = createServerFn({ method: "POST" })
       .upsert({ ...data, updated_at: new Date().toISOString() }, { onConflict: "slug" });
     if (error) throw new Error(error.message);
 
-    // Best effort: saving the plan must never fail because the catalog is busy.
-    let sync: { done: string[]; failed: string[] } = { done: [], failed: [] };
+    // Sync to active payment environment (live production or sandbox)
+    const env = getActiveServerPaddleEnv();
+    let sync: SyncResult = { done: [], failed: [], env };
     try {
-      sync = await syncPlanToPaddle(data, "sandbox");
-    } catch {
-      sync = { done: [], failed: ["catalog unreachable"] };
+      sync = await syncPlanToPaddle(data, env);
+      // If active is live, also attempt sandbox as best effort
+      if (env === "live") {
+        try {
+          await syncPlanToPaddle(data, "sandbox");
+        } catch {
+          // sandbox error should not affect live sync
+        }
+      }
+    } catch (e: any) {
+      sync = {
+        done: [],
+        failed: [{ id: "all", reason: e?.message || "Catalog unreachable" }],
+        env,
+      };
     }
     return { ok: true, sync };
   });
@@ -157,7 +334,12 @@ export const adminSavePlan = createServerFn({ method: "POST" })
 export const adminSyncPlanPrices = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ slug: z.string().min(1), environment: z.enum(["sandbox", "live"]).default("sandbox") }).parse(d),
+    z
+      .object({
+        slug: z.string().min(1),
+        environment: z.enum(["sandbox", "live", "auto"]).default("auto"),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
@@ -169,7 +351,9 @@ export const adminSyncPlanPrices = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("That plan no longer exists.");
-    return await syncPlanToPaddle(row as AdminPlan, data.environment);
+
+    const env: Env = data.environment === "auto" ? getActiveServerPaddleEnv() : data.environment;
+    return await syncPlanToPaddle(row as AdminPlan, env);
   });
 
 /** Delete a plan; students on it fall back to Starter. */

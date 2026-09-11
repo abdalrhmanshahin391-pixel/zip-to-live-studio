@@ -164,6 +164,18 @@ function CheckoutPage() {
       setLocalError(null);
       try {
         closeCheckout();
+        // Cross-verify price with Paddle catalog
+        try {
+          const resolved = await getPaddlePriceId(priceId);
+          if (resolved.amountCents && resolved.amountCents !== cents) {
+            console.warn(
+              `[Checkout Price Discrepancy] Plan ${plan.slug} advertised at ${cents} cents, but Paddle price is ${resolved.amountCents} cents.`,
+            );
+          }
+        } catch {
+          // Non-blocking lookup check
+        }
+
         await openCheckout({
           priceId,
           customerEmail: user.email ?? undefined,
