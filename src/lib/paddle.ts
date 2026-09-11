@@ -17,16 +17,16 @@ declare global {
 
 /** The environment every payment form must open in. */
 export function getPaddleEnvironment(): PayEnv {
-  if (forceTest && (testClientToken || liveClientToken?.startsWith("test_"))) return "sandbox";
-  return liveClientToken?.startsWith("test_") ? "sandbox" : "live";
+  if (forceTest) return "sandbox";
+  if (testClientToken && !liveClientToken?.startsWith("live_")) return "sandbox";
+  return liveClientToken?.startsWith("live_") ? "live" : "sandbox";
 }
 
 function tokenFor(env: PayEnv): string | undefined {
   if (env === "sandbox") {
-    if (testClientToken?.startsWith("test_")) return testClientToken;
-    return liveClientToken?.startsWith("test_") ? liveClientToken : undefined;
+    return testClientToken || (liveClientToken?.startsWith("test_") ? liveClientToken : undefined);
   }
-  return liveClientToken?.startsWith("live_") ? liveClientToken : undefined;
+  return liveClientToken?.startsWith("live_") ? liveClientToken : testClientToken;
 }
 
 let scriptPromise: Promise<void> | null = null;

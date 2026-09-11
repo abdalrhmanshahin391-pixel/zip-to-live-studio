@@ -158,6 +158,7 @@ function CheckoutPage() {
     async (
       discountCode?: string,
       methodRestriction: PaymentMethodSelection = "all",
+      displayMode: "inline" | "overlay" = "inline",
     ) => {
       if (!plan || !user || !priceId) return;
       setLocalError(null);
@@ -170,7 +171,7 @@ function CheckoutPage() {
           successUrl: `${window.location.origin}/checkout/success?plan=${plan.slug}`,
           discountCode,
           frameTarget: FRAME,
-          displayMode: "inline",
+          displayMode,
           methodRestriction,
         });
       } catch (e: any) {
@@ -326,10 +327,17 @@ function CheckoutPage() {
                 <div className="mt-3 flex flex-wrap items-center gap-2.5">
                   <button
                     type="button"
-                    onClick={() => void start(promo?.code, "all")}
+                    onClick={() => void start(promo?.code, "all", "inline")}
                     className="rita-btn rita-btn-primary text-[13px] py-2 px-4"
                   >
                     <RotateCcw size={14} /> Try again
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void start(promo?.code, "all", "overlay")}
+                    className="rita-btn rita-btn-secondary text-[13px] py-2 px-4"
+                  >
+                    Open secure popup
                   </button>
                   <Link to="/pricing" className="text-[13px] text-muted-foreground underline ml-2">
                     Back to plans

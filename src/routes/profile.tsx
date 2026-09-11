@@ -19,6 +19,8 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
+  CreditCard,
+  Gauge,
   KeyRound,
   Save,
   ShieldCheck,
@@ -392,6 +394,26 @@ function ProfilePage() {
               </button>
             </div>
           </form>
+        </SectionCard>
+
+        <SectionCard icon={<CreditCard size={18} />} title="Billing & Subscription">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="max-w-md">
+              <p className="text-sm font-semibold text-foreground">
+                Manage your active plan, view saved payment cards, or cancel auto-renewal.
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                All subscriptions, card on file, and invoices are handled securely via Paddle.
+              </p>
+            </div>
+            <Link
+              to="/my-plan"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition hover:opacity-90"
+            >
+              <Gauge size={16} />
+              Manage Plan & Cards
+            </Link>
+          </div>
         </SectionCard>
 
 

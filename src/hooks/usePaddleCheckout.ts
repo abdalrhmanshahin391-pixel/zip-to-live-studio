@@ -79,6 +79,7 @@ export function usePaddleCheckout() {
           data?.detail ||
           data?.error?.detail ||
           data?.message ||
+          (typeof data?.error === "string" ? data.error : null) ||
           "Paddle encountered an error opening the payment form. Please try again or select card payment.";
         setError(msg);
       } else if (name === "checkout.payment.failed") {
@@ -109,10 +110,11 @@ export function usePaddleCheckout() {
 
       if (activeSessionRef.current !== sessionId) return;
 
-      const hasTarget =
-        !!options.frameTarget &&
-        typeof document !== "undefined" &&
-        !!document.getElementsByClassName(options.frameTarget)[0];
+      const targetEl =
+        options.frameTarget && typeof document !== "undefined"
+          ? (document.getElementsByClassName(options.frameTarget)[0] as HTMLElement | undefined)
+          : undefined;
+      const hasTarget = !!targetEl;
 
       // Use inline if requested and target exists; otherwise overlay
       const isInline = options.displayMode === "inline" || (!options.displayMode && hasTarget);
@@ -121,10 +123,14 @@ export function usePaddleCheckout() {
         throw new Error("Payment container is not ready. Please refresh the page.");
       }
 
+      // Container Hygiene: Clean out any previous stale iframe to prevent DOM collisions on PC
+      if (isInline && targetEl) {
+        targetEl.innerHTML = "";
+      }
+
       // Strictly map allowedPaymentMethods based on user's choice
       let allowedPaymentMethods: string[] | undefined = undefined;
       if (options.cardsOnly || options.methodRestriction === "card_only") {
-        // Strictly card only — no PayPal or others
         allowedPaymentMethods = ["card"];
       } else if (options.methodRestriction === "card_and_paypal") {
         allowedPaymentMethods = ["card", "paypal"];

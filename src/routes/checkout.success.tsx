@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { ProHeader } from "@/components/home/procreate/ProHeader";
 import { supabase } from "@/integrations/supabase/legacy-client";
@@ -34,6 +35,7 @@ export const Route = createFileRoute("/checkout/success")({
 function SuccessPage() {
   const { plan: slug, free: isFree } = Route.useSearch();
   const { user } = useAuth();
+  const qc = useQueryClient();
   const [polling, setPolling] = useState(true);
   const [granted, setGranted] = useState(false);
 
@@ -51,6 +53,9 @@ function SuccessPage() {
           if (!cancelled) {
             setGranted(true);
             setPolling(false);
+            void qc.invalidateQueries({ queryKey: ["my-plan-usage"] });
+            void qc.invalidateQueries({ queryKey: ["my-subscription"] });
+            void qc.invalidateQueries({ queryKey: ["my-payment-methods"] });
           }
         })
         .catch((err) => {
