@@ -74,19 +74,21 @@ export const ROLE_LABEL: Record<SpaceRole, string> = {
 
 /* --------------------------------------------------------------- queries */
 
+export async function listMySpaces(_userId?: string): Promise<MySpace[]> {
+  const { data, error } = await rpc("my_spaces");
+  if (error) throw error;
+  return (data ?? []).map((s: any) => ({
+    ...s,
+    members: Number(s.members),
+    decks: Number(s.decks),
+  })) as MySpace[];
+}
+
 export function useMySpaces() {
   return useQuery({
     queryKey: ["my-spaces"],
     staleTime: 30_000,
-    queryFn: async () => {
-      const { data, error } = await rpc("my_spaces");
-      if (error) throw error;
-      return (data ?? []).map((s: any) => ({
-        ...s,
-        members: Number(s.members),
-        decks: Number(s.decks),
-      })) as MySpace[];
-    },
+    queryFn: () => listMySpaces(),
   });
 }
 
