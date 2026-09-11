@@ -367,7 +367,7 @@ function DeviceTracker() {
         const { data } = await supabase.auth.getSession();
         if (!data.session || cancelled) return;
         const deviceId = getOrCreateDeviceId();
-        const res = await recordDevice({ data: { deviceId } });
+        const res = await recordDevice({ data: { deviceId } }).catch(() => null);
         if (cancelled) return;
         if (res && "ok" in res && !res.ok) {
           // Over the device limit (or manually locked): send the user to the

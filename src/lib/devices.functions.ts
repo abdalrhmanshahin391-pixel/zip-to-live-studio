@@ -58,14 +58,18 @@ async function isAdminUser(supabase: any, userId: string) {
 }
 
 /** Site-wide fallback device limit (used when a profile has no personal override). */
-async function globalDeviceLimit(admin: any): Promise<number> {
-  const { data } = await admin
-    .from("device_security_settings")
-    .select("default_device_limit")
-    .eq("id", true)
-    .maybeSingle();
-  const n = (data as { default_device_limit?: number } | null)?.default_device_limit;
-  return typeof n === "number" && n > 0 ? n : 2;
+async function globalDeviceLimit(client: any): Promise<number> {
+  try {
+    const { data } = await client
+      .from("device_security_settings")
+      .select("default_device_limit")
+      .eq("id", true)
+      .maybeSingle();
+    const n = (data as { default_device_limit?: number } | null)?.default_device_limit;
+    return typeof n === "number" && n > 0 ? n : 2;
+  } catch {
+    return 2;
+  }
 }
 
 /**
@@ -90,21 +94,29 @@ export const recordDevice = createServerFn({ method: "POST" })
     const platform = parsePlatform(ua);
     const now = new Date().toISOString();
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+    let adminClient: any = null;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+      adminClient = supabaseAdmin;
+    } catch {
+      /* fallback to authenticated client */
+    }
+    const db = adminClient || supabase;
 
+    // Use context.supabase for user's own data to leverage RLS safely
     const [{ data: prof }, { data: existing }, admin, globalLimit] = await Promise.all([
-      supabaseAdmin
+      supabase
         .from("profiles")
         .select("device_limit, locked_at")
         .eq("id", userId)
         .maybeSingle(),
-      supabaseAdmin
+      supabase
         .from("user_devices")
         .select("id, device_id, first_seen_at")
         .eq("user_id", userId)
         .order("first_seen_at", { ascending: true }),
       isAdminUser(supabase, userId),
-      globalDeviceLimit(supabaseAdmin),
+      globalDeviceLimit(db),
     ]);
 
     const limit = (prof as { device_limit?: number | null } | null)?.device_limit ?? globalLimit;
@@ -112,7 +124,7 @@ export const recordDevice = createServerFn({ method: "POST" })
 
     // Admins: unlimited devices, never locked.
     if (admin) {
-      await supabaseAdmin.from("user_devices").upsert(
+      await db.from("user_devices").upsert(
         { user_id: userId, device_id: data.deviceId, user_agent: ua, platform, ip, last_seen_at: now },
         { onConflict: "user_id,device_id" },
       );
@@ -125,7 +137,7 @@ export const recordDevice = createServerFn({ method: "POST" })
 
     if (lockedAt || !hasSlot) {
       if (!lockedAt) {
-        await supabaseAdmin
+        await db
           .from("profiles")
           .update({ locked_at: now, lock_reason: "device_limit" })
           .eq("id", userId);
@@ -133,11 +145,13 @@ export const recordDevice = createServerFn({ method: "POST" })
       return { ok: false, status: "locked", limit, count: list.length };
     }
 
-    const { error: upErr } = await supabaseAdmin.from("user_devices").upsert(
+    const { error: upErr } = await supabase.from("user_devices").upsert(
       { user_id: userId, device_id: data.deviceId, user_agent: ua, platform, ip, last_seen_at: now },
       { onConflict: "user_id,device_id" },
     );
-    if (upErr) throw new Error(upErr.message);
+    if (upErr) {
+      console.warn("Could not upsert user device:", upErr.message);
+    }
 
     return { ok: true, status: "ok", limit, count: index > -1 ? list.length : list.length + 1 };
   });
@@ -146,23 +160,30 @@ export const recordDevice = createServerFn({ method: "POST" })
 export const getLockInfo = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+    let adminClient: any = null;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+      adminClient = supabaseAdmin;
+    } catch {}
+    const db = adminClient || context.supabase;
+
     const [{ data: prof }, { count }, { data: settings }, globalLimit] = await Promise.all([
-      supabaseAdmin
+      context.supabase
         .from("profiles")
         .select("device_limit, locked_at, lock_reason, username, full_name")
         .eq("id", context.userId)
         .maybeSingle(),
-      supabaseAdmin
+      context.supabase
         .from("user_devices")
         .select("id", { count: "exact", head: true })
         .eq("user_id", context.userId),
-      supabaseAdmin
+      db
         .from("device_security_settings")
         .select("telegram_url, support_url")
         .eq("id", true)
-        .maybeSingle(),
-      globalDeviceLimit(supabaseAdmin),
+        .maybeSingle()
+        .catch(() => ({ data: null })),
+      globalDeviceLimit(db),
     ]);
     const p = (prof ?? {}) as any;
     return {
@@ -185,14 +206,20 @@ export const redeemUnlockCode = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     const { userId } = context;
-    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+    let adminClient: any = null;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+      adminClient = supabaseAdmin;
+    } catch {}
+    const db = adminClient || context.supabase;
+
     const ua = getRequestHeader("user-agent") ?? null;
     const ip = getRequestIP({ xForwardedFor: true }) ?? null;
     const now = new Date().toISOString();
 
     // Rate limit: max 5 failed attempts per 15 minutes.
     const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-    const { count: recentFails } = await supabaseAdmin
+    const { count: recentFails } = await db
       .from("device_unlock_attempts")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
@@ -202,7 +229,7 @@ export const redeemUnlockCode = createServerFn({ method: "POST" })
       return { ok: false as const, reason: "rate_limited" as const };
     }
 
-    const { data: settings } = await supabaseAdmin
+    const { data: settings } = await db
       .from("device_security_settings")
       .select("unlock_code")
       .eq("id", true)
@@ -210,7 +237,7 @@ export const redeemUnlockCode = createServerFn({ method: "POST" })
     const expected = ((settings as any)?.unlock_code ?? "").trim();
     const good = expected.length > 0 && data.code === expected;
 
-    await supabaseAdmin.from("device_unlock_attempts").insert({
+    await db.from("device_unlock_attempts").insert({
       user_id: userId,
       success: good,
       code_used: good ? null : data.code.slice(0, 40),
@@ -220,14 +247,14 @@ export const redeemUnlockCode = createServerFn({ method: "POST" })
 
     if (!good) return { ok: false as const, reason: "invalid" as const };
 
-    await supabaseAdmin.from("user_devices").delete().eq("user_id", userId);
-    await supabaseAdmin
+    await db.from("user_devices").delete().eq("user_id", userId);
+    await db
       .from("profiles")
       .update({ locked_at: null, lock_reason: null })
       .eq("id", userId);
 
     if (data.deviceId) {
-      await supabaseAdmin.from("user_devices").upsert(
+      await db.from("user_devices").upsert(
         {
           user_id: userId,
           device_id: data.deviceId,
@@ -247,15 +274,21 @@ export const redeemUnlockCode = createServerFn({ method: "POST" })
 export const listMyDevices = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+    let adminClient: any = null;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+      adminClient = supabaseAdmin;
+    } catch {}
+    const db = adminClient || context.supabase;
+
     const [{ data: devices }, { data: prof }, globalLimit] = await Promise.all([
-      supabaseAdmin
+      context.supabase
         .from("user_devices")
         .select("id, device_id, nickname, user_agent, platform, ip, first_seen_at, last_seen_at")
         .eq("user_id", context.userId)
         .order("first_seen_at", { ascending: true }),
-      supabaseAdmin.from("profiles").select("device_limit").eq("id", context.userId).maybeSingle(),
-      globalDeviceLimit(supabaseAdmin),
+      context.supabase.from("profiles").select("device_limit").eq("id", context.userId).maybeSingle(),
+      globalDeviceLimit(db),
     ]);
     return {
       devices: (devices ?? []) as any[],
@@ -267,8 +300,7 @@ export const removeMyDevice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { deviceRowId: string }) => ({ deviceRowId: String(d.deviceRowId) }))
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
-    const { error } = await supabaseAdmin
+    const { error } = await context.supabase
       .from("user_devices")
       .delete()
       .eq("id", data.deviceRowId)
@@ -284,8 +316,7 @@ export const renameMyDevice = createServerFn({ method: "POST" })
     nickname: String(d.nickname ?? "").slice(0, 40),
   }))
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
-    const { error } = await supabaseAdmin
+    const { error } = await context.supabase
       .from("user_devices")
       .update({ nickname: data.nickname || null })
       .eq("id", data.deviceRowId)
