@@ -14,10 +14,12 @@ import {
   BookOpen,
   Archive,
   GraduationCap,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useAuth } from "@/hooks/useAuth";
+import { getDailyShareQuota } from "@/lib/share-decks";
 import {
   DECK_COVERS,
   coverOf,
@@ -75,6 +77,14 @@ export function NewQuestionSetPage() {
     queryFn: () => listMySpaces(user!.id),
     enabled: !!user,
   });
+
+  // Daily sharing quota query
+  const quotaQuery = useQuery({
+    queryKey: ["daily-share-quota", user?.id],
+    queryFn: () => getDailyShareQuota(user!.id),
+    enabled: !!user,
+  });
+  const quota = quotaQuery.data;
 
   const currentNodes: QuestionSubjectNode[] = useMemo(() => {
     if (!sourcesQuery.data) return [];
@@ -159,6 +169,10 @@ export function NewQuestionSetPage() {
   async function publish() {
     if (!user) {
       toast.error("Please sign in to share questions");
+      return;
+    }
+    if (quota?.isBlocked) {
+      toast.error("Daily sharing quota reached (5/5). Delete an item uploaded today to unlock a slot.");
       return;
     }
     if (!title.trim()) {
@@ -254,14 +268,36 @@ export function NewQuestionSetPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-wider ${
-                SOURCE_TYPE_META[sourceType].badgeClass
-              }`}
-            >
-              {SOURCE_TYPE_META[sourceType].icon} {SOURCE_TYPE_META[sourceType].label}
-            </span>
-            <h1 className="mt-3 font-display text-3xl font-black tracking-tight md:text-4xl">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-sky-800">
+                ❓ Question Set
+              </span>
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-wider ${
+                  SOURCE_TYPE_META[sourceType].badgeClass
+                }`}
+              >
+                {SOURCE_TYPE_META[sourceType].icon} {SOURCE_TYPE_META[sourceType].label}
+              </span>
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-black ${
+                  quota?.isBlocked
+                    ? "border-red-200 bg-red-50 text-red-700"
+                    : "border-emerald-200 bg-emerald-50 text-emerald-800"
+                }`}
+              >
+                Quota: {quota?.usedToday ?? 0} / 5 shared today ({quota?.remaining ?? 5} left)
+              </span>
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black ${
+                  toSpace ? "bg-[#eef7e4] text-[#3f6a17]" : "bg-[#fdf0d8] text-[#8a6a1f]"
+                }`}
+              >
+                {toSpace ? "🔒 Space members only" : "🌍 Everyone on RitaJet"}
+              </span>
+            </div>
+
+            <h1 className="mt-4 font-display text-3xl font-black tracking-tight md:text-4xl">
               {toSpace ? "Share questions with your space" : "Share questions with everyone"}
             </h1>
             <p className="mt-2 text-[15px] text-[#6b655c]">
@@ -297,6 +333,42 @@ export function NewQuestionSetPage() {
               🔒 Classroom / Space
             </button>
           </div>
+        </div>
+
+        {quota?.isBlocked && (
+          <div className="mt-4 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50/90 p-4 text-xs font-semibold text-red-800">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+            <div>
+              <p className="font-bold">Daily sharing limit reached (5/5 items shared today)</p>
+              <p className="mt-1 leading-relaxed">
+                You have used all 5 sharing slots for today across flashcards and questions. To share this question set right now,
+                simply delete one of the items you shared today in{" "}
+                <Link
+                  to="/share"
+                  search={{ type: "questions" }}
+                  className="font-black text-red-900 underline"
+                >
+                  My Shared Items
+                </Link>
+                . Deleting an item automatically frees up your slot immediately!
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Cross-navigation switcher: Questions vs Flashcards */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/[0.08] bg-white/70 p-3.5 shadow-sm">
+          <div className="flex items-center gap-2.5 text-xs text-[#6b655c]">
+            <span className="text-xl">🃏</span>
+            <span>Looking to share Flashcard flip-decks instead?</span>
+          </div>
+          <Link
+            to="/share/new"
+            search={{ space: selectedSpaceId ?? undefined }}
+            className="inline-flex items-center gap-1 text-xs font-black text-purple-700 hover:underline"
+          >
+            Share Flashcard Deck →
+          </Link>
         </div>
 
         {/* 1. Source Category Selection */}
@@ -650,7 +722,7 @@ export function NewQuestionSetPage() {
                 <button
                   type="button"
                   onClick={publish}
-                  disabled={saving || totalSelectedQuestions === 0}
+                  disabled={saving || totalSelectedQuestions === 0 || quota?.isBlocked}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#8ec63f] px-6 py-3.5 text-[15px] font-black text-white shadow-[0_12px_24px_-12px_rgba(142,198,63,0.8)] transition hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-50"
                 >
                   {saving ? (
@@ -660,9 +732,11 @@ export function NewQuestionSetPage() {
                   )}
                   {saving
                     ? "Publishing…"
-                    : toSpace
-                      ? `Share to Space (${totalSelectedQuestions} Qs)`
-                      : `Publish Questions (${totalSelectedQuestions} Qs)`}
+                    : quota?.isBlocked
+                      ? "Daily Limit Reached (5/5)"
+                      : toSpace
+                        ? `Share to Space (${totalSelectedQuestions} Qs)`
+                        : `Publish Questions (${totalSelectedQuestions} Qs)`}
                 </button>
               </div>
             </div>

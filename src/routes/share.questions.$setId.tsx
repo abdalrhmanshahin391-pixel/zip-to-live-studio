@@ -12,18 +12,22 @@ import {
   Eye,
   EyeOff,
   FolderPlus,
+  Globe,
   HelpCircle,
   ListChecks,
   Loader2,
+  Lock,
   Play,
   RotateCcw,
   Share2,
+  Star,
   Trash2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SiteHeader } from "@/components/SiteHeader";
 import { AuthorChip } from "@/components/share/DeckCard";
+import { QuestionSetRating } from "@/components/share/QuestionSetRating";
 import { useAuth } from "@/hooks/useAuth";
 import {
   coverOf,
@@ -34,6 +38,7 @@ import {
   isQuestionSetSaved,
   saveQuestionSet,
   setQuestionSetPublished,
+  setQuestionSetAudience,
   SOURCE_TYPE_META,
   type SharedQuestionItem,
   QUESTION_PAGE,
@@ -132,12 +137,32 @@ export function QuestionSetDetailPage() {
     }
   }
 
+  async function handleAudienceChange(newAudience: "public" | "space") {
+    if (!set) return;
+    try {
+      await setQuestionSetAudience(set.id, newAudience);
+      toast.success(
+        newAudience === "public"
+          ? "Question set is now shared publicly with everyone on RitaJet!"
+          : "Question set is now restricted to your space members only.",
+      );
+      qc.invalidateQueries({ queryKey: ["share-qset", setId] });
+    } catch (e: any) {
+      toast.error(e?.message || "Could not change audience");
+    }
+  }
+
   async function handleDelete() {
     if (!set) return;
-    if (!confirm(`Delete "${set.title}" for everyone? This cannot be undone.`)) return;
+    if (
+      !confirm(
+        `Delete "${set.title}" for everyone? This cannot be undone.\n\n✨ Note: If this set was shared today, deleting it will immediately free up 1 slot in your 5/day sharing limit!`,
+      )
+    )
+      return;
     try {
       await deleteQuestionSet(set.id);
-      toast.success("Question set deleted");
+      toast.success("Question set deleted (daily sharing slot recovered if shared today)");
       void navigate({ to: "/share" });
     } catch (e: any) {
       toast.error(e?.message || "Could not delete set");
@@ -203,6 +228,15 @@ export function QuestionSetDetailPage() {
               <>
                 <button
                   type="button"
+                  onClick={() => handleAudienceChange(set.audience === "public" ? "space" : "public")}
+                  className="inline-flex items-center gap-1 rounded-full border border-black/[0.08] bg-white px-3 py-1.5 text-xs font-black text-[#6b655c] transition hover:bg-black/[0.04]"
+                  title={set.audience === "public" ? "Restrict to space only" : "Make publicly available"}
+                >
+                  {set.audience === "public" ? <Lock size={13} /> : <Globe size={13} />}
+                  {set.audience === "public" ? "Make Space-only" : "Make Public"}
+                </button>
+                <button
+                  type="button"
                   onClick={handleTogglePublish}
                   className="grid h-8 w-8 place-items-center rounded-full border border-black/[0.08] bg-white text-[#6b655c] transition hover:bg-black/[0.04]"
                   title={set.published ? "Make hidden" : "Make public"}
@@ -234,6 +268,9 @@ export function QuestionSetDetailPage() {
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-white px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-sky-800 shadow-sm">
+                    ❓ Question Set
+                  </span>
                   <span
                     className={`inline-flex items-center gap-1 rounded-full border bg-white/95 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider ${sourceMeta.badgeClass}`}
                   >
@@ -246,6 +283,23 @@ export function QuestionSetDetailPage() {
                   )}
                   <span className="rounded-full bg-black/10 px-2.5 py-0.5 text-[11px] font-black text-[#23201d]">
                     {set.question_count} Questions
+                  </span>
+                  <span className="rounded-full bg-black/10 px-2.5 py-0.5 text-[11px] font-black text-[#23201d]">
+                    {set.save_count} saves
+                  </span>
+                  {set.rating_count > 0 ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-0.5 text-[11px] font-black text-amber-900 shadow-sm">
+                      <Star size={11} className="fill-amber-500 text-amber-500" />
+                      {set.rating_avg.toFixed(1)} ({set.rating_count})
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-black/10 px-2.5 py-0.5 text-[11px] font-black text-[#23201d]">
+                      No ratings yet
+                    </span>
+                  )}
+                  <span className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2.5 py-0.5 text-[11px] font-black text-[#23201d]">
+                    {set.audience === "public" ? <Globe size={11} /> : <Lock size={11} />}
+                    {set.audience === "public" ? "Public" : "Space only"}
                   </span>
                 </div>
                 <h1 className="mt-2 font-display text-2xl font-black tracking-tight text-[#23201d] md:text-3xl">
@@ -360,6 +414,11 @@ export function QuestionSetDetailPage() {
             )}
           </section>
         )}
+
+        {/* 5-Star Interactive Rating & Reviews */}
+        <div className="mt-12">
+          <QuestionSetRating setId={setId} />
+        </div>
       </main>
     </div>
   );

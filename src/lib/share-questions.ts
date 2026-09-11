@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/legacy-client";
-import { fetchAuthors, type DeckAuthor, DECK_COVERS, coverOf } from "@/lib/share-decks";
+import { fetchAuthors, type DeckAuthor, DECK_COVERS, coverOf, getDailyShareQuota, type DailyShareQuota } from "@/lib/share-decks";
 
 const db = (t: string) => (supabase.from as any)(t);
 
@@ -21,6 +21,8 @@ export type SharedQuestionSet = {
   tags: string[];
   question_count: number;
   save_count: number;
+  rating_avg?: number;
+  rating_count?: number;
   published: boolean;
   audience: SetAudience;
   created_at: string;
@@ -88,8 +90,9 @@ export { DECK_COVERS, coverOf };
 /** One page of the public question-set feed. */
 export async function fetchQuestionFeed(opts: {
   search?: string;
-  sort?: "new" | "top";
+  sort?: "new" | "top" | "rated" | "size";
   sourceType?: QuestionSourceType | "all";
+  tag?: string;
   page?: number;
 }) {
   const page = Math.max(0, opts.page ?? 0);
@@ -104,11 +107,19 @@ export async function fetchQuestionFeed(opts: {
   if (opts.sourceType && opts.sourceType !== "all") {
     q = q.eq("source_type", opts.sourceType);
   }
+  if (opts.tag) {
+    q = q.contains("tags", [opts.tag]);
+  }
 
-  q =
-    opts.sort === "top"
-      ? q.order("save_count", { ascending: false })
-      : q.order("created_at", { ascending: false });
+  if (opts.sort === "top") {
+    q = q.order("save_count", { ascending: false });
+  } else if (opts.sort === "rated") {
+    q = q.order("rating_avg", { ascending: false }).order("save_count", { ascending: false });
+  } else if (opts.sort === "size") {
+    q = q.order("question_count", { ascending: false });
+  } else {
+    q = q.order("created_at", { ascending: false });
+  }
 
   const { data, error } = await q.range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
   if (error) throw error;
@@ -187,6 +198,13 @@ export async function publishQuestionSet(input: {
     throw new Error("Pick at least one subject or lecture that has questions");
   }
 
+  const quota = await getDailyShareQuota(uid);
+  if (quota.isBlocked) {
+    throw new Error(
+      "Daily sharing limit reached (5/5 items today). Delete an item you shared today to free up a slot."
+    );
+  }
+
   const toSpace = !!input.spaceId;
   const { data: set, error } = await db("shared_question_sets")
     .insert({
@@ -247,6 +265,47 @@ export async function deleteQuestionSet(setId: string) {
   const { data, error } = await db("shared_question_sets").delete().eq("id", setId).select("id");
   if (error) throw error;
   if (!(data ?? []).length) throw new Error("Only the student who shared this set can delete it.");
+}
+
+/** Move question set between public feed and classroom space */
+export async function setQuestionSetAudience(setId: string, audience: SetAudience) {
+  const { data, error } = await db("shared_question_sets")
+    .update({ audience, published: audience === "public" })
+    .eq("id", setId)
+    .select("id");
+  if (error) throw error;
+  if (!(data ?? []).length) throw new Error("Only the student who shared this set can change it.");
+}
+
+export type QuestionSetRatingSummary = {
+  avg: number;
+  count: number;
+  mine: { stars: number; note: string | null } | null;
+  breakdown: Record<string, number>;
+};
+
+export async function fetchQuestionSetRating(setId: string, spaceId?: string | null): Promise<QuestionSetRatingSummary> {
+  const { data, error } = await (supabase.rpc as any)("question_set_rating_summary", {
+    _set_id: setId,
+    _space_id: spaceId ?? null,
+  });
+  if (error) throw error;
+  return (data ?? { avg: 0, count: 0, mine: null, breakdown: {} }) as QuestionSetRatingSummary;
+}
+
+export async function rateQuestionSet(
+  setId: string,
+  stars: number,
+  note?: string,
+  spaceId?: string | null,
+) {
+  const { error } = await (supabase.rpc as any)("rate_question_set", {
+    _set_id: setId,
+    _stars: stars,
+    _note: note?.trim() || null,
+    _space_id: spaceId ?? null,
+  });
+  if (error) throw error;
 }
 
 /** Check if user has saved this question set. */

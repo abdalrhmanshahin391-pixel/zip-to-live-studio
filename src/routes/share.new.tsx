@@ -1,14 +1,13 @@
-import { RequireAuth } from "@/components/study/RequireAuth";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { refreshSpace } from "@/lib/spaces";
-import { ArrowLeft, Check, Loader2, Send } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Send, HelpCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { readBoardWithCounts, readTopicCards } from "@/lib/local-board";
-import { DECK_COVERS, coverOf, publishDeck } from "@/lib/share-decks";
+import { DECK_COVERS, coverOf, publishDeck, getDailyShareQuota } from "@/lib/share-decks";
 
 export const Route = createFileRoute("/share/new")({
   // ?space=<id> builds a deck that lives only inside that classroom or group.
@@ -58,6 +57,13 @@ function ShareNew() {
   const [tagText, setTagText] = useState("");
   const [saving, setSaving] = useState(false);
   const [board, setBoard] = useState<ReturnType<typeof readBoardWithCounts>>([]);
+
+  const quotaQuery = useQuery({
+    queryKey: ["daily-share-quota", user?.id],
+    queryFn: () => getDailyShareQuota(user!.id),
+    enabled: !!user,
+  });
+  const quota = quotaQuery.data;
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -147,21 +153,72 @@ function ShareNew() {
             <ArrowLeft size={15} /> Shared flashcards
           </Link>
         )}
-        <h1 className="mt-5 font-display text-4xl font-black tracking-tight">
-          {toSpace ? "Make a deck for your space" : "Share flashcards with everyone"}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-purple-800">
+            🃏 Flashcard Deck
+          </span>
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-black ${
+              quota?.isBlocked
+                ? "border-red-200 bg-red-50 text-red-700"
+                : "border-emerald-200 bg-emerald-50 text-emerald-800"
+            }`}
+          >
+            Quota: {quota?.usedToday ?? 0} / 5 shared today ({quota?.remaining ?? 5} left)
+          </span>
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black ${
+              toSpace ? "bg-[#eef7e4] text-[#3f6a17]" : "bg-[#fdf0d8] text-[#8a6a1f]"
+            }`}
+          >
+            {toSpace ? "🔒 Space members only" : "🌍 Everyone on RitaJet"}
+          </span>
+        </div>
+
+        <h1 className="mt-4 font-display text-4xl font-black tracking-tight">
+          {toSpace ? "Share flashcard deck with your space" : "Share flashcards with everyone"}
         </h1>
         <p className="mt-2 max-w-xl text-[#6b655c]">
           {toSpace
-            ? "Tick the subjects you want to include. Only the members of this classroom or group will see this deck — it never shows up on the public flashcards page."
-            : "Tick the subjects or sub-subjects you want to include. A snapshot of those cards becomes a deck everyone on RitaJet can find and save."}
+            ? "Tick the subjects you want to include. Only members of this classroom or group will see this deck."
+            : "Tick the subjects or sub-subjects you want to include. A snapshot of front & back cards becomes a deck anyone can flip and study."}
         </p>
-        <p
-          className={`mt-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-black ${
-            toSpace ? "bg-[#eef7e4] text-[#3f6a17]" : "bg-[#fdf0d8] text-[#8a6a1f]"
-          }`}
-        >
-          {toSpace ? "🔒 Space members only" : "🌍 Everyone on RitaJet"}
-        </p>
+
+        {quota?.isBlocked && (
+          <div className="mt-4 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50/90 p-4 text-xs font-semibold text-red-800">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+            <div>
+              <p className="font-bold">Daily sharing limit reached (5/5 items shared today)</p>
+              <p className="mt-1 leading-relaxed">
+                You have used all 5 sharing slots for today. To share this flashcard deck right now,
+                simply delete one of the items you shared today in{" "}
+                <Link
+                  to="/share"
+                  search={{ type: "flashcards" }}
+                  className="font-black text-red-900 underline"
+                >
+                  My Shared Items
+                </Link>
+                . Deleting an item automatically frees up your slot immediately!
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Cross-navigation switcher */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/[0.08] bg-white/70 p-3.5 shadow-sm">
+          <div className="flex items-center gap-2.5 text-xs text-[#6b655c]">
+            <span className="text-xl">❓</span>
+            <span>Looking to share Multiple-Choice Exam Questions or Quizzes instead?</span>
+          </div>
+          <Link
+            to="/share/questions/new"
+            search={{ space: spaceId, source: "lecture" }}
+            className="inline-flex items-center gap-1 text-xs font-black text-[#8ec63f] hover:underline"
+          >
+            Share Question Set →
+          </Link>
+        </div>
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <section className="rounded-[26px] border border-black/[0.07] bg-white p-6">
@@ -274,13 +331,23 @@ function ShareNew() {
               </div>
               <button
                 onClick={publish}
-                disabled={saving || picked.size === 0}
+                disabled={saving || picked.size === 0 || quota?.isBlocked}
                 className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[15px] font-black text-white disabled:opacity-50 ${
                   toSpace ? "bg-[#d94f3d]" : "bg-[#8ec63f]"
                 }`}
               >
-                {saving ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                {toSpace ? "Add to my space" : "Publish for everyone"}
+                {saving ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Send size={16} />
+                )}
+                {saving
+                  ? "Publishing…"
+                  : quota?.isBlocked
+                    ? "Daily Limit Reached (5/5)"
+                    : toSpace
+                      ? "Add to my space"
+                      : "Publish for everyone"}
               </button>
             </div>
           </aside>

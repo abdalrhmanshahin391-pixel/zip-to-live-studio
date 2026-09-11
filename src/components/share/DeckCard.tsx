@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Bookmark, Layers } from "lucide-react";
+import { Bookmark, Layers, Star } from "lucide-react";
 import { coverOf, type DeckAuthor, type SharedDeck } from "@/lib/share-decks";
 import { useAvatarUrl, avatarTone } from "@/lib/avatars";
 
@@ -25,6 +25,9 @@ export function AuthorChip({ author, size = 28 }: { author: DeckAuthor | null; s
 
 export function DeckCard({ deck, author }: { deck: SharedDeck; author: DeckAuthor | null }) {
   const c = coverOf(deck.cover);
+  const ratingCount = (deck as any).rating_count ?? 0;
+  const ratingAvg = (deck as any).rating_avg ?? 0;
+
   return (
     <Link
       to="/share/$deckId"
@@ -36,6 +39,10 @@ export function DeckCard({ deck, author }: { deck: SharedDeck; author: DeckAutho
         style={{ background: `linear-gradient(135deg, ${c.from}, ${c.to})` }}
       >
         <span className="text-4xl">{deck.emoji || "🃏"}</span>
+        {/* Flashcard distinction badge */}
+        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full border border-purple-200 bg-white/95 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-purple-800 shadow-sm">
+          🃏 Flashcards
+        </span>
         <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[11px] font-black text-[#23201d]">
           <Layers size={12} /> {deck.card_count}
         </span>
@@ -63,9 +70,17 @@ export function DeckCard({ deck, author }: { deck: SharedDeck; author: DeckAutho
         )}
         <div className="mt-auto flex items-center justify-between gap-2 pt-4">
           <AuthorChip author={author} />
-          <span className="inline-flex items-center gap-1 text-[12px] font-black text-[#6b655c]">
-            <Bookmark size={13} /> {deck.save_count}
-          </span>
+          <div className="flex items-center gap-2">
+            {ratingCount > 0 && (
+              <span className="inline-flex items-center gap-0.5 text-[12px] font-black text-amber-700">
+                <Star size={12} className="fill-amber-500 text-amber-500" />
+                {Number(ratingAvg).toFixed(1)}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 text-[12px] font-black text-[#6b655c]">
+              <Bookmark size={13} /> {deck.save_count}
+            </span>
+          </div>
         </div>
       </div>
     </Link>

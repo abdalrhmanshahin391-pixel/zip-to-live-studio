@@ -5,6 +5,7 @@ import {
   Bell,
   Copy,
   FolderPlus,
+  Layers,
   Link2,
   ListChecks,
   MessageCircle,
@@ -12,6 +13,7 @@ import {
   Plus,
   Send,
   Settings,
+  Star,
   Trash2,
   Users,
   X,
@@ -130,8 +132,8 @@ function SpacePage() {
   }
 
   const tabs: [Tab, string, React.ReactNode][] = [
-    ["decks", "Flashcards", <Plus key="d" size={14} />],
-    ["questions", "Questions", <ListChecks key="q" size={14} />],
+    ["decks", "🃏 Flashcard Decks", <Layers key="d" size={14} />],
+    ["questions", "❓ Question Sets", <ListChecks key="q" size={14} />],
     ["members", `Members (${members.data?.length ?? 0})`, <Users key="m" size={14} />],
     ["news", "Announcements", <Bell key="n" size={14} />],
     ...(s.chat_enabled ? ([["chat", "Chat", <MessageCircle key="c" size={14} />]] as [Tab, string, React.ReactNode][]) : []),
@@ -311,9 +313,9 @@ function SpaceQuestionsTab({
                 >
                   <span className="text-3xl drop-shadow-sm">{q.emoji || "❓"}</span>
                   <span
-                    className={`absolute left-2.5 top-2.5 rounded-full border bg-white/95 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider ${sourceMeta.badgeClass}`}
+                    className="absolute left-2.5 top-2.5 rounded-full border border-sky-200 bg-white/95 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-sky-800 shadow-sm"
                   >
-                    {sourceMeta.icon} {sourceMeta.label}
+                    ❓ {sourceMeta.label}
                   </span>
                   <span className="absolute right-2.5 top-2.5 rounded-full bg-white/90 px-2 py-0.5 text-[10.5px] font-black text-[#23201d]">
                     {q.question_count} Qs
@@ -335,13 +337,21 @@ function SpaceQuestionsTab({
                   )}
 
                   <div className="mt-4 flex items-center justify-between border-t border-black/[0.05] pt-3">
-                    <Link
-                      to="/share/questions/$setId"
-                      params={{ setId: q.id }}
-                      className="inline-flex items-center gap-1 text-xs font-black text-[#8ec63f] hover:underline"
-                    >
-                      Study questions →
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to="/share/questions/$setId"
+                        params={{ setId: q.id }}
+                        className="inline-flex items-center gap-1 text-xs font-black text-[#8ec63f] hover:underline"
+                      >
+                        Study questions →
+                      </Link>
+                      {(q.rating_count ?? 0) > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-[11px] font-black text-amber-700">
+                          <Star size={11} className="fill-amber-500 text-amber-500" />
+                          {Number(q.rating_avg).toFixed(1)}
+                        </span>
+                      )}
+                    </div>
 
                     {canManage && (
                       <button

@@ -51,20 +51,74 @@ export function coverOf(key: string) {
   return DECK_COVERS[key] ?? DECK_COVERS["apricot"]!;
 }
 
-/** Public feed of shared decks, newest or most saved first. Classroom-only decks never appear here. */
-export async function fetchFeed(opts: { search?: string; sort?: "new" | "top"; tag?: string }) {
+export type DailyShareQuota = {
+  decksToday: number;
+  questionsToday: number;
+  usedToday: number;
+  limit: number;
+  remaining: number;
+  isBlocked: boolean;
+};
+
+export async function getDailyShareQuota(userId: string): Promise<DailyShareQuota> {
+  const startOfDay = new Date();
+  startOfDay.setUTCHours(0, 0, 0, 0);
+  const todayIso = startOfDay.toISOString();
+
+  const [decksRes, questionsRes] = await Promise.all([
+    db("shared_decks")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", userId)
+      .gte("created_at", todayIso),
+    db("shared_question_sets")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", userId)
+      .gte("created_at", todayIso),
+  ]);
+
+  const decksToday = decksRes.count ?? 0;
+  const questionsToday = questionsRes.count ?? 0;
+  const usedToday = decksToday + questionsToday;
+  const limit = 5;
+  const remaining = Math.max(0, limit - usedToday);
+  const isBlocked = usedToday >= limit;
+
+  return { decksToday, questionsToday, usedToday, limit, remaining, isBlocked };
+}
+
+export const DECK_PAGE_SIZE = 24;
+
+/** Public feed of shared decks with range pagination and flexible sorting. */
+export async function fetchFeed(opts: {
+  search?: string;
+  sort?: "new" | "top" | "size" | "rated";
+  tag?: string;
+  page?: number;
+}) {
+  const page = Math.max(0, opts.page ?? 0);
   let q = db("shared_decks").select("*").eq("published", true).eq("audience", "public");
 
   if (opts.search?.trim()) q = q.ilike("title", `%${opts.search.trim()}%`);
   if (opts.tag) q = q.contains("tags", [opts.tag]);
-  q = opts.sort === "top"
-    ? q.order("save_count", { ascending: false })
-    : q.order("created_at", { ascending: false });
-  const { data, error } = await q.limit(60);
+
+  if (opts.sort === "top") {
+    q = q.order("save_count", { ascending: false });
+  } else if (opts.sort === "size") {
+    q = q.order("card_count", { ascending: false });
+  } else if (opts.sort === "rated") {
+    q = q.order("rating_avg", { ascending: false }).order("save_count", { ascending: false });
+  } else {
+    q = q.order("created_at", { ascending: false });
+  }
+
+  const { data, error } = await q.range(
+    page * DECK_PAGE_SIZE,
+    page * DECK_PAGE_SIZE + DECK_PAGE_SIZE - 1,
+  );
   if (error) throw error;
   const decks = (data ?? []) as SharedDeck[];
   const authors = await fetchAuthors(decks.map((d) => d.owner_id));
-  return { decks, authors };
+  return { decks, authors, hasMore: decks.length === DECK_PAGE_SIZE, page };
 }
 
 export async function fetchAuthors(ids: string[]): Promise<Record<string, DeckAuthor>> {
@@ -122,6 +176,13 @@ export async function publishDeck(input: {
   const { data: auth } = await supabase.auth.getUser();
   const uid = auth.user?.id;
   if (!uid) throw new Error("Not signed in");
+
+  const quota = await getDailyShareQuota(uid);
+  if (quota.isBlocked) {
+    throw new Error(
+      "Daily sharing limit reached (5/5 items today). Delete an item you shared today to free up a slot."
+    );
+  }
 
   const groups = input.groups.filter((g) => g.cards.length > 0);
   const total = groups.reduce((n, g) => n + g.cards.length, 0);

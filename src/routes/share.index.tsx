@@ -13,12 +13,13 @@ import {
   ChevronLeft,
   ChevronRight,
   BookOpen,
+  Star,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SiteHeader } from "@/components/SiteHeader";
 import { DeckCard, AuthorChip } from "@/components/share/DeckCard";
 import { useAuth } from "@/hooks/useAuth";
-import { deleteDeck, fetchFeed, fetchMyDecks, setPublished } from "@/lib/share-decks";
+import { deleteDeck, fetchFeed, fetchMyDecks, setPublished, getDailyShareQuota } from "@/lib/share-decks";
 import {
   coverOf,
   deleteQuestionSet,
@@ -60,10 +61,17 @@ function SharePage() {
 
   const [mode, setMode] = useState<"flashcards" | "questions">(initialType || "flashcards");
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<"new" | "top">("new");
+  const [sort, setSort] = useState<"new" | "top" | "rated" | "size">("new");
   const [tab, setTab] = useState<"all" | "mine">("all");
   const [sourceFilter, setSourceFilter] = useState<QuestionSourceType | "all">("all");
   const [page, setPage] = useState(0);
+
+  // Daily sharing quota query
+  const quotaQuery = useQuery({
+    queryKey: ["daily-share-quota", user?.id],
+    queryFn: () => getDailyShareQuota(user!.id),
+    enabled: !!user,
+  });
 
   // Decks queries
   const deckFeed = useQuery({
@@ -197,7 +205,12 @@ function SharePage() {
                 setSort(s);
                 setPage(0);
               }}
-              options={[["new", "Newest"], ["top", "Most saved"]]}
+              options={[
+                ["new", "Newest"],
+                ["top", "Most saved"],
+                ["rated", "Top rated"],
+                ["size", mode === "questions" ? "Most questions" : "Most cards"],
+              ]}
             />
           )}
 
@@ -255,6 +268,48 @@ function SharePage() {
             </div>
           )}
         </div>
+
+        {/* Quota dashboard in "My shared items" */}
+        {tab === "mine" && user && (
+          <div className="mt-8 rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">📊</span>
+                  <h3 className="font-display text-base font-black text-[#23201d]">
+                    Daily Sharing Limit: {quotaQuery.data?.usedToday ?? 0} / 5 shared today
+                  </h3>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-black ${
+                      quotaQuery.data?.isBlocked
+                        ? "bg-red-100 text-red-800"
+                        : "bg-emerald-100 text-emerald-800"
+                    }`}
+                  >
+                    {quotaQuery.data?.remaining ?? 5} slots left
+                  </span>
+                </div>
+                <p className="mt-1 max-w-2xl text-xs text-[#6b655c]">
+                  You can share up to 5 items daily across flashcards and questions. If you need to upload a new item today after hitting 5/5, simply delete any item you shared today below to immediately recover a sharing slot!
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/share/new"
+                  className="rounded-full border border-black/[0.08] bg-[#faf8f5] px-4 py-2 text-xs font-black text-[#23201d] transition hover:bg-black/[0.05]"
+                >
+                  + New Flashcards
+                </Link>
+                <Link
+                  to="/share/questions/new"
+                  className="rounded-full bg-[#8ec63f] px-4 py-2 text-xs font-black text-white transition hover:bg-[#7db534]"
+                >
+                  + New Questions
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Content Section: Flashcards */}
         {mode === "flashcards" && (
@@ -318,11 +373,17 @@ function SharePage() {
                   )}
                   <button
                     onClick={async () => {
-                      if (!confirm(`Delete "${d.title}"? Your own cards stay untouched.`)) return;
+                      if (
+                        !confirm(
+                          `Delete "${d.title}"? Your own cards stay untouched.\n\n✨ Note: If this deck was shared today, deleting it immediately restores 1 slot in your 5/day sharing limit!`,
+                        )
+                      )
+                        return;
                       await deleteDeck(d.id);
-                      toast.success("Deck deleted");
+                      toast.success("Deck deleted (quota slot restored if shared today)");
                       qc.invalidateQueries({ queryKey: ["share-mine"] });
                       qc.invalidateQueries({ queryKey: ["share-feed"] });
+                      qc.invalidateQueries({ queryKey: ["daily-share-quota"] });
                     }}
                     className="grid h-9 w-9 place-items-center rounded-xl text-[#6b655c] hover:bg-red-50 hover:text-red-600"
                   >
@@ -438,11 +499,17 @@ function SharePage() {
 
                     <button
                       onClick={async () => {
-                        if (!confirm(`Delete "${s.title}"? Your original questions stay untouched.`)) return;
+                        if (
+                          !confirm(
+                            `Delete "${s.title}"? Your original questions stay untouched.\n\n✨ Note: If this question set was shared today, deleting it immediately restores 1 slot in your 5/day sharing limit!`,
+                          )
+                        )
+                          return;
                         await deleteQuestionSet(s.id);
-                        toast.success("Question set deleted");
+                        toast.success("Question set deleted (quota slot restored if shared today)");
                         qc.invalidateQueries({ queryKey: ["qset-mine"] });
                         qc.invalidateQueries({ queryKey: ["qset-feed"] });
+                        qc.invalidateQueries({ queryKey: ["daily-share-quota"] });
                       }}
                       className="grid h-9 w-9 place-items-center rounded-xl text-[#6b655c] hover:bg-red-50 hover:text-red-600"
                       aria-label="Delete set"
@@ -485,9 +552,9 @@ export function QuestionSetCard({
 
         {/* Top distinction badge */}
         <span
-          className={`absolute left-3 top-3 inline-flex items-center gap-1 rounded-full border bg-white/95 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${sourceMeta.badgeClass}`}
+          className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full border border-sky-200 bg-white/95 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-sky-800 shadow-sm"
         >
-          {sourceMeta.icon} {sourceMeta.label}
+          ❓ Questions · {sourceMeta.label}
         </span>
 
         {/* Question count */}
@@ -507,11 +574,19 @@ export function QuestionSetCard({
         )}
         <div className="mt-auto pt-4 flex items-center justify-between">
           <AuthorChip author={author} />
-          {set.save_count > 0 && (
-            <span className="text-[11.5px] font-bold text-[#8a8376]">
-              {set.save_count} saves
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {(set.rating_count ?? 0) > 0 && (
+              <span className="inline-flex items-center gap-0.5 text-[12px] font-black text-amber-700">
+                <Star size={12} className="fill-amber-500 text-amber-500" />
+                {Number(set.rating_avg).toFixed(1)}
+              </span>
+            )}
+            {set.save_count > 0 && (
+              <span className="text-[11.5px] font-bold text-[#8a8376]">
+                {set.save_count} saves
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </Link>
