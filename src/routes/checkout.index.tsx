@@ -177,7 +177,11 @@ function CheckoutPage() {
     const key = `${plan.slug}:${billing}`;
     if (opened.current === key) return;
     opened.current = key;
-    void start();
+    if (canUseInline()) {
+      void start();
+    } else {
+      setReady(true);
+    }
   }, [plan, user, priceId, billing, start]);
 
   const applyCode = async () => {
@@ -297,27 +301,27 @@ function CheckoutPage() {
 
             <div className={`${FRAME} mt-5 ${user && plan && canUseInline() ? "min-h-[26rem]" : ""}`} />
 
-            {!canUseInline() && ready && !error && (
-              <div className="mt-5 flex flex-col items-center justify-center rounded-[18px] border border-border bg-muted/40 p-6 text-center">
+            {!canUseInline() && (
+              <div className="mt-5 flex flex-col items-center justify-center rounded-[20px] border border-border bg-muted/40 p-7 text-center">
                 <LockKeyhole size={28} className="rita-accent mb-2" />
-                <p className="text-[15px] font-bold text-foreground">Complete your payment</p>
+                <p className="text-[16px] font-bold text-foreground">Choose how you want to pay</p>
                 <p className="mt-1 text-[13.5px] text-muted-foreground max-w-sm">
-                  Choose your payment method below:
+                  Your payment is encrypted and processed securely by Paddle.
                 </p>
-                <div className="mt-4 flex flex-wrap justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => void start(promo?.code, false)}
-                    className="rita-btn rita-btn-primary active:scale-95 touch-manipulation shadow-sm"
-                  >
-                    Apple Pay / All methods
-                  </button>
+                <div className="mt-5 flex flex-col sm:flex-row w-full max-w-sm gap-3 justify-center">
                   <button
                     type="button"
                     onClick={() => void start(promo?.code, true)}
-                    className="rita-btn rita-btn-secondary active:scale-95 touch-manipulation"
+                    className="rita-btn rita-btn-primary flex-1 py-3.5 text-[14.5px] font-bold active:scale-95 touch-manipulation shadow-md"
                   >
-                    Card or PayPal
+                    Pay with Card or PayPal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void start(promo?.code, false)}
+                    className="rita-btn rita-btn-secondary flex-1 py-3.5 text-[14.5px] font-bold active:scale-95 touch-manipulation"
+                  >
+                     Pay with Apple Pay
                   </button>
                 </div>
               </div>
