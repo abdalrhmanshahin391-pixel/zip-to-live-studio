@@ -24,6 +24,7 @@ import {
   adminUpdateDiscount,
 } from "@/lib/promo.functions";
 import { adminListPlans } from "@/lib/plans-admin.functions";
+import { getPaddleEnvironment } from "@/lib/paddle";
 
 export const Route = createFileRoute("/admin/promo-codes")({
   head: () => ({
@@ -50,7 +51,7 @@ function PromoCodesPage() {
   const { isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [env, setEnv] = useState<Env>("sandbox");
+  const [env, setEnv] = useState<Env>(() => getPaddleEnvironment());
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 

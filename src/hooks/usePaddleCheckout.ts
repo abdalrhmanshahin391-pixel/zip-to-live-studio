@@ -149,7 +149,7 @@ export function usePaddleCheckout() {
                 frameTarget: options.frameTarget,
                 frameInitialHeight: 460,
                 frameStyle:
-                  "width:100%; min-width:312px; background-color:transparent; border:none;",
+                  "width:100%; max-width:100%; background-color:transparent; border:none;",
               }
             : {}),
           successUrl: options.successUrl || `${window.location.origin}/pricing?checkout=success`,

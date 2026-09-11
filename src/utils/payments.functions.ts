@@ -35,12 +35,19 @@ async function lookup(environment: PaddleEnv, priceId: string): Promise<string |
 export const resolvePaddlePrice = createServerFn({ method: "GET" })
   .inputValidator((data: { priceId: string; environment: PaddleEnv }) => data)
   .handler(async ({ data }): Promise<ResolvedPrice> => {
+    if (data.priceId.startsWith("pri_")) {
+      return { ok: true, paddlePriceId: data.priceId, environment: data.environment };
+    }
+
     const first = await lookup(data.environment, data.priceId);
     if (first) return { ok: true, paddlePriceId: first, environment: data.environment };
 
-    const other: PaddleEnv = data.environment === "sandbox" ? "live" : "sandbox";
-    const fallback = await lookup(other, data.priceId);
-    if (fallback) return { ok: true, paddlePriceId: fallback, environment: other };
+    // In sandbox, allow looking up live catalog if sandbox prices are missing.
+    // In live production, strictly keep checkout in live mode.
+    if (data.environment === "sandbox") {
+      const fallback = await lookup("live", data.priceId);
+      if (fallback) return { ok: true, paddlePriceId: fallback, environment: "live" };
+    }
 
     return {
       ok: false,

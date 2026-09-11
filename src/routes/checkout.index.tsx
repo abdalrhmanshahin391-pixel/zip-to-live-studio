@@ -297,7 +297,7 @@ function CheckoutPage() {
 
         <div className="mt-11 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22.5rem]">
           {/* ---------------------------------------------- payment form */}
-          <section className="overflow-hidden rounded-[20px] border border-border bg-card p-6 shadow-sm md:p-9">
+          <section className="overflow-hidden rounded-[20px] border border-border bg-card p-4 sm:p-6 shadow-sm md:p-9">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2 text-[13px] font-semibold">
               <LockKeyhole size={14} className="rita-accent" /> Secure payment
             </div>
