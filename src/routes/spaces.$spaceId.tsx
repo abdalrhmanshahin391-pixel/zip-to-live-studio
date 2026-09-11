@@ -6,7 +6,7 @@ import {
   Copy,
   FolderPlus,
   Link2,
-  
+  ListChecks,
   MessageCircle,
   Pin,
   Plus,
@@ -21,6 +21,12 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { MemberAvatar, MemberRow } from "@/components/spaces/MemberRow";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchMyDecks } from "@/lib/share-decks";
+import {
+  fetchSpaceQuestionSets,
+  removeQuestionSetFromSpace,
+  SOURCE_TYPE_META,
+  coverOf,
+} from "@/lib/share-questions";
 import { DeckRating } from "@/components/share/DeckRating";
 import {
   KIND_LABEL,
@@ -69,7 +75,7 @@ export const Route = createFileRoute("/spaces/$spaceId")({
   component: SpacePage,
 });
 
-type Tab = "decks" | "members" | "news" | "chat" | "settings";
+type Tab = "decks" | "questions" | "members" | "news" | "chat" | "settings";
 
 function SpacePage() {
   const { spaceId } = Route.useParams();
@@ -125,7 +131,7 @@ function SpacePage() {
 
   const tabs: [Tab, string, React.ReactNode][] = [
     ["decks", "Flashcards", <Plus key="d" size={14} />],
-    
+    ["questions", "Questions", <ListChecks key="q" size={14} />],
     ["members", `Members (${members.data?.length ?? 0})`, <Users key="m" size={14} />],
     ["news", "Announcements", <Bell key="n" size={14} />],
     ...(s.chat_enabled ? ([["chat", "Chat", <MessageCircle key="c" size={14} />]] as [Tab, string, React.ReactNode][]) : []),
@@ -181,6 +187,14 @@ function SpacePage() {
               }
             />
           )}
+          {tab === "questions" && (
+            <SpaceQuestionsTab
+              spaceId={spaceId}
+              canAdd={canAddDecks}
+              canManage={canManage}
+              onChanged={() => refresh("space-question-sets")}
+            />
+          )}
           {tab === "members" && (
             <MembersTab
               spaceId={spaceId}
@@ -217,6 +231,144 @@ function SpacePage() {
           )}
         </div>
       </main>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------- questions */
+
+/** Question sets shared inside this classroom or study group. */
+function SpaceQuestionsTab({
+  spaceId,
+  canAdd,
+  canManage,
+  onChanged,
+}: {
+  spaceId: string;
+  canAdd: boolean;
+  canManage: boolean;
+  onChanged: () => void;
+}) {
+  const query = useQuery({
+    queryKey: ["space-question-sets", spaceId],
+    queryFn: () => fetchSpaceQuestionSets(spaceId),
+  });
+
+  const sets = query.data ?? [];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl font-black text-[#23201d]">Question sets</h2>
+          <p className="text-sm text-[#6b655c]">
+            Questions shared by members for practice and exam preparation.
+          </p>
+        </div>
+        {canAdd && (
+          <Link
+            to="/share/questions/new"
+            search={{ space: spaceId, source: "lecture" }}
+            className="inline-flex items-center gap-2 rounded-full bg-[#8ec63f] px-5 py-2.5 text-[14px] font-black text-white shadow-sm transition hover:brightness-105"
+          >
+            <Plus size={15} /> Share questions here
+          </Link>
+        )}
+      </div>
+
+      {query.isLoading ? (
+        <p className="mt-6 text-[#6b655c]">Loading question sets…</p>
+      ) : sets.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-black/15 bg-white/60 p-10 text-center">
+          <span className="text-3xl">❓</span>
+          <p className="mt-3 font-display text-lg font-black text-[#23201d]">No question sets yet</p>
+          <p className="mt-1 text-sm text-[#6b655c]">
+            Share questions from Question Bank, Exam Archive, or Lecture Lab with everyone here.
+          </p>
+          {canAdd && (
+            <Link
+              to="/share/questions/new"
+              search={{ space: spaceId, source: "lecture" }}
+              className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-[#23201d] px-5 py-2.5 text-xs font-black text-white"
+            >
+              <Plus size={14} /> Add questions
+            </Link>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {sets.map((q) => {
+            const c = coverOf(q.cover);
+            const sourceMeta = SOURCE_TYPE_META[q.source_type || "lecture"];
+            return (
+              <div
+                key={q.id}
+                className="group relative flex flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white shadow-sm transition hover:-translate-y-0.5"
+              >
+                <div
+                  className="relative flex h-24 items-center justify-center p-3"
+                  style={{ background: `linear-gradient(135deg, ${c.from}, ${c.to})` }}
+                >
+                  <span className="text-3xl drop-shadow-sm">{q.emoji || "❓"}</span>
+                  <span
+                    className={`absolute left-2.5 top-2.5 rounded-full border bg-white/95 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider ${sourceMeta.badgeClass}`}
+                  >
+                    {sourceMeta.icon} {sourceMeta.label}
+                  </span>
+                  <span className="absolute right-2.5 top-2.5 rounded-full bg-white/90 px-2 py-0.5 text-[10.5px] font-black text-[#23201d]">
+                    {q.question_count} Qs
+                  </span>
+                </div>
+
+                <div className="flex flex-1 flex-col p-4">
+                  <Link
+                    to="/share/questions/$setId"
+                    params={{ setId: q.id }}
+                    className="font-display text-[16px] font-black text-[#23201d] hover:underline"
+                  >
+                    {q.title}
+                  </Link>
+                  {q.description && (
+                    <p className="mt-1 line-clamp-2 text-xs text-[#6b655c]">
+                      {q.description}
+                    </p>
+                  )}
+
+                  <div className="mt-4 flex items-center justify-between border-t border-black/[0.05] pt-3">
+                    <Link
+                      to="/share/questions/$setId"
+                      params={{ setId: q.id }}
+                      className="inline-flex items-center gap-1 text-xs font-black text-[#8ec63f] hover:underline"
+                    >
+                      Study questions →
+                    </Link>
+
+                    {canManage && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!confirm(`Remove "${q.title}" from this space?`)) return;
+                          try {
+                            await removeQuestionSetFromSpace(spaceId, q.id);
+                            toast.success("Question set removed from space");
+                            onChanged();
+                          } catch (e: any) {
+                            toast.error(e?.message || "Could not remove question set");
+                          }
+                        }}
+                        className="grid h-7 w-7 place-items-center rounded-lg text-[#a29a8d] hover:bg-red-50 hover:text-red-600"
+                        title="Remove from space"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -70,7 +70,7 @@ export const adminListUsersAndDevices = createServerFn({ method: "GET" })
     if (rpcRes.error) throw new Error(rpcRes.error.message);
 
     const globalLimit =
-      (settingsRes.data as { default_device_limit?: number } | null)?.default_device_limit ?? 2;
+      (settingsRes.data as { default_device_limit?: number } | null)?.default_device_limit ?? 50;
     const profMap = new Map<string, any>();
     for (const p of (profilesRes.data ?? []) as any[]) {
       profMap.set(p.id, p);

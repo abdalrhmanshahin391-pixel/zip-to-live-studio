@@ -111,7 +111,7 @@ function AdminDevicesPage() {
   const [unlockCode, setUnlockCode] = useState("");
   const [telegramUrl, setTelegramUrl] = useState("");
   const [supportUrl, setSupportUrl] = useState("");
-  const [defaultLimit, setDefaultLimit] = useState(2);
+  const [defaultLimit, setDefaultLimit] = useState(50);
   const [attempts, setAttempts] = useState<
     { id: string; user_id: string; success: boolean; ip: string | null; created_at: string }[]
   >([]);
@@ -131,7 +131,7 @@ function AdminDevicesPage() {
       setUnlockCode(sec.settings.unlock_code);
       setTelegramUrl(sec.settings.telegram_url);
       setSupportUrl(sec.settings.support_url);
-      setDefaultLimit(sec.settings.default_device_limit ?? 2);
+      setDefaultLimit(sec.settings.default_device_limit ?? 50);
       setAttempts(sec.attempts);
       const m: Record<string, string | null> = {};
       for (const l of lockRes.locks) m[l.id] = l.locked_at;

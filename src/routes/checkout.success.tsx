@@ -131,8 +131,8 @@ function SuccessPage() {
           ) : granted ? (
             <div className="grid gap-4">
               <p className="text-[15.5px] font-semibold text-white">Your plan is ready.</p>
-              <Link to="/study" className="rita-btn rita-btn-primary gap-2 self-start">
-                Start studying <ArrowRight className="h-4 w-4" />
+              <Link to="/" className="rita-btn rita-btn-primary gap-2 self-start">
+                Go to Home <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           ) : (

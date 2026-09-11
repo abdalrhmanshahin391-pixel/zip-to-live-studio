@@ -103,6 +103,9 @@ import { Route as GermanCourseIdRunRouteImport } from './routes/german.$courseId
 import { Route as GermanCourseIdTapRouteImport } from './routes/german.$courseId.tap'
 import { Route as StudyAllInOneIndexRouteImport } from './routes/study.all-in-one.index'
 import { Route as StudyAllInOneLectureIdRouteImport } from './routes/study.all-in-one.$lectureId'
+import { Route as ShareQuestionsIndexRouteImport } from './routes/share.questions.index'
+import { Route as ShareQuestionsSetIdRouteImport } from './routes/share.questions.$setId'
+import { Route as ShareQuestionsNewRouteImport } from './routes/share.questions.new'
 import { Route as StudyLecturesIndexRouteImport } from './routes/study.lectures.index'
 import { Route as StudyLecturesNewRouteImport } from './routes/study.lectures.new'
 import { Route as StudyLecturesRunRouteImport } from './routes/study.lectures.run'
@@ -578,6 +581,21 @@ const GermanCourseIdTapRoute = GermanCourseIdTapRouteImport.update({
   path: '/$courseId/tap',
   getParentRoute: () => GermanRoute,
 } as any)
+const ShareQuestionsIndexRoute = ShareQuestionsIndexRouteImport.update({
+  id: '/share/questions/',
+  path: '/share/questions/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareQuestionsSetIdRoute = ShareQuestionsSetIdRouteImport.update({
+  id: '/share/questions/$setId',
+  path: '/share/questions/$setId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareQuestionsNewRoute = ShareQuestionsNewRouteImport.update({
+  id: '/share/questions/new',
+  path: '/share/questions/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudyAllInOneIndexRoute = StudyAllInOneIndexRouteImport.update({
   id: '/all-in-one/',
   path: '/all-in-one/',
@@ -731,6 +749,8 @@ export interface FileRoutesByFullPath {
   '/german/$courseId/review': typeof GermanCourseIdReviewRouteWithChildren
   '/german/$courseId/run': typeof GermanCourseIdRunRoute
   '/german/$courseId/tap': typeof GermanCourseIdTapRoute
+  '/share/questions/$setId': typeof ShareQuestionsSetIdRoute
+  '/share/questions/new': typeof ShareQuestionsNewRoute
   '/study/all-in-one/$lectureId': typeof StudyAllInOneLectureIdRoute
   '/study/lectures/new': typeof StudyLecturesNewRoute
   '/study/lectures/run': typeof StudyLecturesRunRoute
@@ -739,6 +759,7 @@ export interface FileRoutesByFullPath {
   '/admin/spaces/': typeof AdminSpacesIndexRoute
   '/courses/$courseId/': typeof CoursesCourseIdIndexRoute
   '/german/$courseId/': typeof GermanCourseIdIndexRoute
+  '/share/questions/': typeof ShareQuestionsIndexRoute
   '/study/all-in-one/': typeof StudyAllInOneIndexRoute
   '/study/lectures/': typeof StudyLecturesIndexRoute
   '/admin/german/$courseId/manage': typeof AdminGermanCourseIdManageRoute
@@ -832,6 +853,8 @@ export interface FileRoutesByTo {
   '/german/$courseId/match': typeof GermanCourseIdMatchRoute
   '/german/$courseId/run': typeof GermanCourseIdRunRoute
   '/german/$courseId/tap': typeof GermanCourseIdTapRoute
+  '/share/questions/$setId': typeof ShareQuestionsSetIdRoute
+  '/share/questions/new': typeof ShareQuestionsNewRoute
   '/study/all-in-one/$lectureId': typeof StudyAllInOneLectureIdRoute
   '/study/lectures/new': typeof StudyLecturesNewRoute
   '/study/lectures/run': typeof StudyLecturesRunRoute
@@ -840,6 +863,7 @@ export interface FileRoutesByTo {
   '/admin/spaces': typeof AdminSpacesIndexRoute
   '/courses/$courseId': typeof CoursesCourseIdIndexRoute
   '/german/$courseId': typeof GermanCourseIdIndexRoute
+  '/share/questions': typeof ShareQuestionsIndexRoute
   '/study/all-in-one': typeof StudyAllInOneIndexRoute
   '/study/lectures': typeof StudyLecturesIndexRoute
   '/admin/german/$courseId/manage': typeof AdminGermanCourseIdManageRoute
@@ -939,6 +963,8 @@ export interface FileRoutesById {
   '/german/$courseId/review': typeof GermanCourseIdReviewRouteWithChildren
   '/german/$courseId/run': typeof GermanCourseIdRunRoute
   '/german/$courseId/tap': typeof GermanCourseIdTapRoute
+  '/share/questions/$setId': typeof ShareQuestionsSetIdRoute
+  '/share/questions/new': typeof ShareQuestionsNewRoute
   '/study/all-in-one/$lectureId': typeof StudyAllInOneLectureIdRoute
   '/study/lectures/new': typeof StudyLecturesNewRoute
   '/study/lectures/run': typeof StudyLecturesRunRoute
@@ -947,6 +973,7 @@ export interface FileRoutesById {
   '/admin/spaces/': typeof AdminSpacesIndexRoute
   '/courses/$courseId/': typeof CoursesCourseIdIndexRoute
   '/german/$courseId/': typeof GermanCourseIdIndexRoute
+  '/share/questions/': typeof ShareQuestionsIndexRoute
   '/study/all-in-one/': typeof StudyAllInOneIndexRoute
   '/study/lectures/': typeof StudyLecturesIndexRoute
   '/admin/german/$courseId/manage': typeof AdminGermanCourseIdManageRoute
@@ -1047,6 +1074,12 @@ export interface FileRouteTypes {
     | '/german/$courseId/review'
     | '/german/$courseId/run'
     | '/german/$courseId/tap'
+    | '/share/questions/$setId'
+    | '/share/questions/new'
+    | '/share/questions/$setId'
+    | '/share/questions/new'
+    | '/share/questions/$setId'
+    | '/share/questions/new'
     | '/study/all-in-one/$lectureId'
     | '/study/lectures/new'
     | '/study/lectures/run'
@@ -1055,6 +1088,8 @@ export interface FileRouteTypes {
     | '/admin/spaces/'
     | '/courses/$courseId/'
     | '/german/$courseId/'
+    | '/share/questions/'
+    | '/share/questions/'
     | '/study/all-in-one/'
     | '/study/lectures/'
     | '/admin/german/$courseId/manage'
@@ -1156,6 +1191,7 @@ export interface FileRouteTypes {
     | '/admin/spaces'
     | '/courses/$courseId'
     | '/german/$courseId'
+    | '/share/questions'
     | '/study/all-in-one'
     | '/study/lectures'
     | '/admin/german/$courseId/manage'
@@ -1339,7 +1375,10 @@ export interface RootRouteChildren {
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicPushDispatchRoute: typeof ApiPublicPushDispatchRoute
   ApiPublicRitaWorkerRoute: typeof ApiPublicRitaWorkerRoute
+  ShareQuestionsSetIdRoute: typeof ShareQuestionsSetIdRoute
+  ShareQuestionsNewRoute: typeof ShareQuestionsNewRoute
   AdminSpacesIndexRoute: typeof AdminSpacesIndexRoute
+  ShareQuestionsIndexRoute: typeof ShareQuestionsIndexRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1991,6 +2030,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GermanCourseIdTapRouteImport
       parentRoute: typeof GermanRoute
     }
+    '/share/questions/': {
+      id: '/share/questions/'
+      path: '/share/questions'
+      fullPath: '/share/questions/'
+      preLoaderRoute: typeof ShareQuestionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share/questions/$setId': {
+      id: '/share/questions/$setId'
+      path: '/share/questions/$setId'
+      fullPath: '/share/questions/$setId'
+      preLoaderRoute: typeof ShareQuestionsSetIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share/questions/new': {
+      id: '/share/questions/new'
+      path: '/share/questions/new'
+      fullPath: '/share/questions/new'
+      preLoaderRoute: typeof ShareQuestionsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/study/all-in-one/': {
       id: '/study/all-in-one/'
       path: '/all-in-one'
@@ -2278,7 +2338,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicPushDispatchRoute: ApiPublicPushDispatchRoute,
   ApiPublicRitaWorkerRoute: ApiPublicRitaWorkerRoute,
+  ShareQuestionsSetIdRoute: ShareQuestionsSetIdRoute,
+  ShareQuestionsNewRoute: ShareQuestionsNewRoute,
   AdminSpacesIndexRoute: AdminSpacesIndexRoute,
+  ShareQuestionsIndexRoute: ShareQuestionsIndexRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,

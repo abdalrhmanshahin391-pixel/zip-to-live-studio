@@ -66,9 +66,9 @@ async function globalDeviceLimit(client: any): Promise<number> {
       .eq("id", true)
       .maybeSingle();
     const n = (data as { default_device_limit?: number } | null)?.default_device_limit;
-    return typeof n === "number" && n > 0 ? n : 2;
+    return typeof n === "number" && n > 0 ? n : 50;
   } catch {
-    return 2;
+    return 50;
   }
 }
 
@@ -119,7 +119,8 @@ export const recordDevice = createServerFn({ method: "POST" })
       globalDeviceLimit(db),
     ]);
 
-    const limit = (prof as { device_limit?: number | null } | null)?.device_limit ?? globalLimit;
+    const userLimit = (prof as { device_limit?: number | null } | null)?.device_limit;
+    const limit = Math.max(userLimit ?? globalLimit, 50);
     const list = (existing ?? []) as DeviceRowLite[];
 
     // Admins: unlimited devices, never locked.
@@ -353,7 +354,7 @@ export const adminGetDeviceSecurity = createServerFn({ method: "GET" })
         unlock_code: "",
         telegram_url: "",
         support_url: "",
-        default_device_limit: 2,
+        default_device_limit: 50,
       }) as {
         unlock_code: string;
         telegram_url: string;
@@ -382,7 +383,7 @@ export const adminUpdateDeviceSecurity = createServerFn({ method: "POST" })
     unlockCode: String(d.unlockCode ?? "").trim().slice(0, 100),
     telegramUrl: String(d.telegramUrl ?? "").trim().slice(0, 300),
     supportUrl: String(d.supportUrl ?? "").trim().slice(0, 300),
-    defaultLimit: Math.max(1, Math.min(50, Math.floor(Number(d.defaultLimit ?? 2)) || 2)),
+    defaultLimit: Math.max(1, Math.min(200, Math.floor(Number(d.defaultLimit ?? 50)) || 50)),
     applyToAll: !!d.applyToAll,
   }))
   .handler(async ({ data, context }) => {
