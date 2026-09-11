@@ -224,6 +224,45 @@ export const claimFreePlanWithPromo = createServerFn({ method: "POST" })
       }
     }
 
+    const cleanCode = data.code.trim().toUpperCase();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Check if user has already redeemed this promo code
+    try {
+      const { data: existing } = await (supabaseAdmin as any)
+        .from("promo_code_redemptions")
+        .select("id, code")
+        .eq("user_id", userId)
+        .eq("code", cleanCode)
+        .maybeSingle();
+
+      if (existing) {
+        throw new Error("You have already redeemed this promo code on your account.");
+      }
+    } catch (err: any) {
+      if (err?.message?.includes("already redeemed")) {
+        throw err;
+      }
+    }
+
+    // Secondary check against manual_plan_grants
+    try {
+      const { data: existingGrant } = await (supabaseAdmin as any)
+        .from("manual_plan_grants")
+        .select("id, reason")
+        .eq("user_id", userId)
+        .ilike("reason", `%${cleanCode}%`)
+        .maybeSingle();
+
+      if (existingGrant) {
+        throw new Error("You have already redeemed this promo code on your account.");
+      }
+    } catch (err: any) {
+      if (err?.message?.includes("already redeemed")) {
+        throw err;
+      }
+    }
+
     let discountObj: any = null;
     for (const testEnv of [env, env === "sandbox" ? "live" : "sandbox"] as const) {
       try {
@@ -232,7 +271,7 @@ export const claimFreePlanWithPromo = createServerFn({ method: "POST" })
           const body = await res.json();
           const list = (body?.data ?? []) as any[];
           const match = list.find(
-            (x: any) => (x.code ?? "").toUpperCase() === data.code.trim().toUpperCase(),
+            (x: any) => (x.code ?? "").toUpperCase() === cleanCode,
           );
           if (match) {
             discountObj = match;
@@ -256,11 +295,17 @@ export const claimFreePlanWithPromo = createServerFn({ method: "POST" })
     if (discountObj.usage_limit !== null && discountObj.times_used >= discountObj.usage_limit) {
       throw new Error("This promo code usage limit has been reached.");
     }
-    if (
-      discountObj.restrict_to?.length &&
-      paddlePriceId &&
-      !discountObj.restrict_to.includes(paddlePriceId)
-    ) {
+
+    const { doesPromoApplyToPlan } = await import("@/lib/promo.functions");
+    const applies = await doesPromoApplyToPlan(
+      discountObj.restrict_to,
+      data.planSlug,
+      data.billing,
+      paddlePriceId,
+      priceId,
+      env,
+    );
+    if (!applies) {
       throw new Error("This promo code does not apply to this plan.");
     }
 
@@ -274,6 +319,12 @@ export const claimFreePlanWithPromo = createServerFn({ method: "POST" })
       throw new Error("This promo code does not provide a 100% free plan.");
     }
 
+    // Calculate 3-month or yearly duration window
+    const now = new Date();
+    const isYearly = data.billing === "yearly";
+    const durationDays = isYearly ? 365 : 90; // 3 months = 90 days!
+    const expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000).toISOString();
+
     // 3. Activate plan for user
     const { error: rpcErr } = await client.rpc("activate_user_plan", {
       _user_id: userId,
@@ -282,17 +333,58 @@ export const claimFreePlanWithPromo = createServerFn({ method: "POST" })
 
     if (rpcErr) {
       console.warn("activate_user_plan RPC error:", rpcErr);
-      try {
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        await (supabaseAdmin as any)
-          .from("user_plans")
-          .upsert(
-            { user_id: userId, plan_slug: plan.slug, updated_at: new Date().toISOString() },
-            { onConflict: "user_id" },
-          );
-      } catch (adminErr) {
-        console.warn("Admin upsert fallback failed:", adminErr);
-      }
+    }
+    try {
+      await (supabaseAdmin as any)
+        .from("user_plans")
+        .upsert(
+          { user_id: userId, plan_slug: plan.slug, updated_at: now.toISOString() },
+          { onConflict: "user_id" },
+        );
+    } catch (adminErr) {
+      console.warn("Admin upsert fallback failed:", adminErr);
+    }
+
+    // Record grant in manual_plan_grants with 3-month expiration
+    try {
+      await (supabaseAdmin as any).from("manual_plan_grants").insert({
+        user_id: userId,
+        plan_slug: plan.slug,
+        starts_at: now.toISOString(),
+        expires_at: expiresAt,
+        reason: `Promo code: ${cleanCode} (${isYearly ? "1 year" : "3 months"} gift)`,
+        overrides_paid: true,
+        granted_by: userId,
+      });
+    } catch (mpgErr) {
+      console.warn("manual_plan_grants insert error:", mpgErr);
+    }
+
+    // Record in toolkit_claims so /my-plan countdown timer displays the active 3 months
+    try {
+      await (supabaseAdmin as any).from("toolkit_claims").insert({
+        user_id: userId,
+        plan_slug: plan.slug,
+        expires_at: expiresAt,
+      });
+    } catch (tcErr) {
+      console.warn("toolkit_claims insert error:", tcErr);
+    }
+
+    // Record redemption permanently in promo_code_redemptions to prevent multiple claims
+    try {
+      await (supabaseAdmin as any).from("promo_code_redemptions").upsert(
+        {
+          user_id: userId,
+          code: cleanCode,
+          plan_slug: plan.slug,
+          billing: data.billing,
+          expires_at: expiresAt,
+        },
+        { onConflict: "user_id,code" },
+      );
+    } catch (pcrErr) {
+      console.warn("promo_code_redemptions insert error:", pcrErr);
     }
 
     // If lifetime / pack, grant allowances
@@ -300,7 +392,7 @@ export const claimFreePlanWithPromo = createServerFn({ method: "POST" })
       const grantRow: Record<string, unknown> = {
         user_id: userId,
         plan_slug: plan.slug,
-        transaction_id: `free_promo_${data.code.trim().toUpperCase()}_${Date.now()}`,
+        transaction_id: `free_promo_${cleanCode}_${Date.now()}`,
         environment: env,
       };
       const GRANT_COLUMNS = [
@@ -324,5 +416,5 @@ export const claimFreePlanWithPromo = createServerFn({ method: "POST" })
       }
     }
 
-    return { ok: true, planSlug: plan.slug };
+    return { ok: true, planSlug: plan.slug, expiresAt };
   });

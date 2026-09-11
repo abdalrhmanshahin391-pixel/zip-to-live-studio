@@ -56,12 +56,98 @@ async function assertAdmin(context: unknown) {
   if (error || !data) throw new Error("Forbidden");
 }
 
+/**
+ * Robust multi-factor check ensuring a discount applies to the selected plan
+ * across external IDs, internal Paddle pri_ IDs, plan slugs, and environments.
+ */
+export async function doesPromoApplyToPlan(
+  restrictTo: string[] | null | undefined,
+  planSlug?: string | null,
+  billing?: string | null,
+  paddlePriceId?: string | null,
+  externalPriceId?: string | null,
+  environment: Env = "live",
+): Promise<boolean> {
+  if (!restrictTo || restrictTo.length === 0) return true;
+
+  const cleanRestrictions = restrictTo.map((r) => r.trim()).filter(Boolean);
+  if (cleanRestrictions.length === 0) return true;
+
+  // 1. Direct match with paddlePriceId
+  if (paddlePriceId && cleanRestrictions.includes(paddlePriceId.trim())) return true;
+
+  // 2. Direct match with externalPriceId (e.g. "toolkit_monthly")
+  if (externalPriceId && cleanRestrictions.includes(externalPriceId.trim())) return true;
+
+  // 3. Direct match with planSlug (e.g. "toolkit")
+  if (planSlug && cleanRestrictions.includes(planSlug.trim())) return true;
+
+  // 4. Query plan from Supabase to check plan external price IDs and aliases
+  if (planSlug) {
+    try {
+      const url = process.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
+      const key =
+        process.env["SUPABASE_SERVICE_ROLE_KEY"] ||
+        process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+        process.env["SUPABASE_PUBLISHABLE_KEY"];
+      if (url && key) {
+        const { createClient } = await import("@supabase/supabase-js");
+        const client = createClient(url, key, { auth: { persistSession: false } });
+        const { data: plan } = await (client.from as any)("plans")
+          .select("*")
+          .eq("slug", planSlug)
+          .maybeSingle();
+
+        if (plan) {
+          const is3m = !billing || billing === "three_months" || billing === "monthly";
+          const isYearly = billing === "yearly";
+          const isOnce = billing === "once";
+
+          const planPriceKey = is3m
+            ? plan.paddle_price_monthly
+            : isYearly
+              ? plan.paddle_price_yearly
+              : plan.paddle_price_once;
+
+          if (planPriceKey && cleanRestrictions.includes(planPriceKey)) return true;
+
+          // 5. Cross-environment price lookup in Paddle:
+          // Check if any restricted ID matches the Paddle price resolved for planPriceKey
+          if (planPriceKey) {
+            const { gatewayFetch } = await import("@/lib/paddle.server");
+            for (const envToCheck of ["live", "sandbox"] as const) {
+              try {
+                const res = await gatewayFetch(
+                  envToCheck,
+                  `/prices?external_id=${encodeURIComponent(planPriceKey)}`,
+                );
+                if (res.ok) {
+                  const body = await res.json();
+                  const foundPriceId = body?.data?.[0]?.id;
+                  if (foundPriceId && cleanRestrictions.includes(foundPriceId)) {
+                    return true;
+                  }
+                }
+              } catch {
+                /* continue */
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("doesPromoApplyToPlan lookup error:", err);
+    }
+  }
+
+  return false;
+}
+
 /* ------------------------------------------------------------- customer */
 
 /**
  * Checks a promo code the student typed at checkout and works out what the
- * new total would be. The real discount is still applied by the payment
- * provider — this is only so we can show an honest price first.
+ * new total would be. Also enforces that each student can only redeem each promo code once.
  */
 export const checkPromoCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -71,11 +157,57 @@ export const checkPromoCode = createServerFn({ method: "POST" })
         code: z.string().trim().min(1).max(32),
         environment: envSchema,
         paddlePriceId: z.string().min(1),
+        externalPriceId: z.string().optional(),
+        planSlug: z.string().optional(),
+        billing: z.string().optional(),
         cents: z.number().int().min(0),
       })
       .parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const cleanCode = data.code.trim().toUpperCase();
+    const userId = (context as { userId?: string }).userId;
+
+    // Single-use per user check: ensure user has not already redeemed this code
+    if (userId) {
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: existing } = await (supabaseAdmin as any)
+          .from("promo_code_redemptions")
+          .select("id, code")
+          .eq("user_id", userId)
+          .eq("code", cleanCode)
+          .maybeSingle();
+
+        if (existing) {
+          throw new Error("You have already redeemed this promo code on your account.");
+        }
+      } catch (err: any) {
+        if (err?.message?.includes("already redeemed")) {
+          throw err;
+        }
+      }
+
+      // Secondary check against manual_plan_grants
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: existingGrant } = await (supabaseAdmin as any)
+          .from("manual_plan_grants")
+          .select("id, reason")
+          .eq("user_id", userId)
+          .ilike("reason", `%${cleanCode}%`)
+          .maybeSingle();
+
+        if (existingGrant) {
+          throw new Error("You have already redeemed this promo code on your account.");
+        }
+      } catch (err: any) {
+        if (err?.message?.includes("already redeemed")) {
+          throw err;
+        }
+      }
+    }
+
     let found: Discount[] = [];
     try {
       const body = await api(data.environment, "/discounts?status=active&per_page=200");
@@ -84,7 +216,7 @@ export const checkPromoCode = createServerFn({ method: "POST" })
       console.warn(`Discounts fetch in ${data.environment} failed:`, err);
     }
 
-    let d = found.find((x) => (x.code ?? "").toUpperCase() === data.code.trim().toUpperCase());
+    let d = found.find((x) => (x.code ?? "").toUpperCase() === cleanCode);
 
     // Fall back to check the other environment if not found in primary
     if (!d) {
@@ -92,7 +224,7 @@ export const checkPromoCode = createServerFn({ method: "POST" })
       try {
         const bodyOther = await api(other, "/discounts?status=active&per_page=200");
         const foundOther = (bodyOther?.data ?? []) as Discount[];
-        d = foundOther.find((x) => (x.code ?? "").toUpperCase() === data.code.trim().toUpperCase());
+        d = foundOther.find((x) => (x.code ?? "").toUpperCase() === cleanCode);
       } catch (err) {
         console.warn(`Discounts fallback in ${other} failed:`, err);
       }
@@ -104,8 +236,18 @@ export const checkPromoCode = createServerFn({ method: "POST" })
       throw new Error("That code has expired.");
     if (d.usage_limit !== null && d.times_used >= d.usage_limit)
       throw new Error("That code has already been fully used.");
-    if (d.restrict_to?.length && !d.restrict_to.includes(data.paddlePriceId))
+
+    const applies = await doesPromoApplyToPlan(
+      d.restrict_to,
+      data.planSlug,
+      data.billing,
+      data.paddlePriceId,
+      data.externalPriceId,
+      data.environment,
+    );
+    if (!applies) {
       throw new Error("That code does not apply to this plan.");
+    }
 
     const amount = Number(d.amount || 0);
     const off =

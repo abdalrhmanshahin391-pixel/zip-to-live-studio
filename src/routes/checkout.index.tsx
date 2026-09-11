@@ -207,7 +207,15 @@ function CheckoutPage() {
     try {
       const { paddlePriceId, environment } = await getPaddlePriceId(priceId);
       const result = await checkPromoCode({
-        data: { code, environment, paddlePriceId, cents },
+        data: {
+          code,
+          environment,
+          paddlePriceId,
+          externalPriceId: priceId,
+          planSlug: plan?.slug,
+          billing: (billing as any) || "three_months",
+          cents,
+        },
       });
       setPromo(result);
       setCodeInput("");
