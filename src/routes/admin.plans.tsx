@@ -30,6 +30,7 @@ import {
   adminInspectPaddlePrices,
   adminListPlans,
   adminListPlanGrants,
+  adminReconcileAllPaddlePrices,
   adminRevokePlanGrant,
   adminSavePlan,
   adminSyncPlanPrices,
@@ -116,6 +117,7 @@ function AdminPlansPage() {
   const save = useServerFn(adminSavePlan);
   const syncPrices = useServerFn(adminSyncPlanPrices);
   const inspectPaddle = useServerFn(adminInspectPaddlePrices);
+  const reconcileAll = useServerFn(adminReconcileAllPaddlePrices);
   const remove = useServerFn(adminDeletePlan);
   const findStudent = useServerFn(adminFindGrantStudent);
   const createGrant = useServerFn(adminCreatePlanGrant);
@@ -133,10 +135,39 @@ function AdminPlansPage() {
   const [grantReason, setGrantReason] = useState("");
   const [grantOverride, setGrantOverride] = useState(true);
   const editorRef = useRef<HTMLDivElement | null>(null);
+  const autoReconciled = useRef(false);
 
   useEffect(() => {
     if (!loading && !isAdmin) guardRedirect(navigate);
   }, [loading, isAdmin, navigate]);
+
+  // Automatically reconcile all plans on mount so Paddle always matches 3-Month & Yearly intervals
+  useEffect(() => {
+    if (!isAdmin || autoReconciled.current) return;
+    autoReconciled.current = true;
+    void (async () => {
+      try {
+        const res = (await reconcileAll({})) as {
+          ok: boolean;
+          env: string;
+          results: Array<{ slug: string; name: string; sync: any }>;
+        };
+        const migratedCount = res?.results?.reduce(
+          (acc, r) => acc + (r.sync?.done?.length ?? 0),
+          0,
+        );
+        if (migratedCount > 0) {
+          toast.success(
+            `Paddle catalog auto-synchronized with 3-Month and Yearly cycles (${migratedCount} prices updated/migrated)`,
+          );
+          await qc.invalidateQueries({ queryKey: ["admin-plans"] });
+          await qc.invalidateQueries({ queryKey: ["admin-paddle-inspect"] });
+        }
+      } catch {
+        // quiet background attempt
+      }
+    })();
+  }, [isAdmin, reconcileAll, qc]);
 
   const { data } = useQuery({
     queryKey: ["admin-plans"],
@@ -185,15 +216,19 @@ function AdminPlansPage() {
         done: string[];
         failed: Array<{ id: string; reason: string }>;
         env?: string;
+        updatedPriceIds?: Record<string, string>;
       };
     };
+    if (res?.sync?.updatedPriceIds && Object.keys(res.sync.updatedPriceIds).length > 0) {
+      patch(res.sync.updatedPriceIds);
+    }
     setSaved((s) => ({ ...s, [row.slug]: JSON.stringify(row) }));
     await qc.invalidateQueries({ queryKey: ["plans"] });
     if (!quiet) {
       const done = res?.sync?.done?.length ?? 0;
       toast.success(
         done > 0
-          ? `${row.name} saved — new price synced to Paddle (${res?.sync?.env ?? "live"}) for new buyers`
+          ? `${row.name} saved — new price and 3-month cycle synced to Paddle (${res?.sync?.env ?? "live"}) for new buyers`
           : `${row.name} saved`,
       );
       if (res?.sync?.failed?.length) {
@@ -214,13 +249,17 @@ function AdminPlansPage() {
         done: string[];
         failed: Array<{ id: string; reason: string }>;
         env: string;
+        updatedPriceIds?: Record<string, string>;
       };
+      if (r?.updatedPriceIds && Object.keys(r.updatedPriceIds).length > 0) {
+        patch(r.updatedPriceIds);
+      }
       if (r.done?.length) {
         toast.success(
           `Live Paddle catalog updated (${r.env} mode): ${r.done.join(", ")}`,
         );
       } else if (!r.failed?.length) {
-        toast.info("No prices needed updating — verify that price IDs are set.");
+        toast.info("No prices needed updating — all prices and 3-month cycles are synchronized.");
       }
       if (r.failed?.length) {
         const failedMsg = r.failed
@@ -228,6 +267,7 @@ function AdminPlansPage() {
           .join(", ");
         toast.error(`Could not update: ${failedMsg}`);
       }
+      await qc.invalidateQueries({ queryKey: ["admin-plans"] });
       await refetchInspection();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not reach the payment catalog");
@@ -1177,10 +1217,11 @@ function PaddleCoordinationPanel({
           <div className="flex items-start gap-2.5 text-[#92400e]">
             <AlertTriangle size={18} className="mt-0.5 shrink-0 text-[#b45309]" />
             <div>
-              <p className="text-[13px] font-black">Price Desync Detected!</p>
+              <p className="text-[13px] font-black">Paddle Desync / Legacy Cycle Detected!</p>
               <p className="mt-0.5 text-[12px] font-medium text-[#78350f]">
-                The price configured on RitaJet does not match what Paddle charges buyers. Push your
-                updated price to Paddle or adopt the existing Paddle price to avoid discrepancies.
+                Paddle has an outdated price or is still set to the legacy 1-month cycle. Syncing will
+                automatically create a 3-Month recurring subscription in Paddle ({money(plan.price_cents, plan.currency)}),
+                retire the old 1-month price, and update your catalog.
               </p>
             </div>
           </div>
@@ -1192,7 +1233,7 @@ function PaddleCoordinationPanel({
               className="inline-flex items-center gap-1.5 rounded-full bg-[#b45309] px-3.5 py-1.5 text-[12px] font-black text-white hover:bg-[#92400e] disabled:opacity-60"
             >
               <Sparkles size={13} />
-              Push Website Price to Live Paddle
+              Migrate to 3-Month & Sync to Live Paddle
             </button>
           </div>
         </div>

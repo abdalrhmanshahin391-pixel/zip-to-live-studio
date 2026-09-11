@@ -100,68 +100,258 @@ export type SyncResult = {
   done: string[];
   failed: { id: string; reason: string }[];
   env: Env;
+  updatedPriceIds?: Record<string, string>;
+};
+
+type TargetSpec = {
+  key: "monthly" | "yearly" | "once";
+  label: string;
+  field: "paddle_price_monthly" | "paddle_price_yearly" | "paddle_price_once";
+  externalId: string | null;
+  cents: number;
+  billingCycle: { interval: "month" | "year"; frequency: number } | null;
+  name: string;
+  description: string;
 };
 
 /**
- * Pushes a plan's name and prices to the payment catalog so the amount a
- * student is charged always matches what the pricing page shows.
- * Supports both internal Paddle IDs (pri_...) and human external IDs (e.g. toolkit_monthly).
+ * Pushes a plan's name, prices, and billing intervals to the payment catalog
+ * so the amount and cadence a student is charged always matches what RitaJet promises.
+ * Automatically migrates legacy 1-month prices to 3-month recurring subscriptions,
+ * archives obsolete 1-month prices, and synchronizes product metadata.
  */
 async function syncPlanToPaddle(plan: AdminPlan, env: Env): Promise<SyncResult> {
-  const targets: { label: string; externalId: string | null; cents: number }[] = [
-    { label: "monthly", externalId: plan.paddle_price_monthly, cents: plan.price_cents },
-    { label: "yearly", externalId: plan.paddle_price_yearly, cents: plan.yearly_cents },
-    { label: "lifetime", externalId: plan.paddle_price_once, cents: plan.once_cents },
-  ];
+  const isLifetime = (plan.billing_kind ?? "monthly") === "lifetime";
+  const targets: TargetSpec[] = isLifetime
+    ? [
+        {
+          key: "once",
+          label: "One-Time Pack",
+          field: "paddle_price_once",
+          externalId: plan.paddle_price_once,
+          cents: plan.once_cents ?? 0,
+          billingCycle: null,
+          name: `${plan.name} (One-Time)`,
+          description: `${plan.name} Lifetime Pack`,
+        },
+      ]
+    : [
+        {
+          key: "monthly",
+          label: "3-Month Subscription",
+          field: "paddle_price_monthly",
+          externalId: plan.paddle_price_monthly,
+          cents: plan.price_cents ?? 0,
+          billingCycle: { interval: "month", frequency: 3 },
+          name: `${plan.name} (3 Months)`,
+          description: `${plan.name} - 3 Months Access`,
+        },
+        {
+          key: "yearly",
+          label: "Yearly Subscription",
+          field: "paddle_price_yearly",
+          externalId: plan.paddle_price_yearly,
+          cents: plan.yearly_cents ?? 0,
+          billingCycle: { interval: "year", frequency: 1 },
+          name: `${plan.name} (Yearly)`,
+          description: `${plan.name} - 1 Year Access`,
+        },
+      ];
+
   const done: string[] = [];
   const failed: { id: string; reason: string }[] = [];
+  const updatedPriceIds: Record<string, string> = {};
+  let productId: string | null = null;
   let productSynced = false;
 
+  // First, find productId from any known price or by searching product catalog
   for (const t of targets) {
-    if (!t.externalId || !t.cents) continue;
+    if (!t.externalId) continue;
     try {
       const isPri = t.externalId.startsWith("pri_");
       const found = isPri
         ? await pay(env, `/prices/${encodeURIComponent(t.externalId)}`)
         : await pay(env, `/prices?external_id=${encodeURIComponent(t.externalId)}`);
-
       const price = isPri ? found?.data : found?.data?.[0];
-      if (!price || !price.id) {
-        failed.push({
-          id: t.externalId,
-          reason: `Price identifier "${t.externalId}" not found in Paddle ${env} catalog`,
-        });
-        continue;
+      if (price?.product_id) {
+        productId = price.product_id;
+        break;
       }
+    } catch {
+      // continue searching
+    }
+  }
 
-      // Update unit price on Paddle
-      await pay(env, `/prices/${price.id}`, {
-        method: "PATCH",
+  // If no product_id found from prices, search products by name
+  if (!productId) {
+    try {
+      const prods = await pay(env, `/products?search=${encodeURIComponent(plan.name)}`);
+      if (prods?.data?.[0]?.id) {
+        productId = prods.data[0].id;
+      }
+    } catch {
+      // non-blocking
+    }
+  }
+
+  // If still no product_id, create the product in Paddle
+  if (!productId) {
+    try {
+      const createdProd = await pay(env, "/products", {
+        method: "POST",
         body: JSON.stringify({
-          unit_price: { amount: String(t.cents), currency_code: plan.currency.toUpperCase() },
+          name: plan.name,
+          description: plan.tagline || plan.name,
+          tax_category: "standard",
         }),
       });
-      done.push(`${t.externalId} -> ${(t.cents / 100).toFixed(2)} ${plan.currency} (${env})`);
+      if (createdProd?.data?.id) {
+        productId = createdProd.data.id;
+        done.push(`Created product "${plan.name}" in Paddle (${productId})`);
+      }
+    } catch (e: any) {
+      console.warn("Product creation error:", e?.message);
+    }
+  }
 
-      // Keep product title aligned
-      if (!productSynced && price.product_id) {
-        await pay(env, `/products/${price.product_id}`, {
-          method: "PATCH",
+  for (const t of targets) {
+    if (!t.cents || t.cents <= 0) continue;
+    try {
+      let existingPrice: any = null;
+      if (t.externalId) {
+        const isPri = t.externalId.startsWith("pri_");
+        const found = isPri
+          ? await pay(env, `/prices/${encodeURIComponent(t.externalId)}`)
+          : await pay(env, `/prices?external_id=${encodeURIComponent(t.externalId)}`);
+        existingPrice = isPri ? found?.data : found?.data?.[0];
+      }
+
+      if (existingPrice?.id) {
+        if (!productId && existingPrice.product_id) productId = existingPrice.product_id;
+
+        // Check if billing cycle matches
+        const existingCycle = existingPrice.billing_cycle;
+        const cycleMatches =
+          (!t.billingCycle && !existingCycle) ||
+          (Boolean(t.billingCycle) &&
+            Boolean(existingCycle) &&
+            existingCycle?.interval === t.billingCycle?.interval &&
+            existingCycle?.frequency === t.billingCycle?.frequency);
+
+        if (cycleMatches) {
+          // Billing cycle matches (e.g. 3 months). Update unit price and names
+          await pay(env, `/prices/${existingPrice.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              name: t.name,
+              description: t.description,
+              unit_price: { amount: String(t.cents), currency_code: plan.currency.toUpperCase() },
+              status: "active",
+            }),
+          });
+          done.push(`${t.label}: Updated price to $${(t.cents / 100).toFixed(2)} ${plan.currency} (${existingPrice.id})`);
+        } else {
+          // Billing cycle changed (e.g. was legacy 1-month frequency:1, now 3-month frequency:3)!
+          // In Paddle, billing_cycle is immutable on existing price. Create new price with proper billing_cycle.
+          const prodId = productId || existingPrice.product_id;
+          if (!prodId) throw new Error("Missing product ID for creating 3-month price");
+
+          const newPriceRes = await pay(env, "/prices", {
+            method: "POST",
+            body: JSON.stringify({
+              product_id: prodId,
+              name: t.name,
+              description: t.description,
+              unit_price: { amount: String(t.cents), currency_code: plan.currency.toUpperCase() },
+              ...(t.billingCycle ? { billing_cycle: t.billingCycle } : {}),
+            }),
+          });
+
+          const newPrice = newPriceRes?.data;
+          if (!newPrice?.id) throw new Error("Paddle did not return new price ID");
+
+          // Archive old legacy price so nobody can purchase the 1-month version
+          await pay(env, `/prices/${existingPrice.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({ status: "archived" }),
+          }).catch(() => null);
+
+          updatedPriceIds[t.field] = newPrice.id;
+          done.push(
+            `${t.label}: Migrated to 3-month cycle. Created ${newPrice.id} ($${(t.cents / 100).toFixed(2)}) and archived legacy 1-month ${existingPrice.id}`,
+          );
+        }
+      } else {
+        // Price does not exist in Paddle yet. Create it under productId!
+        if (!productId) {
+          const createdProd = await pay(env, "/products", {
+            method: "POST",
+            body: JSON.stringify({
+              name: plan.name,
+              description: plan.tagline || plan.name,
+              tax_category: "standard",
+            }),
+          });
+          productId = createdProd?.data?.id;
+        }
+
+        if (!productId) {
+          throw new Error(`Could not find or create product for plan "${plan.name}"`);
+        }
+
+        const newPriceRes = await pay(env, "/prices", {
+          method: "POST",
           body: JSON.stringify({
-            name: plan.name,
-            description: plan.tagline || plan.name,
+            product_id: productId,
+            name: t.name,
+            description: t.description,
+            unit_price: { amount: String(t.cents), currency_code: plan.currency.toUpperCase() },
+            ...(t.billingCycle ? { billing_cycle: t.billingCycle } : {}),
           }),
-        }).catch(() => null);
-        productSynced = true;
+        });
+
+        const newPrice = newPriceRes?.data;
+        if (!newPrice?.id) throw new Error("Paddle price creation failed");
+
+        updatedPriceIds[t.field] = newPrice.id;
+        done.push(
+          `${t.label}: Created ${newPrice.id} ($${(t.cents / 100).toFixed(2)}) in Paddle (${env})`,
+        );
       }
     } catch (err: any) {
       failed.push({
-        id: t.externalId,
+        id: t.label,
         reason: err?.message || "Paddle update failed",
       });
     }
   }
-  return { done, failed, env };
+
+  // Update product title and description if product is known
+  if (!productSynced && productId) {
+    await pay(env, `/products/${productId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: plan.name,
+        description: plan.tagline || plan.name,
+      }),
+    }).catch(() => null);
+    productSynced = true;
+  }
+
+  // If any price IDs were updated/migrated, persist them in Supabase plans table
+  if (Object.keys(updatedPriceIds).length > 0) {
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+      await (supabaseAdmin as any)
+        .from("plans")
+        .update(updatedPriceIds)
+        .eq("slug", plan.slug);
+    } catch (dbErr: any) {
+      console.warn("Could not save new price IDs to Supabase:", dbErr?.message);
+    }
+  }
+
+  return { done, failed, env, updatedPriceIds };
 }
 
 export type PaddleTargetInspection = {
@@ -175,6 +365,7 @@ export type PaddleTargetInspection = {
   paddleCents?: number;
   paddleCurrency?: string;
   paddleStatus?: string;
+  billingCycle?: { interval: string; frequency: number } | null;
   status: "in_sync" | "desynced" | "not_found" | "error";
   message: string;
 };
@@ -212,9 +403,9 @@ export const adminInspectPaddlePrices = createServerFn({ method: "POST" })
     const env: Env = data.environment === "auto" ? getActiveServerPaddleEnv() : data.environment;
 
     const list: { key: "monthly" | "yearly" | "once"; label: string; id: string | null; cents: number }[] = [
-      { key: "monthly", label: "Monthly / 3-Month", id: plan.paddle_price_monthly, cents: plan.price_cents },
-      { key: "yearly", label: "Yearly", id: plan.paddle_price_yearly, cents: plan.yearly_cents },
-      { key: "once", label: "One-time / Lifetime", id: plan.paddle_price_once, cents: plan.once_cents },
+      { key: "monthly", label: "3-Month Subscription", id: plan.paddle_price_monthly, cents: plan.price_cents },
+      { key: "yearly", label: "Yearly Subscription", id: plan.paddle_price_yearly, cents: plan.yearly_cents },
+      { key: "once", label: "One-Time Pack", id: plan.paddle_price_once, cents: plan.once_cents },
     ];
 
     const targets: PaddleTargetInspection[] = [];
@@ -245,7 +436,37 @@ export const adminInspectPaddlePrices = createServerFn({ method: "POST" })
 
         const paddleCents = price.unit_price?.amount ? Number(price.unit_price.amount) : 0;
         const paddleCurrency = price.unit_price?.currency_code || plan.currency;
-        const inSync = paddleCents === expectedCents;
+        const billingCycle = price.billing_cycle ?? null;
+
+        const expectedCycle =
+          item.key === "monthly"
+            ? { interval: "month", frequency: 3 }
+            : item.key === "yearly"
+              ? { interval: "year", frequency: 1 }
+              : null;
+
+        const cycleMatches =
+          (!expectedCycle && !billingCycle) ||
+          (Boolean(expectedCycle) &&
+            Boolean(billingCycle) &&
+            billingCycle?.interval === expectedCycle?.interval &&
+            billingCycle?.frequency === expectedCycle?.frequency);
+
+        const inSync = paddleCents === expectedCents && cycleMatches;
+
+        let message = "";
+        if (inSync) {
+          const cycleLabel = expectedCycle
+            ? expectedCycle.frequency === 3
+              ? "every 3 months"
+              : "yearly"
+            : "one-time";
+          message = `In sync ($${(paddleCents / 100).toFixed(2)} ${paddleCurrency} ${cycleLabel})`;
+        } else if (!cycleMatches && billingCycle?.frequency === 1 && billingCycle?.interval === "month") {
+          message = `Desynced: Paddle has legacy 1-Month ($${(paddleCents / 100).toFixed(2)}/mo). Website requires 3-Month ($${(expectedCents / 100).toFixed(2)})`;
+        } else {
+          message = `Desynced: Paddle has $${(paddleCents / 100).toFixed(2)} ${paddleCurrency}, website has $${(expectedCents / 100).toFixed(2)} ${plan.currency}`;
+        }
 
         targets.push({
           key: item.key,
@@ -258,10 +479,9 @@ export const adminInspectPaddlePrices = createServerFn({ method: "POST" })
           paddleCents,
           paddleCurrency,
           paddleStatus: price.status,
+          billingCycle,
           status: inSync ? "in_sync" : "desynced",
-          message: inSync
-            ? `In sync ($${(paddleCents / 100).toFixed(2)} ${paddleCurrency})`
-            : `Desynced: Paddle has $${(paddleCents / 100).toFixed(2)} ${paddleCurrency}, website has $${(expectedCents / 100).toFixed(2)} ${plan.currency}`,
+          message,
         });
       } catch (err: any) {
         targets.push({
@@ -354,6 +574,45 @@ export const adminSyncPlanPrices = createServerFn({ method: "POST" })
 
     const env: Env = data.environment === "auto" ? getActiveServerPaddleEnv() : data.environment;
     return await syncPlanToPaddle(row as AdminPlan, env);
+  });
+
+/**
+ * Automatically reconciles ALL plans against the active Paddle catalog:
+ * Migrates deprecated 1-month prices to 3-month prices, archives obsolete prices,
+ * updates amounts, and keeps Supabase synchronized.
+ */
+export const adminReconcileAllPaddlePrices = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+    const { data: rows, error } = await (supabaseAdmin as any)
+      .from("plans")
+      .select("*")
+      .neq("slug", "starter")
+      .order("sort");
+    if (error) throw new Error(error.message);
+
+    const env = getActiveServerPaddleEnv();
+    const results: Array<{ slug: string; name: string; sync: SyncResult }> = [];
+
+    for (const row of rows ?? []) {
+      try {
+        const sync = await syncPlanToPaddle(row as AdminPlan, env);
+        results.push({ slug: row.slug, name: row.name, sync });
+      } catch (e: any) {
+        results.push({
+          slug: row.slug,
+          name: row.name,
+          sync: {
+            done: [],
+            failed: [{ id: row.slug, reason: e?.message || "Reconciliation failed" }],
+            env,
+          },
+        });
+      }
+    }
+    return { ok: true, env, results };
   });
 
 /** Delete a plan; students on it fall back to Starter. */
