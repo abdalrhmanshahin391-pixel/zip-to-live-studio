@@ -50,16 +50,21 @@ export function usePaddleCheckout() {
         setStatus("completed");
       } else if (name === "checkout.error") {
         setStatus("error");
+        console.warn("Paddle checkout.error event payload:", data);
         const msg =
+          data?.error?.message ||
           data?.detail ||
           data?.error?.detail ||
           data?.message ||
-          "Paddle encountered an error opening the payment form.";
+          "Paddle encountered an error opening the payment form. Please try again or select card payment.";
         setError(msg);
       } else if (name === "checkout.payment.failed") {
+        console.warn("Paddle checkout.payment.failed event payload:", data);
         const msg =
+          data?.error?.message ||
           data?.error?.detail ||
           data?.detail ||
+          data?.message ||
           "Payment was declined or cancelled. Please check your card details or try another method.";
         setError(msg);
       }

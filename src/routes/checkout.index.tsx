@@ -156,6 +156,7 @@ function CheckoutPage() {
     ) => {
       if (!plan || !user || !priceId) return;
       setLocalError(null);
+      const isTouch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
       try {
         closeCheckout();
         await openCheckout({
@@ -164,7 +165,8 @@ function CheckoutPage() {
           customData: { userId: user.id, planSlug: plan.slug },
           successUrl: `${window.location.origin}/checkout/success?plan=${plan.slug}`,
           discountCode,
-          frameTarget: FRAME,
+          frameTarget: isTouch ? undefined : FRAME,
+          displayMode: isTouch ? "overlay" : "inline",
           methodRestriction,
         });
       } catch (e: any) {
