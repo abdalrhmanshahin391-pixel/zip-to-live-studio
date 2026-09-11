@@ -48,7 +48,7 @@ export function usePaddleCheckout() {
           allowLogout: false,
           showAddTaxId: false,
           showAddDiscounts: false,
-          variant: "express",
+          variant: "one-page",
         },
       });
     } finally {

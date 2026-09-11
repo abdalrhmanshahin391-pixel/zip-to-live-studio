@@ -76,12 +76,28 @@ export const checkPromoCode = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    const body = await api(
-      data.environment,
-      `/discounts?code=${encodeURIComponent(data.code.toUpperCase())}&status=active`,
-    );
-    const found = (body?.data ?? []) as Discount[];
-    const d = found.find((x) => (x.code ?? "").toUpperCase() === data.code.trim().toUpperCase());
+    let found: Discount[] = [];
+    try {
+      const body = await api(data.environment, "/discounts?status=active&per_page=200");
+      found = (body?.data ?? []) as Discount[];
+    } catch (err) {
+      console.warn(`Discounts fetch in ${data.environment} failed:`, err);
+    }
+
+    let d = found.find((x) => (x.code ?? "").toUpperCase() === data.code.trim().toUpperCase());
+
+    // Fall back to check the other environment if not found in primary
+    if (!d) {
+      const other: Env = data.environment === "sandbox" ? "live" : "sandbox";
+      try {
+        const bodyOther = await api(other, "/discounts?status=active&per_page=200");
+        const foundOther = (bodyOther?.data ?? []) as Discount[];
+        d = foundOther.find((x) => (x.code ?? "").toUpperCase() === data.code.trim().toUpperCase());
+      } catch (err) {
+        console.warn(`Discounts fallback in ${other} failed:`, err);
+      }
+    }
+
     if (!d) throw new Error("That code is not valid — check the spelling and try again.");
     if (!d.enabled_for_checkout) throw new Error("That code cannot be used at checkout.");
     if (d.expires_at && new Date(d.expires_at) < new Date())
