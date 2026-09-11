@@ -5,6 +5,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import { useServerFn } from "@tanstack/react-start";
 import { checkIdentityAvailability } from "@/lib/auth.functions";
+import { needsOnboarding } from "@/lib/onboarding";
 import { refreshAuthProfile } from "@/lib/auth-store";
 import {
   AuthShell,
@@ -74,6 +75,18 @@ function WelcomePage() {
         .eq("id", user.id)
         .maybeSingle();
       if (cancelled) return;
+      const provider =
+        (user.app_metadata?.provider as string | undefined) ??
+        (user.identities?.[0]?.provider as string | undefined);
+      if (prof && !needsOnboarding(user.id, prof, provider)) {
+        if (next) {
+          void navigate({ to: next as string, replace: true });
+        } else {
+          void navigate({ to: "/", replace: true });
+        }
+        return;
+      }
+
       setEmail(user.email ?? "");
       // Use a verified provider name when available so the form is easier to finish.
       const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
@@ -94,7 +107,7 @@ function WelcomePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [navigate, next]);
 
   function update<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -120,7 +133,13 @@ function WelcomePage() {
         return;
       }
 
-      const taken = await checkIdentity({ data: { username: data.username, phone: data.phone } });
+      const taken = await checkIdentity({
+        data: {
+          username: data.username,
+          phone: data.phone,
+          excludeUserId: uid,
+        },
+      });
       if (taken?.username) {
         setError("This username is already taken — try another one.");
         setSaving(false);

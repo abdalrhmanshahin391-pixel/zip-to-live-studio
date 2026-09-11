@@ -328,7 +328,10 @@ function OnboardingGate() {
     if (loading || !user) return;
     const pathname = location.pathname;
     if (ONBOARDING_EXEMPT.some((p) => pathname === p || pathname.startsWith(p + "/"))) return;
-    if (!needsOnboarding(user.id, profile)) return;
+    const provider =
+      (user.app_metadata?.provider as string | undefined) ??
+      (user.identities?.[0]?.provider as string | undefined);
+    if (!needsOnboarding(user.id, profile, provider)) return;
     const next = pathname + (location.searchStr ?? "");
     const q = next && next !== "/" ? `?next=${encodeURIComponent(next)}` : "";
     // Navigate in-app: a hard reload here threw away the freshly booted app.

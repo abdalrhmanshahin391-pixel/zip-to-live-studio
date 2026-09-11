@@ -69,6 +69,24 @@ async function loadExtras(uid: string) {
   }
   // A newer auth event may have landed while we were fetching.
   if (snapshot.user?.id !== uid) return;
+
+  // Self-heal profile row if user_metadata contains fields (like phone) missing from profiles table
+  if (prof && snapshot.user?.user_metadata) {
+    const meta = snapshot.user.user_metadata as Record<string, any>;
+    const currentProf = prof as Record<string, any>;
+    const missingPhone = !currentProf.phone && meta.phone;
+    const missingName = !currentProf.full_name && (meta.full_name || meta.name);
+    const missingUsername = (!currentProf.username || currentProf.username === uid) && meta.username;
+    if (missingPhone || missingName || missingUsername) {
+      const updates: Record<string, any> = {};
+      if (missingPhone) updates.phone = meta.phone;
+      if (missingName) updates.full_name = meta.full_name || meta.name;
+      if (missingUsername) updates.username = meta.username;
+      prof = { ...currentProf, ...updates };
+      void supabase.from("profiles").update(updates).eq("id", uid);
+    }
+  }
+
   extrasLoaded.add(uid);
   const list = (roles ?? []) as { role: string }[];
   emit({

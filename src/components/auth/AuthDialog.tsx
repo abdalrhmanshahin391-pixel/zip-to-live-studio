@@ -433,10 +433,9 @@ const signupSchema = z
     phone: z
       .string()
       .trim()
-      .max(20)
-      .optional()
-      .or(z.literal(""))
-      .refine((v) => !v || /^[0-9+\-\s()]{6,20}$/.test(v), "Please enter a valid phone number."),
+      .min(6, "Please enter your phone number (at least 6 digits).")
+      .max(20, "Phone number cannot exceed 20 characters.")
+      .regex(/^[0-9+\-\s()]{6,20}$/, "Please enter a valid phone number."),
     password: z.string().min(6, "Password must be at least 6 characters.").max(72),
   })
   .strip();
@@ -680,7 +679,7 @@ function SignUpPanel() {
             />
           </label>
           <label className="block">
-            <Label>phone (optional)</Label>
+            <Label>phone number</Label>
             <input
               type="tel"
               autoComplete="tel"
