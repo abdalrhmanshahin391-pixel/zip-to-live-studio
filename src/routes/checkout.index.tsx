@@ -141,7 +141,7 @@ function CheckoutPage() {
     : 0;
 
   const start = useCallback(
-    async (discountCode?: string) => {
+    async (discountCode?: string, cardsOnly = false) => {
       if (!plan || !user || !priceId) return;
       setReady(false);
       setError(null);
@@ -154,6 +154,7 @@ function CheckoutPage() {
           successUrl: `${window.location.origin}/checkout/success?plan=${plan.slug}`,
           discountCode,
           frameTarget: FRAME,
+          cardsOnly,
         });
         setReady(true);
       } catch (e) {
@@ -297,19 +298,28 @@ function CheckoutPage() {
             <div className={`${FRAME} mt-5 ${user && plan && canUseInline() ? "min-h-[26rem]" : ""}`} />
 
             {!canUseInline() && ready && !error && (
-              <div className="mt-5 flex flex-col items-center justify-center rounded-[18px] border border-border bg-muted/40 p-8 text-center">
+              <div className="mt-5 flex flex-col items-center justify-center rounded-[18px] border border-border bg-muted/40 p-6 text-center">
                 <LockKeyhole size={28} className="rita-accent mb-2" />
                 <p className="text-[15px] font-bold text-foreground">Complete your payment</p>
                 <p className="mt-1 text-[13.5px] text-muted-foreground max-w-sm">
-                  The secure payment window is ready with Apple Pay, cards, and PayPal.
+                  Choose your payment method below:
                 </p>
-                <button
-                  type="button"
-                  onClick={() => void start(promo?.code)}
-                  className="rita-btn rita-btn-primary mt-4 active:scale-95 touch-manipulation shadow-md"
-                >
-                  Open payment window
-                </button>
+                <div className="mt-4 flex flex-wrap justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void start(promo?.code, false)}
+                    className="rita-btn rita-btn-primary active:scale-95 touch-manipulation shadow-sm"
+                  >
+                    Apple Pay / All methods
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void start(promo?.code, true)}
+                    className="rita-btn rita-btn-secondary active:scale-95 touch-manipulation"
+                  >
+                    Card or PayPal
+                  </button>
+                </div>
               </div>
             )}
 

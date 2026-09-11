@@ -31,6 +31,8 @@ export function usePaddleCheckout() {
     discountCode?: string;
     /** CSS class of the element the inline payment form is rendered into */
     frameTarget?: string;
+    /** If true, skips Apple Pay merchant check to prevent iPad crashes when domain is unverified */
+    cardsOnly?: boolean;
   }) => {
     setLoading(true);
     try {
@@ -63,6 +65,7 @@ export function usePaddleCheckout() {
           showAddTaxId: false,
           showAddDiscounts: false,
           variant: "one-page",
+          ...(options.cardsOnly ? { allowedPaymentMethods: ["card", "paypal"] } : {}),
         },
       });
     } finally {
