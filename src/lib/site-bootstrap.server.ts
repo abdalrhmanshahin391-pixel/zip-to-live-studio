@@ -54,10 +54,10 @@ async function load(): Promise<BootstrapData> {
   const rows = (imagesRes?.data ?? []) as { key: string; path: string }[];
   const siteImages: Record<string, string> = {};
   if (rows.length) {
-    const paths = rows.map((r) => r.path);
-    const { data: signed } = await client.storage
-      .from("site-media")
-      .createSignedUrls(paths, 60 * 60 * 6);
+    const paths = rows.filter((r) => !/^https?:\/\//i.test(r.path)).map((r) => r.path);
+    const signed = paths.length
+      ? (await client.storage.from("site-media").createSignedUrls(paths, 60 * 60 * 6)).data
+      : [];
     const byPath = new Map((signed ?? []).map((s: any) => [s.path as string, s.signedUrl as string]));
     for (const row of rows) {
       const url = /^https?:\/\//i.test(row.path) ? row.path : byPath.get(row.path);

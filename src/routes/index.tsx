@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ProHome } from "@/components/home/procreate/ProHome";
 import { InstallAppBanner } from "@/components/InstallAppButton";
-import screenAsset from "@/assets/rita-girl-ipad.webp.asset.json";
+import screenAsset from "@/assets/home-ipad-restored.webp.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,12 +24,12 @@ export const Route = createFileRoute("/")({
       {
         property: "og:image",
         content:
-          "https://ritajet.com/__l5e/assets-v1/d79e87a3-84a5-47e3-aafe-db3d8230e0b1/rita-ipad-screen.jpg",
+          "https://ritajet.com/__l5e/assets-v1/e715e252-b093-484d-98d9-8e3144845769/home-ipad-restored.webp",
       },
       {
         name: "twitter:image",
         content:
-          "https://ritajet.com/__l5e/assets-v1/d79e87a3-84a5-47e3-aafe-db3d8230e0b1/rita-ipad-screen.jpg",
+          "https://ritajet.com/__l5e/assets-v1/e715e252-b093-484d-98d9-8e3144845769/home-ipad-restored.webp",
       },
     ],
     links: [

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import toolkitArt from "@/assets/toolkit-girl-study.webp.asset.json";
-import plansArt from "@/assets/pricing-monthly-dark.jpg.asset.json";
+import toolkitArt from "@/assets/home-toolkit-restored.webp.asset.json";
+import plansArt from "@/assets/home-plans-restored.webp.asset.json";
 import classroomArt from "@/assets/classroom-study-group.jpg.asset.json";
 import flashcardsArt from "@/assets/rita-flashcards-feature.webp.asset.json";
 import { EditableImage } from "@/components/site/EditableImage";
