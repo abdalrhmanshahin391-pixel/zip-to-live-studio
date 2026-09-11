@@ -53,17 +53,42 @@ export type PlanUsage = {
 
 
 
-/** Public plan catalogue for the pricing page. */
-export const listPlans = createServerFn({ method: "GET" }).handler(async () => {
+const PLANS_CACHE_TTL_MS = 60_000;
+let cachedPlans: { at: number; data: PlanRow[] } | null = null;
+let inFlightPlans: Promise<PlanRow[]> | null = null;
+
+async function fetchPlans(): Promise<PlanRow[]> {
+  const url = process.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
+  const key = process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"];
+  if (!url || !key) return [];
   const { createClient } = await import("@supabase/supabase-js");
-  const client = createClient(
-    process.env["VITE_SUPABASE_URL"]!,
-    process.env["VITE_SUPABASE_PUBLISHABLE_KEY"]!,
-    { auth: { persistSession: false } },
-  );
+  const client = createClient(url, key, { auth: { persistSession: false } });
   const { data, error } = await (client.from as any)("plans").select("*").order("sort");
   if (error) throw new Error(error.message);
   return (data ?? []) as PlanRow[];
+}
+
+/** Public plan catalogue for the pricing page with in-memory edge caching for sub-millisecond SSR. */
+export const listPlans = createServerFn({ method: "GET" }).handler(async () => {
+  const now = Date.now();
+  if (cachedPlans && now - cachedPlans.at < PLANS_CACHE_TTL_MS) {
+    return cachedPlans.data;
+  }
+  if (!inFlightPlans) {
+    inFlightPlans = fetchPlans()
+      .then((data) => {
+        cachedPlans = { at: Date.now(), data };
+        return data;
+      })
+      .catch((err) => {
+        if (cachedPlans) return cachedPlans.data;
+        throw err;
+      })
+      .finally(() => {
+        inFlightPlans = null;
+      });
+  }
+  return inFlightPlans;
 });
 
 /** The signed-in student's plan plus what they have used this month. */

@@ -125,13 +125,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "preconnect", href: "https://drive.usercontent.google.com", crossOrigin: "anonymous" },
-      { rel: "dns-prefetch", href: "https://drive.usercontent.google.com" },
-      { rel: "preconnect", href: "https://drive.google.com" },
-      { rel: "dns-prefetch", href: "https://drive.google.com" },
+      { rel: "dns-prefetch", href: "https://cdn.paddle.com" },
+      {
+        rel: "preload",
+        as: "style",
+        href: "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap",
+      },
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap",
+        media: "print",
+        onLoad: "this.media='all'",
       },
 
       { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
@@ -191,6 +195,12 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <script dangerouslySetInnerHTML={{ __html: recoveryBootScript }} />
+        <noscript>
+          <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap"
+          />
+        </noscript>
       </head>
       <body suppressHydrationWarning>
         {children}
@@ -219,16 +229,28 @@ function RootComponent() {
   useEffect(() => {
     // Sample content is only added after the account's own kit has loaded, so
     // it can never overwrite real data or race the cloud copy.
-    void (async () => {
+    // Defer to idle time so initial paint, hydration, and user tap responsiveness are instantaneous.
+    let cancelled = false;
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number })
+      .requestIdleCallback;
+    const run = async () => {
+      if (cancelled) return;
       try {
-      const sync = await import("@/lib/cloud-sync");
-      await sync.startCloudSync();
-      const seed = await import("@/lib/demo-seed");
-      seed.seedDemoContent();
+        const sync = await import("@/lib/cloud-sync");
+        await sync.startCloudSync();
+        const seed = await import("@/lib/demo-seed");
+        seed.seedDemoContent();
       } catch (error) {
         reportLovableError(error, { boundary: "background_startup" });
       }
-    })();
+    };
+    const id = idle ? idle(() => void run(), { timeout: 1500 }) : window.setTimeout(() => void run(), 600);
+    return () => {
+      cancelled = true;
+      const cancelIdle = (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
+      if (idle && cancelIdle) cancelIdle(id as number);
+      else window.clearTimeout(id as number);
+    };
   }, []);
 
 
@@ -389,7 +411,13 @@ function DeviceTracker() {
         if (event === "SIGNED_IN") void ping(true);
       });
       unsub = () => sub.subscription.unsubscribe();
-      void ping(true);
+      const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number })
+        .requestIdleCallback;
+      if (idle) {
+        idle(() => { if (!cancelled) void ping(true); }, { timeout: 2000 });
+      } else {
+        setTimeout(() => { if (!cancelled) void ping(true); }, 1000);
+      }
       } catch {
         /* Account tracking is optional and must never affect page rendering. */
       }

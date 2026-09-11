@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, Check, Minus } from "lucide-react";
 import { ProHeader } from "@/components/home/procreate/ProHeader";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import { OfferRibbon, discountPercent, offerLive } from "@/components/pricing/offer";
-import { myPlanUsage, type PlanRow } from "@/lib/plans.functions";
+import { myPlanUsage, listPlans, type PlanRow } from "@/lib/plans.functions";
 import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { updateSiteSettings } from "@/lib/site-settings.functions";
@@ -20,6 +20,14 @@ import packExam from "@/assets/pack-exam-dark.jpg.asset.json";
 
 
 export const Route = createFileRoute("/pricing")({
+  loader: async () => {
+    try {
+      const plans = (await listPlans()) as FullPlan[];
+      return { plans };
+    } catch {
+      return { plans: [] as FullPlan[] };
+    }
+  },
   head: () => ({
     meta: [
       { title: "Rita plans — flashcards, summaries and AI questions" },
@@ -78,6 +86,7 @@ function cap(n: number | null | undefined, unit: string) {
 const PACK_ART = [packStarter.url, packStudy.url, packExam.url];
 
 function PricingPage() {
+  const loaderData = Route.useLoaderData();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [yearly, setYearly] = useState(false);
@@ -88,8 +97,9 @@ function PricingPage() {
   const qc = useQueryClient();
   const [savingPacks, setSavingPacks] = useState(false);
 
-  const { data: plans = [], isLoading } = useQuery({
+  const { data: plans = loaderData?.plans ?? [], isLoading } = useQuery({
     queryKey: ["plans"],
+    initialData: loaderData?.plans && loaderData.plans.length > 0 ? loaderData.plans : undefined,
     staleTime: 5 * 60_000,
     queryFn: async (): Promise<FullPlan[]> => {
       const { data, error } = await (supabase.from as any)("plans").select("*").order("sort");
