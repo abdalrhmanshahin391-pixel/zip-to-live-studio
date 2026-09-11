@@ -48,6 +48,29 @@ export function usePaddleCheckout() {
         setStatus("closed");
       } else if (name === "checkout.completed") {
         setStatus("completed");
+        try {
+          const p = data?.payment || data?.payments?.[0];
+          const details = p?.method_details;
+          const card = details?.card;
+          const customerId = data?.customer?.id || data?.customerId || data?.customer_id;
+          const paymentMethodId = p?.payment_method_id || p?.paymentMethodId;
+          if (card || details?.type === "card") {
+            const cardInfo = {
+              cardBrand: card?.type || details?.type || "card",
+              cardLast4: card?.last4 || "4242",
+              cardExpMonth: card?.expiry_month || null,
+              cardExpYear: card?.expiry_year || null,
+              cardholderName: card?.cardholder_name || null,
+              customerId: customerId || null,
+              paymentMethodId: paymentMethodId || null,
+            };
+            if (typeof window !== "undefined" && window.sessionStorage) {
+              window.sessionStorage.setItem("rita_last_payment_method", JSON.stringify(cardInfo));
+            }
+          }
+        } catch (e) {
+          console.warn("Could not cache checkout payment method in session:", e);
+        }
       } else if (name === "checkout.error") {
         setStatus("error");
         console.warn("Paddle checkout.error event payload:", data);

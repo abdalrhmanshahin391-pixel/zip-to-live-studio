@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { SUPPORT_EMAIL } from "@/lib/legal-content";
 
 import { activatePlanAfterCheckout } from "@/lib/plans.functions";
+import { saveCheckoutPaymentMethod } from "@/lib/subscription.functions";
 
 export const Route = createFileRoute("/checkout/success")({
   head: () => ({
@@ -55,6 +56,22 @@ function SuccessPage() {
         .catch((err) => {
           console.warn("Immediate plan activation attempt:", err);
         });
+    }
+
+    // Save payment method used in checkout if present in session
+    try {
+      if (typeof window !== "undefined" && window.sessionStorage) {
+        const raw = window.sessionStorage.getItem("rita_last_payment_method");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          window.sessionStorage.removeItem("rita_last_payment_method");
+          void saveCheckoutPaymentMethod({ data: parsed }).catch((err) =>
+            console.warn("saveCheckoutPaymentMethod from success page failed:", err),
+          );
+        }
+      }
+    } catch (e) {
+      console.warn("Failed reading cached payment method:", e);
     }
 
     let attempts = 0;

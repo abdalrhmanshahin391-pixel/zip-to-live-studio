@@ -83,6 +83,33 @@ async function grantPack(
   await putOnPlan(userId, plan.slug);
 }
 
+async function recordWebhookPaymentMethod(userId: string, data: any, env: PaddleEnv) {
+  try {
+    const payment = data?.payments?.[0] || data?.payment;
+    const details = payment?.method_details;
+    const card = details?.card;
+    const customerId = data?.customerId || data?.customer_id;
+    const paymentMethodId = payment?.payment_method_id || payment?.paymentMethodId;
+
+    if (card && (details?.type === "card" || details?.type === "apple_pay" || card?.last4)) {
+      const db = getSupabase();
+      await (db as any).from("customer_payment_methods").insert({
+        user_id: userId,
+        paddle_customer_id: customerId || null,
+        paddle_payment_method_id: paymentMethodId || null,
+        card_brand: (card.type || "card").toLowerCase(),
+        card_last4: card.last4 || "••••",
+        card_exp_month: card.expiry_month || null,
+        card_exp_year: card.expiry_year || null,
+        cardholder_name: card.cardholder_name || null,
+        environment: env,
+      });
+    }
+  } catch (err) {
+    console.warn("recordWebhookPaymentMethod error:", err);
+  }
+}
+
 async function handleTransactionCompleted(data: any, env: PaddleEnv) {
   const userId = data?.customData?.userId;
   if (!userId) return;
@@ -99,6 +126,8 @@ async function handleTransactionCompleted(data: any, env: PaddleEnv) {
   } else {
     await putOnPlan(userId, targetSlug);
   }
+
+  await recordWebhookPaymentMethod(userId, data, env);
 }
 
 async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
@@ -130,6 +159,8 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
   );
 
   if (targetSlug) await putOnPlan(userId, targetSlug);
+
+  await recordWebhookPaymentMethod(userId, data, env);
 }
 
 async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {

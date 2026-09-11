@@ -10,6 +10,7 @@ import {
   Loader2,
   Sparkles,
   Timer,
+  Trash2,
   XCircle,
 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -18,8 +19,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   getMySubscription,
+  getMySavedPaymentMethods,
+  removeSavedPaymentMethod,
   createCustomerPortalSession,
   cancelSubscription,
+  type SavedPaymentMethod,
 } from "@/lib/subscription.functions";
 
 export const Route = createFileRoute("/my-plan")({
@@ -81,11 +85,43 @@ function MyPlanPage() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelNotice, setCancelNotice] = useState<string | null>(null);
 
+  const [cardToRemove, setCardToRemove] = useState<SavedPaymentMethod | null>(null);
+  const [removingCard, setRemovingCard] = useState(false);
+
   const { data: subscription, refetch: refetchSub } = useQuery({
     queryKey: ["my-subscription", user?.id],
     enabled: !!user?.id,
     queryFn: () => getMySubscription(),
   });
+
+  const { data: cards, refetch: refetchCards } = useQuery({
+    queryKey: ["my-payment-methods", user?.id],
+    enabled: !!user?.id,
+    queryFn: () => getMySavedPaymentMethods(),
+  });
+
+  const handleRemoveCard = async () => {
+    if (!cardToRemove) return;
+    setRemovingCard(true);
+    setCancelNotice(null);
+    try {
+      await removeSavedPaymentMethod({
+        data: {
+          cardId: cardToRemove.id,
+          paddlePaymentMethodId: cardToRemove.paddle_payment_method_id,
+          paddleCustomerId: cardToRemove.paddle_customer_id,
+          paddleSubscriptionId: subscription?.paddle_subscription_id,
+        },
+      });
+      await Promise.all([refetchCards(), refetchSub()]);
+      setCardToRemove(null);
+      setCancelNotice("Your card was removed and auto-renewal has been cancelled.");
+    } catch (err: any) {
+      setCancelNotice(err instanceof Error ? err.message : "Failed to remove card.");
+    } finally {
+      setRemovingCard(false);
+    }
+  };
 
   const handleOpenPortal = async () => {
     setPortalLoading(true);
@@ -255,6 +291,104 @@ function MyPlanPage() {
                 </p>
               </div>
             </div>
+
+            {/* Saved Payment Method Section */}
+            <div className="mt-6 border-t border-black/[0.06] pt-6">
+              <span className="text-[11.5px] font-black uppercase tracking-wider text-[#a29a8d]">
+                Saved Payment Method
+              </span>
+
+              {cards && cards.length > 0 ? (
+                <div className="mt-3 grid gap-3">
+                  {cards.map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-black/[0.08] bg-[#fbf5e9]/50 p-4 transition-all hover:bg-[#fbf5e9]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="grid h-11 w-11 place-items-center rounded-xl bg-white border border-black/[0.06] text-[#23201d] shadow-sm">
+                          <CreditCard size={20} className="text-amber-700" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-[15px] font-black capitalize text-[#23201d]">
+                              {c.card_brand} •••• {c.card_last4}
+                            </p>
+                            {subscription?.cancel_at_period_end ? (
+                              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10.5px] font-bold text-amber-800">
+                                Auto-renewal stopped
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10.5px] font-bold text-emerald-800">
+                                Active card
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-0.5 text-[12.5px] font-semibold text-[#8c8275]">
+                            {c.card_exp_month && c.card_exp_year
+                              ? `Expires ${String(c.card_exp_month).padStart(2, "0")}/${c.card_exp_year}`
+                              : "Card on file"}
+                            {" • "}
+                            <span>Encrypted in Paddle vault</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setCardToRemove(c)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-white px-3.5 py-1.5 text-[12.5px] font-bold text-red-600 hover:bg-red-50 transition-colors shadow-sm"
+                        >
+                          <Trash2 size={13} /> Remove Card
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3 rounded-2xl border border-black/[0.06] bg-[#fbf5e9]/30 p-4">
+                  <p className="text-[13.5px] font-semibold text-[#8c8275]">
+                    No payment cards stored on file.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Remove Card Confirmation Dialog */}
+            {cardToRemove && (
+              <div className="mt-5 rounded-2xl border border-red-200 bg-red-50/70 p-5 shadow-sm">
+                <p className="text-[14.5px] font-black text-red-950">
+                  Remove {cardToRemove.card_brand.toUpperCase()} •••• {cardToRemove.card_last4}?
+                </p>
+                <p className="mt-1.5 text-[13.5px] font-medium leading-relaxed text-red-800/90">
+                  Removing this card will cancel auto-renewal so you will not be charged again. You will keep full access to your plan and allowances until your current billing period ends on{" "}
+                  <strong>
+                    {subscription?.current_period_end
+                      ? new Date(subscription.current_period_end).toLocaleDateString()
+                      : "the renewal date"}
+                  </strong>
+                  .
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2.5">
+                  <button
+                    type="button"
+                    onClick={handleRemoveCard}
+                    disabled={removingCard}
+                    className="rounded-full bg-red-600 px-4 py-2 text-[13px] font-bold text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    {removingCard ? "Removing card…" : "Cancel Auto-Renewal & Remove Card"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCardToRemove(null)}
+                    className="rounded-full border border-black/10 bg-white px-4 py-2 text-[13px] font-bold text-[#23201d] hover:bg-gray-50 transition-colors"
+                  >
+                    Keep Card
+                  </button>
+                </div>
+              </div>
+            )}
 
             {cancelNotice && (
               <div className="mt-5 rounded-2xl bg-amber-50 p-4 border border-amber-200/80 text-[13.5px] font-bold text-amber-900 flex items-center gap-2">

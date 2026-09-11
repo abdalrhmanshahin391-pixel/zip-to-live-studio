@@ -19,6 +19,20 @@ export type SubscriptionRow = {
   updated_at: string;
 };
 
+export type SavedPaymentMethod = {
+  id: string;
+  user_id: string;
+  paddle_customer_id: string | null;
+  paddle_payment_method_id: string | null;
+  card_brand: string;
+  card_last4: string;
+  card_exp_month: number | null;
+  card_exp_year: number | null;
+  cardholder_name: string | null;
+  environment: string;
+  created_at: string;
+};
+
 /** Retrieves the authenticated student's latest subscription. */
 export const getMySubscription = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -39,6 +53,211 @@ export const getMySubscription = createServerFn({ method: "GET" })
       return null;
     }
     return data as SubscriptionRow | null;
+  });
+
+/** Retrieves saved payment methods for the authenticated student. */
+export const getMySavedPaymentMethods = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const userId = (context as any).userId as string;
+    const client = (context as any).supabase as any;
+
+    // 1. Check local table
+    const { data: localCards, error: localErr } = await client
+      .from("customer_payment_methods")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (!localErr && localCards && localCards.length > 0) {
+      return localCards as SavedPaymentMethod[];
+    }
+
+    // 2. If no local cards, check if user has a paddle_customer_id in subscriptions
+    const { data: sub } = await client
+      .from("subscriptions")
+      .select("paddle_customer_id, environment")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (sub?.paddle_customer_id) {
+      const env: "sandbox" | "live" = (sub.environment as any) === "live" ? "live" : "sandbox";
+      try {
+        const { gatewayFetch } = await import("@/lib/paddle.server");
+        const res = await gatewayFetch(
+          env,
+          `/customers/${sub.paddle_customer_id}/payment-methods?status=active`,
+        );
+        if (res.ok) {
+          const body = await res.json();
+          const list = (body?.data ?? []) as any[];
+          const savedList: SavedPaymentMethod[] = [];
+
+          for (const item of list) {
+            const cardObj = item?.card;
+            if (cardObj) {
+              const row = {
+                user_id: userId,
+                paddle_customer_id: sub.paddle_customer_id,
+                paddle_payment_method_id: item.id,
+                card_brand: cardObj.type || "card",
+                card_last4: cardObj.last4 || "••••",
+                card_exp_month: cardObj.expiry_month || null,
+                card_exp_year: cardObj.expiry_year || null,
+                cardholder_name: cardObj.cardholder_name || null,
+                environment: env,
+              };
+              const { data: inserted } = await client
+                .from("customer_payment_methods")
+                .insert(row)
+                .select()
+                .maybeSingle();
+              if (inserted) savedList.push(inserted as SavedPaymentMethod);
+            }
+          }
+          if (savedList.length > 0) return savedList;
+        }
+      } catch (e) {
+        console.warn("Syncing paddle payment methods failed:", e);
+      }
+    }
+
+    return (localCards ?? []) as SavedPaymentMethod[];
+  });
+
+/** Saves or records a credit card used at checkout. */
+export const saveCheckoutPaymentMethod = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        cardBrand: z.string().default("card"),
+        cardLast4: z.string().min(1).max(10),
+        cardExpMonth: z.number().int().optional().nullable(),
+        cardExpYear: z.number().int().optional().nullable(),
+        cardholderName: z.string().optional().nullable(),
+        customerId: z.string().optional().nullable(),
+        paymentMethodId: z.string().optional().nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const userId = (context as any).userId as string;
+    const client = (context as any).supabase as any;
+
+    const row = {
+      user_id: userId,
+      paddle_customer_id: data.customerId || null,
+      paddle_payment_method_id: data.paymentMethodId || null,
+      card_brand: data.cardBrand.toLowerCase(),
+      card_last4: data.cardLast4,
+      card_exp_month: data.cardExpMonth || null,
+      card_exp_year: data.cardExpYear || null,
+      cardholder_name: data.cardholderName || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Upsert or insert card
+    const { data: saved, error } = await client
+      .from("customer_payment_methods")
+      .insert(row)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      console.warn("saveCheckoutPaymentMethod insert error:", error);
+    }
+    return { ok: true, card: saved };
+  });
+
+/** Removes a saved payment method, cancelling auto-renewal so no future charges occur. */
+export const removeSavedPaymentMethod = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        cardId: z.string().uuid(),
+        paddlePaymentMethodId: z.string().optional().nullable(),
+        paddleCustomerId: z.string().optional().nullable(),
+        paddleSubscriptionId: z.string().optional().nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const userId = (context as any).userId as string;
+    const client = (context as any).supabase as any;
+
+    // 1. If subscription ID is provided or user has an active subscription, cancel auto-renewal in Paddle
+    let subId = data.paddleSubscriptionId;
+    let customerId = data.paddleCustomerId;
+    let env: "sandbox" | "live" = "sandbox";
+
+    const { data: sub } = await client
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (sub) {
+      subId = subId || sub.paddle_subscription_id;
+      customerId = customerId || sub.paddle_customer_id;
+      env = (sub.environment as any) === "live" ? "live" : "sandbox";
+    }
+
+    if (subId) {
+      try {
+        const { gatewayFetch } = await import("@/lib/paddle.server");
+        const res = await gatewayFetch(env, `/subscriptions/${subId}/cancel`, {
+          method: "POST",
+          body: JSON.stringify({ effective_from: "next_billing_period" }),
+        });
+        if (!res.ok) {
+          console.warn("Paddle cancel sub on remove card error:", res.status, await res.text());
+        }
+      } catch (err) {
+        console.warn("Paddle cancel call error:", err);
+      }
+    }
+
+    // 2. If paddlePaymentMethodId and customerId exist, delete from Paddle vault
+    if (customerId && data.paddlePaymentMethodId) {
+      try {
+        const { gatewayFetch } = await import("@/lib/paddle.server");
+        const delRes = await gatewayFetch(
+          env,
+          `/customers/${customerId}/payment-methods/${data.paddlePaymentMethodId}`,
+          { method: "DELETE" },
+        );
+        if (!delRes.ok) {
+          console.warn("Paddle delete payment method warning:", delRes.status, await delRes.text());
+        }
+      } catch (delErr) {
+        console.warn("Paddle delete payment method call error:", delErr);
+      }
+    }
+
+    // 3. Atomically remove card and cancel auto-renew locally using RPC
+    const { error: rpcErr } = await client.rpc("remove_user_card_and_cancel_auto_renew", {
+      _user_id: userId,
+      _card_id: data.cardId,
+    });
+
+    if (rpcErr) {
+      console.warn("remove_user_card_and_cancel_auto_renew RPC fallback:", rpcErr);
+      await client.from("customer_payment_methods").delete().eq("id", data.cardId).eq("user_id", userId);
+      if (subId) {
+        await client.from("subscriptions").update({ cancel_at_period_end: true }).eq("user_id", userId);
+      }
+    }
+
+    return {
+      ok: true,
+      message: "Your credit card has been removed and auto-renewal has been cancelled.",
+    };
   });
 
 /** Creates a secure Paddle Customer Portal session to manage/remove payment methods and view receipts. */

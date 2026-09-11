@@ -20,7 +20,7 @@ import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import { useAuth } from "@/hooks/useAuth";
 import { usePaddleCheckout, type PaymentMethodSelection } from "@/hooks/usePaddleCheckout";
-import { getPaddlePriceId } from "@/lib/paddle";
+import { getPaddlePriceId, getPaddleEnvironment } from "@/lib/paddle";
 import { checkPromoCode } from "@/lib/promo.functions";
 import { claimFreePlanWithPromo } from "@/lib/plans.functions";
 import { SUPPORT_EMAIL } from "@/lib/legal-content";
@@ -298,6 +298,12 @@ function CheckoutPage() {
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2 text-[13px] font-semibold">
               <LockKeyhole size={14} className="rita-accent" /> Secure payment
             </div>
+
+            {getPaddleEnvironment() === "sandbox" && (
+              <div className="mt-3 flex items-center gap-2 rounded-[12px] bg-amber-500/10 border border-amber-500/20 px-3.5 py-2 text-[12.5px] font-medium text-amber-700 dark:text-amber-300">
+                <span>💡 <strong>Test Mode:</strong> Use test card <code className="font-mono font-bold">4242 4242 4242 4242</code>, any future date, and CVC <code className="font-mono font-bold">123</code>.</span>
+              </div>
+            )}
 
             {!authLoading && !user && (
               <div className="mt-5 rounded-[14px] border border-border bg-muted/60 px-5 py-5">
