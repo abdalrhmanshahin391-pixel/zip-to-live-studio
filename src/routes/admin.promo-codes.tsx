@@ -797,7 +797,8 @@ function PromoCodesPage() {
                     )}
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           )}
         </section>
