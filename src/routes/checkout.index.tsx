@@ -47,7 +47,9 @@ export const Route = createFileRoute("/checkout/")({
   validateSearch: (s: Record<string, unknown>) => ({
     plan: typeof s.plan === "string" ? s.plan : "",
     billing:
-      s.billing === "yearly" || s.billing === "once" ? s.billing : "monthly",
+      s.billing === "yearly" || s.billing === "once"
+        ? s.billing
+        : "three_months",
   }),
   component: CheckoutPage,
   errorComponent: CheckoutFallback,
@@ -230,7 +232,7 @@ function CheckoutPage() {
         data: {
           code: promo.code,
           planSlug: plan.slug,
-          billing: (billing as any) || "monthly",
+          billing: (billing as any) || "three_months",
         },
       });
       navigate({
@@ -269,7 +271,7 @@ function CheckoutPage() {
     : [];
 
   const total = promo ? promo.totalCents : cents;
-  const period = billing === "once" ? "one-time" : billing === "yearly" ? "per year" : "per month";
+  const period = billing === "once" ? "one-time" : billing === "yearly" ? "per year" : "for 3 months";
   const activeError = localError || paddleError;
 
   return (
@@ -533,7 +535,7 @@ function CheckoutPage() {
                   </p>
                 ) : (
                   <p className="mt-5 rounded-[14px] border border-border bg-muted/60 px-4 py-3 text-[13px] font-medium text-muted-foreground">
-                    Renews automatically {billing === "yearly" ? "every year" : "every month"}. Cancel anytime in your account.
+                    Renews automatically {billing === "yearly" ? "every year" : "every 3 months"}. Cancel anytime in your account.
                   </p>
                 )}
               </>

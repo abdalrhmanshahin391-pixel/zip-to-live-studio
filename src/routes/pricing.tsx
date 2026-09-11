@@ -122,7 +122,7 @@ function PricingPage() {
   );
 
   const buy = (p: FullPlan) => {
-    const billing = kind === "lifetime" ? "once" : yearly ? "yearly" : "monthly";
+    const billing = kind === "lifetime" ? "once" : yearly ? "yearly" : "three_months";
     if (!user) {
       navigate({ to: "/register", search: { next: `/checkout?plan=${p.slug}&billing=${billing}` } as any });
       return;
@@ -147,14 +147,14 @@ function PricingPage() {
               className="rita-btn rita-btn-secondary mt-8 gap-2"
             >
               <ArrowLeft size={15} />
-              {kind === "monthly" ? "Monthly plans" : "One-time packs"} · change
+              {kind === "monthly" ? "Subscription plans" : "One-time packs"} · change
             </button>
           )}
 
           {kind === "monthly" && (
              <div className="mt-6 inline-flex rounded-full border border-white/10 bg-white/[0.06] p-1">
               {[
-                { k: false, label: "Monthly" },
+                { k: false, label: "3 Months" },
                 { k: true, label: "Yearly · save more" },
               ].map((o) => (
                 <button
@@ -186,9 +186,9 @@ function PricingPage() {
             {
               k: "monthly" as const,
                art: monthlyArt.url,
-              title: "Monthly plans",
-              copy: "A steady allowance every month for cards, summaries and AI questions. Cancel any time.",
-              cta: "See monthly plans",
+              title: "Subscription plans",
+              copy: "A steady allowance for cards, summaries and AI questions. Choose 3 months or yearly. Cancel any time.",
+              cta: "See plans",
             },
             {
               k: "lifetime" as const,
@@ -294,7 +294,7 @@ function PricingPage() {
             const off = lifetime || yearly || !liveOffer ? 0 : discountPercent(p.compare_cents, p.price_cents);
             const semesterSave =
               !lifetime && yearly && p.price_cents && p.yearly_cents
-                ? Math.max(0, Math.round((1 - p.yearly_cents / (p.price_cents * 6)) * 100))
+                ? Math.max(0, Math.round((1 - p.yearly_cents / (p.price_cents * 4)) * 100))
                 : 0;
             return (
               <article
@@ -339,7 +339,7 @@ function PricingPage() {
                     {money(priceCents, p.currency)}
                   </span>
                    <span className="pb-1.5 text-[14px] font-medium text-white/35">
-                    {priceCents === 0 ? "free" : lifetime ? "once" : yearly ? "/ year" : "/ month"}
+                    {priceCents === 0 ? "free" : lifetime ? "once" : yearly ? "/ year" : "/ 3 months"}
                   </span>
                   {off > 0 && (
                     <span className="mb-1.5 inline-flex items-center gap-1.5">
@@ -355,7 +355,7 @@ function PricingPage() {
                   )}
                   {semesterSave > 0 && (
                      <span className="rita-accent-soft rita-accent mb-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-black">
-                      save {semesterSave}% vs monthly
+                      save {semesterSave}% vs 3 months
                     </span>
                   )}
                 </div>

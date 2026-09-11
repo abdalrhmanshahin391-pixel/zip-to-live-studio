@@ -277,7 +277,7 @@ function AdminPlansPage() {
           {/* -------------------------------------------------- plan list */}
           <aside className="h-fit rounded-[24px] border border-black/[0.07] bg-white p-3 lg:sticky lg:top-6">
             {([
-              { k: "monthly" as const, title: "Monthly plans" },
+              { k: "monthly" as const, title: "Subscription plans (3-Month & Yearly)" },
               { k: "lifetime" as const, title: "One-time credit packs" },
             ]).map((group) => {
               const rows = drafts
@@ -338,7 +338,7 @@ function AdminPlansPage() {
                               >
                                 {(p.billing_kind ?? "monthly") === "lifetime"
                                   ? `${money(p.once_cents ?? 0, p.currency)} once`
-                                  : `${money(p.price_cents, p.currency)} / mo`}
+                                  : `${money(p.price_cents, p.currency)} / 3 mo`}
                                 {!onSale && " · not on sale"}
                               </span>
                             </button>
@@ -424,7 +424,7 @@ function AdminPlansPage() {
                   <Block title="Price">
                     <div className="mb-4 inline-flex rounded-full bg-[#f3efe6] p-1">
                       {[
-                        { k: "monthly" as const, label: "Monthly plan" },
+                        { k: "monthly" as const, label: "Recurring subscription (3-Month & Yearly)" },
                         { k: "lifetime" as const, label: "One-time pack" },
                       ].map((o) => (
                         <button
@@ -468,17 +468,17 @@ function AdminPlansPage() {
                           </Field>
                         </div>
                         <p className="text-[12.5px] font-semibold text-[#a29a8d]">
-                          Students pay this once and keep the credits for good. Monthly and
-                          semester prices are ignored for a pack.
+                          Students pay this once and keep the credits for good. 3-Month and
+                          yearly prices are ignored for a pack.
                         </p>
                       </>
                     ) : (
                       <>
                         <div className="grid gap-3 sm:grid-cols-3">
-                          <Field label="Monthly">
+                          <Field label="3 Months">
                             <Money value={plan.price_cents} onChange={(v) => patch({ price_cents: v ?? 0 })} />
                           </Field>
-                          <Field label="Semester">
+                          <Field label="Yearly">
                             <Money value={plan.yearly_cents} onChange={(v) => patch({ yearly_cents: v ?? 0 })} />
                           </Field>
                           <Field label="Currency">
@@ -494,10 +494,10 @@ function AdminPlansPage() {
                           </Field>
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2">
-                          <Field label="Monthly checkout price id">
+                          <Field label="3-Month checkout price id">
                             <input
                               className={input}
-                              placeholder="pro_monthly"
+                              placeholder="pro_3_months"
                               value={plan.paddle_price_monthly ?? ""}
                               onChange={(e) => patch({ paddle_price_monthly: e.target.value || null })}
                             />
@@ -512,11 +512,11 @@ function AdminPlansPage() {
                           </Field>
                         </div>
                         <p className="text-[12.5px] font-semibold text-[#a29a8d]">
-                          Type real money, e.g. 6.00. Yearly works out at{" "}
+                          Type real money, e.g. 15.00 for 3 months. Yearly works out at{" "}
                           <strong className="text-[#5c554b]">
-                            {money(Math.round((plan.yearly_cents || 0) / 12), plan.currency)}
+                            {money(Math.round((plan.yearly_cents || 0) / 4), plan.currency)}
                           </strong>{" "}
-                          per month.
+                          per 3 months.
                         </p>
                       </>
                     )}
@@ -985,7 +985,9 @@ function PlanPreview({ plan }: { plan: AdminPlan }) {
           )}
         </div>
         <p className="text-[12.5px] font-bold text-[#a29a8d]">
-          or {money(plan.yearly_cents, plan.currency)} per semester
+          {(plan.billing_kind ?? "monthly") === "lifetime"
+            ? "one-time payment"
+            : `for 3 months · or ${money(plan.yearly_cents, plan.currency)} per year`}
         </p>
         <div className="mt-4 flex h-10 items-center justify-center rounded-full bg-[#4c9a2a] text-[13.5px] font-black text-white">
           {plan.cta_label || "Choose plan"}

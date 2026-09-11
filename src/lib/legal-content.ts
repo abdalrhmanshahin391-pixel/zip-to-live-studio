@@ -43,10 +43,10 @@ We publish our current plans, allowances and prices at ${SITE_DOMAIN}/pricing. T
 
 5. PRICES, BILLING AND PAYMENT
 5.1 All prices are shown and charged in US dollars (USD).
-5.2 Paid plans are sold either monthly or as a semester pass covering ten (10) months from the date of purchase.
+5.2 Paid plans are sold either for three (3) months or as a yearly pass covering twelve (12) months from the date of purchase.
 5.3 Our order process is conducted by our online reseller Paddle.com. Paddle.com is the Merchant of Record for all our orders. Paddle provides all customer service enquiries and handles returns.
 5.4 Paddle collects the price plus any sales tax, VAT or GST required by your country and shows the total before you confirm the order.
-5.5 Monthly subscriptions renew automatically each month, and semester passes renew at the end of the ten-month term, at the then-current price, unless you cancel first.
+5.5 Three-month subscriptions renew automatically every 3 months, and yearly passes renew at the end of the twelve-month term, at the then-current price, unless you cancel first.
 5.6 We may change prices for future billing periods. If we do, we will tell you by email at least 14 days before the change takes effect, and you may cancel before it applies.
 
 6. DELIVERY
@@ -101,7 +101,7 @@ If ${SITE_NAME} is not what you expected, email ${SUPPORT_EMAIL} within 30 days 
 Our order process is conducted by our online reseller Paddle.com, the Merchant of Record for all our orders. Refunds are issued by Paddle to the original payment method. You can request a refund from us at ${SUPPORT_EMAIL} or directly through Paddle at paddle.net.
 
 3. 30-DAY MONEY-BACK GUARANTEE
-Every first purchase of a monthly plan or semester pass is covered by a 30-day money-back guarantee, counted from the moment payment is taken. This applies even though the product is digital and delivered immediately.
+Every first purchase of a 3-month plan or yearly pass is covered by a 30-day money-back guarantee, counted from the moment payment is taken. This applies even though the product is digital and delivered immediately.
 
 4. RENEWALS
 If an automatic renewal charges you and you had not meant to continue, email us within 30 days of that charge and we will refund it and cancel the plan. To avoid renewals altogether, cancel from your account page before the renewal date.

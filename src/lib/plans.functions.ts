@@ -150,7 +150,7 @@ export const claimFreePlanWithPromo = createServerFn({ method: "POST" })
       .object({
         code: z.string().trim().min(1).max(32),
         planSlug: z.string().min(1),
-        billing: z.enum(["monthly", "yearly", "once"]).default("monthly"),
+        billing: z.enum(["monthly", "three_months", "yearly", "once"]).default("three_months"),
       })
       .parse(d),
   )
