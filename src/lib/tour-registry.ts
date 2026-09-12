@@ -736,22 +736,64 @@ export const TOURS: Record<string, PageTourDef> = {
   },
 
   /* =========================================================================
-     9. ALL-IN-ONE (/study/all-in-one)
+     9. ALL-IN-ONE (/study/all-in-one) - Multi-Pass AI Studio
      ========================================================================= */
   "all-in-one": {
     toolKey: "all-in-one",
     title: { en: "All-in-One Multi-Pass AI Studio", ar: "استوديو ريتا الشامل متعدد المعالجة" },
     steps: [
       {
-        id: "aio-studio",
-        targetSelector: '[data-tour="aio-studio"], main',
+        id: "aio-studio-input",
+        targetSelector: '[data-tour="aio-studio-box"]',
+        fallbackSelector: "main section:first-of-type",
         title: {
-          en: "One Upload · Complete Academic Package",
-          ar: "رفع واحد · حزمة أكاديمية متكاملة بضغطة واحدة",
+          en: "Point 1: One Upload · Complete Academic Package",
+          ar: "النقطة الأولى: رفع واحد · حزمة أكاديمية متكاملة بضغطة واحدة",
         },
         description: {
-          en: "Transform raw lecture files in a single pass into a structured 1-page summary, 25+ SM-2 spaced repetition cards, and verified practice MCQs with clinical explanations.",
-          ar: "حوّل ملف المحاضرة في ثوانٍ معدودة إلى ورقة ملخص مركزة، وأكثر من 25 بطاقة فلاش كارد مبرمجة، وبنك أسئلة امتحانية مصحوبة بالشرح السريري.",
+          en: "Drop a lecture PDF (digital slides or physical document scans) or paste raw text. In one single background pass, Rita AI extracts and generates your complete 4-part study package.",
+          ar: "ارفع ملف المحاضرة PDF (سواء شرائح إلكترونية أو مسح ضوئي بالأوراق) أو الصق النص مباشرة. وبضغطة زر واحدة في الخلفية، تُولّد لك ريتا حزمة دراسية متكاملة من 4 أقسام.",
+        },
+        bullets: {
+          en: [
+            "1. Flexible Input (PDF or Text): Switch between 'PDF' for documents and book chapters or 'Paste text' for lecture transcripts.",
+            "2. 4 Automated Deliverables: Automatically builds a structured Study Guide, a 1-page Summary Sheet, 16 Spaced Repetition Flashcards, and 15 Clinical Practice Questions.",
+            "3. 'Build everything' Action: Initiates AI processing. You can safely close the tab — processing continues asynchronously in the cloud.",
+            "4. Plan Upgrade Protection: If you don't have an active plan or run out of quota, dropping a PDF will prompt you to upgrade without losing any previous work.",
+          ],
+          ar: [
+            "١. خيارات إدخال مرنة (PDF أو نص): اختر 'PDF' لرفع ملفات المحاضرات والكتب أو 'Paste text' للصق تفريغ المحاضرات.",
+            "٢. ٤ مخرجات أكاديمية شاملة: توليد تلقائي لدليل دراسي مفصل، وورقة ملخص مركزة، و16 بطاقة فلاش كارد، وبنك يحتوي على 15 سؤالاً تدريبياً.",
+            "٣. زر 'Build everything': يطلق المعالجة الذكية في الخلفية بأمان؛ يمكنك إغلاق المتصفح والعودة في أي وقت لتجد كل شيء جاهزاً.",
+            "٤. حماية الترقية: إذا لم تكن مشتركاً في باقة مدفوعة، ستظهر لك نافذة الترقية فور محاولة رفع الملف مع الحفاظ على كل بياناتك.",
+          ],
+        },
+      },
+      {
+        id: "aio-sample-observe",
+        targetSelector: '[data-tour="aio-sample-card"]',
+        fallbackSelector: "main section:last-of-type a:first-child",
+        title: {
+          en: "Point 2: Observe the Tuberculosis Handbook Live Example",
+          ar: "النقطة الثانية: معاينة مثال 'Tuberculosis Handbook' النموذجي",
+        },
+        description: {
+          en: "Explore a fully generated, real-world All-in-One lecture before spending any plan credits or upgrading. Tap the Tuberculosis Handbook sample below to observe how all 4 tools work together.",
+          ar: "عاين مثالاً حقيقياً ومكتملاً لمحاضرة مُعالجة بالذكاء الاصطناعي دون استهلاك أي رصيد من باقتك. اضغط على بطاقة 'Tuberculosis Handbook' لاستكشاف تناغم الأدوات الأربع معاً.",
+        },
+        bullets: {
+          en: [
+            "1. Universal Example for All Members: Provided free to every student to observe the quality of the AI study guide, flashcards, and exam questions.",
+            "2. Explore the Study Guide & Summary: Review high-yield clinical notes on Mycobacterium tuberculosis, diagnostics, and multi-drug regimens.",
+            "3. Interactive Retrieval Practice: Flip through the 16 generated cards and launch the 15-question quiz runner directly inside the workspace.",
+            "4. Upgrade to Generate Yours: Once you've inspected the example, upgrade your plan to drop your own curriculum lectures and exams.",
+          ],
+          ar: [
+            "١. مثال نموذجي متاح لجميع الأعضاء: متاح مجاناً لكل طالب لمعاينة الدقة العالية للدليل الدراسي والبطاقات والأسئلة التدريبية.",
+            "٢. تصفح الدليل والملخص: استكشف الشرح السريري لمرض السل الرئوي، وطرق التشخيص، والبروتوكولات العلاجية المعتمدة.",
+            "٣. تدريب تفاعلي واسترجاع نشط: جرّب مراجعة الـ 16 بطاقة فلاش كارد وأجب عن الـ 15 سؤالاً سريرياً داخل مساحة المحاضرة مباشرة.",
+            "٤. الترقية لرفع محاضراتك: بعد معاينة المثال النموذجي، يمكنك ترقية باقتك لرفع محاضرات كليتك وبناء حزمك الأكاديمية الخاصة.",
+          ],
         },
       },
     ],

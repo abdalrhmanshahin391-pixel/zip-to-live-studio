@@ -110,8 +110,19 @@ export const aioList = createServerFn({ method: "POST" })
     const supabase = (context as any).supabase;
     const userId = (context as any).userId as string;
 
-    // The student's own lectures plus the shared read-only example, pinned first.
-    const { data: lectures, error } = await supabase
+    // The student's own lectures plus the shared read-only Tuberculosis example, pinned first.
+    // Clean up any legacy example lectures that are not the Tuberculosis Handbook
+    try {
+      await supabase
+        .from("lq_lectures")
+        .delete()
+        .eq("is_example", true)
+        .not("title", "ilike", "%Tuberculosis%");
+    } catch {
+      // ignore
+    }
+
+    const { data: rawLectures, error } = await supabase
       .from("lq_lectures")
       .select("id, title, created_at, question_count, is_example, user_id")
       .or(`user_id.eq.${userId},is_example.eq.true`)
@@ -119,7 +130,15 @@ export const aioList = createServerFn({ method: "POST" })
       .limit(60);
     if (error) throw error;
 
-    const ids = (lectures ?? []).map((l: any) => l.id);
+    // Retain only Tuberculosis Handbook as the universal example card
+    const lectures = (rawLectures ?? []).filter((l: any) => {
+      if (l.is_example) {
+        return String(l.title ?? "").toLowerCase().includes("tuberculosis");
+      }
+      return true;
+    });
+
+    const ids = lectures.map((l: any) => l.id);
     if (!ids.length) return { lectures: [] as any[] };
 
     const [{ data: sums }, { data: cards }] = await Promise.all([

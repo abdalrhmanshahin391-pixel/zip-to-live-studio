@@ -72,15 +72,28 @@ export function usePlanGate() {
 
   /** Returns true when the student may go ahead; otherwise opens the wall. */
   function check(opts: { kind?: GateKind; feature?: GateFeature; need?: number }): boolean {
-    if (isLoading || !data || data.is_admin) return true;
-    const need = opts.need ?? 1;
+    if (isLoading) return true;
+    if (data?.is_admin) return true;
 
-    if (opts.feature && (data.plan as any)?.[opts.feature] === false) {
+    if (!data || !data.plan) {
       setBlock({
         reason: "feature",
-        title: `${FEATURE_LABEL[opts.feature]} is not in your plan`,
+        title: "Upgrade to use All-in-One AI Studio",
         message:
-          `Your ${data.plan?.name ?? "current"} plan does not include ${FEATURE_LABEL[opts.feature]}. ` +
+          "Turn entire lecture PDFs into study guides, flashcards, summaries, and exam questions. " +
+          "Upgrade your plan to unlock.",
+      });
+      return false;
+    }
+
+    const need = opts.need ?? 1;
+
+    if (opts.feature && (data.plan as any)?.[opts.feature] !== true) {
+      setBlock({
+        reason: "feature",
+        title: `${FEATURE_LABEL[opts.feature] || "This feature"} is not in your plan`,
+        message:
+          `Your ${data.plan?.name ?? "current"} plan does not include ${FEATURE_LABEL[opts.feature] || "this feature"}. ` +
           `Upgrade once and it unlocks straight away — nothing you have made is lost.`,
       });
       return false;
@@ -105,5 +118,13 @@ export function usePlanGate() {
     return true;
   }
 
-  return { usage: data, loading: isLoading, check, remaining, block, closeBlock: () => setBlock(null) };
+  return {
+    usage: data,
+    loading: isLoading,
+    check,
+    remaining,
+    block,
+    openBlock: (b: GateBlock) => setBlock(b),
+    closeBlock: () => setBlock(null),
+  };
 }
