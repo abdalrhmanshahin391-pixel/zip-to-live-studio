@@ -34,12 +34,19 @@ export function LivePageTour({
   const isAr = lang === "ar";
   const step: TourStep | undefined = tour.steps[stepIndex];
 
-  // Measure card height whenever step or lang changes
+  // Measure card height whenever step, lang, or window changes
   useEffect(() => {
-    if (cardRef.current) {
-      setCardHeight(cardRef.current.offsetHeight || 320);
-    }
-  }, [stepIndex, lang]);
+    if (!cardRef.current) return;
+    const updateH = () => {
+      if (cardRef.current) {
+        setCardHeight(cardRef.current.offsetHeight || 320);
+      }
+    };
+    updateH();
+    const observer = new ResizeObserver(() => updateH());
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, [stepIndex, lang, open]);
 
   // Viewport resize listener
   useEffect(() => {
@@ -66,7 +73,7 @@ export function LivePageTour({
     if (el) {
       const b = el.getBoundingClientRect();
       const mobile = window.innerWidth < 768;
-      const reservedBottom = mobile ? 330 : 260;
+      const reservedBottom = mobile ? 340 : 380;
 
       // Ensure element is positioned in the upper portion of viewport with ample room below
       const isComfortable =
@@ -84,7 +91,7 @@ export function LivePageTour({
       const freshRect = el.getBoundingClientRect();
       const pad = mobile ? 6 : 10;
       // Cap height if the container is excessively tall so spotlight doesn't swallow the whole page
-      const clampedHeight = Math.min(freshRect.height, window.innerHeight * 0.55);
+      const clampedHeight = Math.min(freshRect.height, window.innerHeight * 0.52);
 
       setRect({
         top: Math.max(0, freshRect.top - pad),
@@ -172,23 +179,25 @@ export function LivePageTour({
     }
   };
 
-  // --- Strict Collision-Free Card Positioning Logic ---
+  // --- Strict Viewport-Contained Collision-Free Card Placement ---
   let cardStyle: React.CSSProperties = {};
+  const maxCardH = Math.min(500, window.innerHeight - 32);
 
   if (isMobile) {
     // Docked mobile bottom sheet with safe area insets
     cardStyle = {
       position: "fixed",
-      bottom: "max(1rem, env(safe-area-inset-bottom))",
+      bottom: "max(0.75rem, env(safe-area-inset-bottom))",
       left: "0.75rem",
       right: "0.75rem",
       maxWidth: "34rem",
+      maxHeight: "min(440px, 62vh)",
       margin: "0 auto",
       zIndex: 9999,
     };
   } else if (rect) {
-    const cardWidth = 460;
-    const estHeight = cardHeight || 340;
+    const cardWidth = Math.min(460, window.innerWidth - 32);
+    const estHeight = Math.min(cardHeight || 350, maxCardH);
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceRight = window.innerWidth - rect.right;
     const spaceLeft = rect.left;
@@ -207,12 +216,12 @@ export function LivePageTour({
     // 2. Side-by-Side: Place to the right of the highlighted element
     else if (spaceRight >= cardWidth + 24) {
       left = rect.right + 16;
-      top = Math.max(20, Math.min(window.innerHeight - estHeight - 20, rect.top));
+      top = Math.max(16, Math.min(window.innerHeight - estHeight - 16, rect.top));
     }
     // 3. Side-by-Side: Place to the left of the highlighted element
     else if (spaceLeft >= cardWidth + 24) {
       left = rect.left - cardWidth - 16;
-      top = Math.max(20, Math.min(window.innerHeight - estHeight - 20, rect.top));
+      top = Math.max(16, Math.min(window.innerHeight - estHeight - 16, rect.top));
     }
     // 4. Above: Only if there is clean space above without touching the element
     else if (spaceAbove >= estHeight + 20) {
@@ -221,12 +230,16 @@ export function LivePageTour({
         left = rect.right - cardWidth;
       }
     }
-    // 5. Fallback: Position below the element's top and scroll
+    // 5. Fallback: Position with safe viewport bottom margin
     else {
-      top = Math.max(rect.bottom + 12, window.innerHeight - estHeight - 20);
+      top = Math.max(16, window.innerHeight - estHeight - 20);
+      if (isAr) {
+        left = rect.right - cardWidth;
+      }
     }
 
-    // Clamp horizontal placement within screen boundaries
+    // Strict boundary clamps: Card NEVER clips below bottom or above top of screen
+    top = Math.max(16, Math.min(window.innerHeight - estHeight - 16, top));
     left = Math.max(16, Math.min(window.innerWidth - cardWidth - 16, left));
 
     cardStyle = {
@@ -234,16 +247,41 @@ export function LivePageTour({
       top: `${top}px`,
       left: `${left}px`,
       width: `${cardWidth}px`,
+      maxHeight: `${maxCardH}px`,
       zIndex: 9999,
     };
   }
 
   return (
     <div className="live-tour-root">
-      {/* Full screen backdrop click blocker */}
+      {/* SVG Mask Definition for transparent spotlight cutout */}
+      <svg className="fixed inset-0 pointer-events-none z-[9990] h-full w-full" aria-hidden="true">
+        <defs>
+          <mask id="tour-spotlight-mask" x="0" y="0" width="100%" height="100%">
+            <rect x="0" y="0" width="100%" height="100%" fill="white" />
+            {rect && (
+              <rect
+                x={rect.left}
+                y={rect.top}
+                width={rect.width}
+                height={rect.height}
+                rx={20}
+                ry={20}
+                fill="black"
+              />
+            )}
+          </mask>
+        </defs>
+      </svg>
+
+      {/* Full screen backdrop: blurred and darkened everywhere EXCEPT the spotlight cutout */}
       <div
-        className="fixed inset-0 z-[9990] bg-black/45 backdrop-blur-[1.5px] transition-opacity duration-300"
+        className="fixed inset-0 z-[9990] bg-black/55 backdrop-blur-[3px] transition-opacity duration-300"
         onClick={onClose}
+        style={{
+          mask: "url(#tour-spotlight-mask)",
+          WebkitMask: "url(#tour-spotlight-mask)",
+        }}
       />
 
       {/* Radiant Spotlight Cutout Frame */}
@@ -257,7 +295,7 @@ export function LivePageTour({
             height: `${rect.height}px`,
             borderRadius: "20px",
             boxShadow:
-              "0 0 0 9999px rgba(12, 10, 8, 0.65), 0 0 25px 5px rgba(47, 125, 85, 0.55)",
+              "0 0 0 9999px rgba(12, 10, 8, 0.45), 0 0 25px 5px rgba(47, 125, 85, 0.55)",
             border: "2.5px solid rgba(47, 125, 85, 0.9)",
             zIndex: 9995,
           }}
@@ -272,10 +310,10 @@ export function LivePageTour({
         ref={cardRef}
         style={cardStyle}
         dir={isAr ? "rtl" : "ltr"}
-        className="overflow-hidden rounded-[26px] border border-black/[0.12] bg-[#fbf5e9] p-5 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-200"
+        className="flex flex-col overflow-hidden rounded-[26px] border border-black/[0.12] bg-[#fbf5e9] p-5 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.55)] animate-in fade-in zoom-in-95 duration-200"
       >
         {/* Card Top Navigation Bar */}
-        <div className="flex items-center justify-between border-b border-black/[0.08] pb-3">
+        <div className="flex shrink-0 items-center justify-between border-b border-black/[0.08] pb-3">
           <div className="flex items-center gap-2">
             <span className="grid h-6 w-6 place-items-center rounded-full bg-[#2f7d55] text-[11px] font-black text-white shadow-xs">
               {stepIndex + 1}
@@ -335,7 +373,7 @@ export function LivePageTour({
         </div>
 
         {/* Scrollable Content Body for Comprehensive Explanations */}
-        <div className="mt-3.5 max-h-[50vh] sm:max-h-[58vh] overflow-y-auto pr-1">
+        <div className="mt-3.5 min-h-0 flex-1 overflow-y-auto pr-1">
           <h3 className="font-display text-[17px] sm:text-[18px] font-black leading-snug text-[#23201d]">
             {step.title[lang]}
           </h3>
@@ -370,7 +408,7 @@ export function LivePageTour({
         </div>
 
         {/* Card Footer: Progress Dots & Navigation */}
-        <div className="mt-4 flex items-center justify-between border-t border-black/[0.07] pt-3.5">
+        <div className="mt-4 flex shrink-0 items-center justify-between border-t border-black/[0.07] pt-3.5">
           {/* Progress dots */}
           <div className="flex items-center gap-1.5" dir="ltr">
             {tour.steps.map((_, i) => (
