@@ -58,6 +58,20 @@ export const DEFAULT_LAYOUT: HubLayout = {
       ],
     },
     {
+      id: "support",
+      label: "Support Center",
+      labelAr: "مركز الدعم والمساعدة",
+      tiles: [
+        {
+          id: "/admin/support",
+          to: "/admin/support",
+          label: "Support Center",
+          labelAr: "مركز الدعم",
+          icon: "LifeBuoy",
+        },
+      ],
+    },
+    {
       id: "ai",
       label: "AI engine",
       labelAr: "ذكاء ريتا",

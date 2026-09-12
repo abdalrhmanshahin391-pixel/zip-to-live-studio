@@ -234,7 +234,7 @@ function AllInOneUpload() {
       <SiteHeader />
       <UpgradeWall block={gate.block} onClose={gate.closeBlock} />
       <main className="mx-auto w-full max-w-[980px] px-4 pb-24 pt-8">
-        <Link to="/study" className="inline-flex items-center gap-2 text-[13px] font-extrabold text-[#6b6357] hover:text-[#23201d]">
+        <Link to="/learn" className="inline-flex items-center gap-2 text-[13px] font-extrabold text-[#6b6357] hover:text-[#23201d]">
           <ArrowLeft size={15} /> Back to Start learning
         </Link>
 

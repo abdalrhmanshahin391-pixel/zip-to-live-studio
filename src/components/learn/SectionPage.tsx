@@ -1,5 +1,6 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Sparkles, Layers, Users } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ToolCard } from "@/components/learn/ToolCard";
 import {
@@ -17,6 +18,8 @@ export function SectionPage({ id }: { id: SectionId }) {
   const tools = toolsOf(id);
   const { enabled, badge } = useFeatureFlags();
   const { text } = useSiteText();
+  const { i18n } = useTranslation();
+  const isAr = (i18n.language ?? "").startsWith("ar");
   const sectionOff = !enabled(SECTION_FLAG(id));
 
   return (
@@ -55,18 +58,42 @@ export function SectionPage({ id }: { id: SectionId }) {
           {s.columns.map((col) => {
             const list = tools.filter((t) => t.column === col.id);
             if (list.length === 0) return null;
+            const isAi = col.id === "ai";
+            const isNoAi = col.id === "no-ai";
+
             return (
               <section
                 key={col.id}
-                className="rounded-[26px] border border-black/[0.06] bg-white/55 p-4 md:p-5"
+                className="rounded-[28px] border border-black/[0.08] bg-white/75 p-5 md:p-6 shadow-sm"
               >
-                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <h2 className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7a4b16]">
-                    {col.label.en}
-                  </h2>
-                  <p className="text-[13px] font-semibold text-[#a1957f]">{col.note.en}</p>
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-black/[0.07]">
+                  {isAi ? (
+                    <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#6e2fa6] to-[#4c217f] px-4 py-1.5 text-white shadow-[0_4px_14px_rgba(110,47,166,0.32)]">
+                      <Sparkles size={15} className="text-amber-300 animate-pulse" />
+                      <h2 className="text-[13px] font-black uppercase tracking-[0.14em]">
+                        {isAr ? col.label.ar : col.label.en}
+                      </h2>
+                    </div>
+                  ) : isNoAi ? (
+                    <div className="inline-flex items-center gap-2 rounded-full bg-[#2a241d] px-4 py-1.5 text-[#fbf5e9] shadow-[0_4px_14px_rgba(42,36,29,0.25)]">
+                      <Layers size={15} className="text-[#e8af61]" />
+                      <h2 className="text-[13px] font-black uppercase tracking-[0.14em]">
+                        {isAr ? col.label.ar : col.label.en}
+                      </h2>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 rounded-full bg-[#1b4332] px-4 py-1.5 text-white shadow-[0_4px_14px_rgba(27,67,50,0.25)]">
+                      <Users size={15} className="text-[#74c69d]" />
+                      <h2 className="text-[13px] font-black uppercase tracking-[0.14em]">
+                        {isAr ? col.label.ar : col.label.en}
+                      </h2>
+                    </div>
+                  )}
+                  <p className={`text-[13.5px] font-bold ${isAi ? "text-[#6e2fa6]" : isNoAi ? "text-[#5e5344]" : "text-[#2d6a4f]"}`}>
+                    {isAr ? col.note.ar : col.note.en}
+                  </p>
                 </div>
-                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {list.map((t) => (
                     <ToolCard
                       key={t.key}

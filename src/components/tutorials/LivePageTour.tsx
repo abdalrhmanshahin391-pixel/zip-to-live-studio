@@ -58,6 +58,16 @@ export function LivePageTour({
     return () => window.removeEventListener("resize", checkViewport);
   }, []);
 
+function safeFindElement(selector?: string): HTMLElement | null {
+  if (!selector) return null;
+  try {
+    return document.querySelector(selector) as HTMLElement | null;
+  } catch (err) {
+    console.warn(`[LivePageTour] Invalid or unresolvable selector "${selector}":`, err);
+    return null;
+  }
+}
+
   // Update rect of the spotlighted target element
   const updateRect = useCallback(() => {
     if (!open || !step) {
@@ -65,9 +75,9 @@ export function LivePageTour({
       return;
     }
 
-    let el = document.querySelector(step.targetSelector) as HTMLElement | null;
+    let el = safeFindElement(step.targetSelector);
     if (!el && step.fallbackSelector) {
-      el = document.querySelector(step.fallbackSelector) as HTMLElement | null;
+      el = safeFindElement(step.fallbackSelector);
     }
 
     if (el) {
@@ -169,7 +179,7 @@ export function LivePageTour({
 
   const handleAction = (actionId: string) => {
     if (actionId === "toggle-edit-mode") {
-      const editBtn = document.querySelector(
+      const editBtn = safeFindElement(
         '[data-tour="mode-switch"] button:nth-child(2)'
       ) as HTMLButtonElement | null;
       if (editBtn) {

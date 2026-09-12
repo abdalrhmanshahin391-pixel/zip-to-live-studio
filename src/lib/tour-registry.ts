@@ -384,7 +384,8 @@ export const TOURS: Record<string, PageTourDef> = {
     steps: [
       {
         id: "qb-topics",
-        targetSelector: '[data-tour="qb-topics"], .grid:has(button), main div:first-child',
+        targetSelector: '[data-tour="qb-topics"]',
+        fallbackSelector: 'main section:first-of-type, main',
         title: {
           en: "Clinical Vignettes & Multi-Discipline Targeting",
           ar: "الحالات السريرية وتحديد الفروع والموضوعات",
@@ -395,19 +396,21 @@ export const TOURS: Record<string, PageTourDef> = {
         },
         bullets: {
           en: [
-            "Flexible Question Pool: Select from All Questions, Incorrect Attempts (targeted weakness remediation), or Flagged questions.",
-            "Sub-Subject Granularity: Focus strictly on high-yield targets like Rheumatic Heart Disease, Arrhythmias, or Antimicrobial Therapy.",
+            "1. Flexible Question Pool: Select from All Questions, Incorrect Attempts (targeted weakness remediation), or Flagged questions.",
+            "2. Sub-Subject Granularity: Focus strictly on high-yield targets like Rheumatic Heart Disease, Arrhythmias, or Antimicrobial Therapy.",
+            "3. Progress Counts: View exactly how many questions exist and how many you have checked in real time.",
           ],
           ar: [
-            "بنك أسئلة متدرج: اختر بين دراسة جميع الأسئلة، أو التركيز على إجاباتك الخاطئة السابقة لتصحيح نقاط الضعف، أو مراجعة الأسئلة المميزة بعلامة (Flagged).",
-            "دقة التخصيص: ركّز على عناوين محددة كالحمى الروماتيزمية، اضطرابات النظم، أو مضادات الميكروبات.",
+            "١. بنك أسئلة متدرج: اختر بين دراسة جميع الأسئلة، أو التركيز على إجاباتك الخاطئة السابقة لتصحيح نقاط الضعف، أو مراجعة الأسئلة المميزة بعلامة (Flagged).",
+            "٢. دقة التخصيص: ركّز على عناوين محددة كالحمى الروماتيزمية، اضطرابات النظم، أو مضادات الميكروبات.",
+            "٣. عدادات الإنجاز: شاهد بالضبط كم سؤالاً يتضمنه كل موضوع وعدد الأسئلة المحددة حالياً في الوقت الفعلي.",
           ],
         },
       },
       {
         id: "qb-mode",
-        targetSelector: '[data-tour="qb-modes"], div:has(button:contains("Study"))',
-        fallbackSelector: "main",
+        targetSelector: '[data-tour="qb-modes"]',
+        fallbackSelector: "aside",
         title: {
           en: "Tutor Study Mode vs Timed Exam Simulation",
           ar: "وضع الدراسة التعليمي مقابل محاكاة الاختبار التنازلي",
@@ -418,18 +421,21 @@ export const TOURS: Record<string, PageTourDef> = {
         },
         bullets: {
           en: [
-            "Study Mode (Tutor): Ideal for initial revision. Provides immediate verdict, reveals correct mechanisms, and unrolls pedagogical rationale panels.",
-            "Exam Mode: Real-time countdown timer, locked answers, and hidden explanations to test endurance and pace management.",
+            "1. Study Mode (Tutor): Ideal for initial revision. Provides immediate verdict, reveals correct mechanisms, and unrolls pedagogical rationale panels.",
+            "2. Exam Mode: Real-time countdown timer, locked answers, and hidden explanations to test endurance and pace management.",
+            "3. Timing Controls: Set custom durations (15m, 30m, 60m, 90m, 120m) to train your pacing for official board exams.",
           ],
           ar: [
-            "وضع الدراسة (المعلّم الفوري): مثالي لمرحلة الحفظ والاستيعاب؛ يقدم تصحيحاً فورياً وشرحاً متكاملاً بعد كل خيار.",
-            "وضع الامتحان: مؤقت تنازلي حقيقي، وحجب للإجابات والشروحات حتى إنهاء الاختبار لتدريبك على إدارة وقت الامتحان الرسمي.",
+            "١. وضع الدراسة (المعلّم الفوري): مثالي لمرحلة الحفظ والاستيعاب؛ يقدم تصحيحاً فورياً وشرحاً متكاملاً بعد كل خيار.",
+            "٢. وضع الامتحان: مؤقت تنازلي حقيقي، وحجب للإجابات والشروحات حتى إنهاء الاختبار لتدريبك على إدارة وقت الامتحان الرسمي.",
+            "٣. التحكم في التوقيت: حدد أوقات مخصصة (15د، 30د، 60د، 90د، 120د) لتدريب سرعة الحل للامتحانات الوزارية والنهائية.",
           ],
         },
       },
       {
         id: "qb-explanations",
-        targetSelector: '[data-tour="qb-start"], button.magnetic-cta, button:has(svg)',
+        targetSelector: '[data-tour="qb-start"]',
+        fallbackSelector: 'aside button.magnetic-cta, aside',
         title: {
           en: "Deep Clinical Rationales & Distractor Analysis",
           ar: "التعليلات الطبية المفصلة وتحليل الخيارات الخاطئة",
@@ -437,6 +443,18 @@ export const TOURS: Record<string, PageTourDef> = {
         description: {
           en: "RitaJet explanations don't just state the right choice — they dissect the diagnostic reasoning, Jones criteria, clinical algorithms, and explain exactly why each distractor is clinically invalid.",
           ar: "شروحات ريتاجت لا تكتفي بذكر الجواب الصحيح، بل تحلل المسار التشخيصي كاملاً، وتوضح معايير التشخيص المعتمدة، وتعلل سبب استبعاد كل خيار خاطئ بدقة متناهية.",
+        },
+        bullets: {
+          en: [
+            "1. Three Launch Modes: Choose Study Mode (step-by-step), Session Mode (continuous), or Exam Mode (strict timed test).",
+            "2. Distractor Diagnostics: Every option explains why it is correct or why other choices are clinical distractors.",
+            "3. Reset Anytime: Clear your selections or reset filters in one tap to start a fresh practice batch.",
+          ],
+          ar: [
+            "١. ثلاثة أنماط للإطلاق: اختر نمط الدراسة (خطوة بخطوة)، نمط الجلسة (مستمر)، أو نمط الامتحان (محاكاة بوقت محدد).",
+            "٢. تشريح المشتتات: يوضح كل خيار سبب صحته أو سبب خطأ الخيارات الأخرى طبياً وسريرياً.",
+            "٣. إعادة الضبط بسهولة: امسح الاختيارات وأعد ضبط الفلاتر بنقرة واحدة لبدء جلسة جديدة فوراً.",
+          ],
         },
       },
     ],
@@ -826,18 +844,60 @@ export const TOURS: Record<string, PageTourDef> = {
      ========================================================================= */
   "german-lab": {
     toolKey: "german-lab",
-    title: { en: "German Medical & Vocabulary Mastery", ar: "مختبر الألمانية والمصطلحات التخصصية" },
+    title: { en: "German Medical & Vocabulary Mastery", ar: "الدليل الشامل لمختبر اللغة الألمانية" },
     steps: [
       {
-        id: "german-taxonomy",
-        targetSelector: '[data-tour="german-tools"], main',
+        id: "german-hero",
+        targetSelector: '[data-tour="german-hero"]',
+        fallbackSelector: 'main > div:first-of-type, main',
         title: {
-          en: "One Shared Shelf: der · die · das & Syntax",
-          ar: "رف الكلمات الموحد: أدوات التعريف der/die/das وبناء الجمل",
+          en: "Box 1: The Core Framework — Stop Guessing der, die, das",
+          ar: "المربع الأول: الإطار المنهجي — إنهاء تخمين أدوات التعريف der, die, das",
         },
         description: {
-          en: "Store a German word once to power article practice, audio pronunciation coaching, and grammatical sentence building without repetitive data entry.",
-          ar: "احفظ الكلمة الألمانية لمرة واحدة لتغذي تلقائياً ألعاب أدوات التعريف der/die/das، وتدريب مخارج الحروف، وتركيب الجمل النحوية بدقة واحترافية.",
+          en: "German articles are the foundation of grammar, case declensions (Nominativ, Akkusativ, Dativ, Genitiv), and clinical precision. RitaJet replaces arbitrary memorization with an instinctive, visual, and audio-backed retention loop.",
+          ar: "أدوات التعريف الألمانية هي حجر الأساس في القواعد، والإعراب (Nominativ, Akkusativ, Dativ, Genitiv)، والدقة الطبية. يستبدل ريتاجت الحفظ العشوائي بنظام بصري وصوتي يرسخ الأداة في الذاكرة فوراً.",
+        },
+        bullets: {
+          en: [
+            "1. Tri-Color Cognitive Anchors: Blue for masculine (der), red for feminine (die), and green for neutral (das) burn gender instinctively into memory without conscious translation.",
+            "2. Hierarchical Syllabus Categorization: Sort medical terminology, clinical phrases, and everyday words into structured subjects and sub-subjects.",
+            "3. Red-Flag Spaced Reinforcement: Any challenging noun or irregular plural you flag automatically recurs in future sessions until full fluency is achieved.",
+            "4. Dual Audio Grounding: Listen to native German voices at both normal conversational speed and slow articulation to master pronunciation subtleties.",
+          ],
+          ar: [
+            "١. التثبيت البصري ثلاثي الألوان: الأزرق للمذكر (der)، الأحمر للمؤنث (die)، والأخضر للمحايد (das) لترسيخ جنس الكلمة في الذاكرة الصورية تلقائياً.",
+            "٢. التصنيف الهيكلي للمنهج: قسّم المصطلحات الطبية، العبارات السريرية، ومفردات الحياة اليومية إلى مواد وموضوعات فرعية منظمة.",
+            "٣. نظام الراية الحمراء (Red-Flag): الكلمات الصعبة والجموع الشاذة التي تميزها بالراية الحمراء تتكرر بذكاء في الجلسات القادمة حتى تتقنها تماماً.",
+            "٤. الاستماع الصوتي المزدوج: استمع لأصوات متحدثين ألمان أصليين بالسرعة الطبيعية أو بالسرعة البطيئة لضبط مخارج الحروف الألمانية بدقة.",
+          ],
+        },
+      },
+      {
+        id: "german-modes",
+        targetSelector: '[data-tour="german-modes"]',
+        fallbackSelector: 'main .grid:last-of-type, main',
+        title: {
+          en: "Box 2: Specialized Training Labs — 4 Modes, 1 Data Source",
+          ar: "المربع الثاني: مختبرات التدريب التخصصية — ٤ أنماط من مصدر واحد",
+        },
+        description: {
+          en: "Four specialized practice modules designed to build complete language competence. Enter your vocabulary once, and each lab targets a distinct cognitive pathway.",
+          ar: "أربعة أنماط تدريب متخصصة لبناء كفاءة لغوية متكاملة؛ تسجل الكلمة لمرة واحدة فقط، وكل نمط يستهدف مساراً إدراكياً مختلفاً في الدماغ.",
+        },
+        bullets: {
+          en: [
+            "1. Article Lab (der · die · das): Rapid tap mode, beat-the-clock speed drills, and an intelligent grammar endings coach that explains why a word takes der, die, or das (e.g., -ung, -heit, -keit, -tion, -ment).",
+            "2. Pronunciation Lab (Speak & Score): Listen to authentic native German, record your pronunciation via microphone, and receive real-time 0–100 phonetic scoring with word-by-word color feedback (green/amber/red).",
+            "3. Build Lab (Order the Pieces): Reassemble clinical phrases word-by-word and complex compound words syllable-by-syllable, accompanied by instant audio pronunciation on correct assembly.",
+            "4. One Place (Add Once, Play Everywhere): Enter a medical word or sentence once, assign it to a chapter, and it automatically populates Article Lab, Pronunciation Lab, Build Lab, and your personal flashcards.",
+          ],
+          ar: [
+            "١. مختبر أدوات التعريف (Article Lab): ألعاب الضغط السريع، وتحدي الوقت، ومعلّم نهايات الكلمات الذكي الذي يشرح لك القاعدة وراء الأداة (مثل: ung-، heit-، keit-، tion-، ment-).",
+            "٢. مختبر النطق (Pronunciation Lab): استمع لنطق أصلي، وسجّل صوتك بالميكروفون، واحصل على تقييم فوري من 0 إلى 100 بنظام ألوان كلمة بكلمة (أخضر، برتقالي، أحمر).",
+            "٣. مختبر التركيب (Build Lab): أعد تركيب الجمل والعبارات الطبية كلمة بكلمة، والكلمات المركبة مقطعاً بمقطع، مع تشغيل الصوت فور الإجابة الصحيحة.",
+            "٤. مكان واحد (One Place): اكتب الكلمة أو الجملة مرة واحدة مع معناها ومادتها، وستظهر تلقائياً في لعبة الأدوات، واختبار النطق، ومختبر التركيب، والبطاقات.",
+          ],
         },
       },
     ],
