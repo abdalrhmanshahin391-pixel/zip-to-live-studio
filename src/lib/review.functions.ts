@@ -503,7 +503,29 @@ export const setDailyGoal = createServerFn({ method: "POST" })
   });
 
 export type Dashboard = {
-  totals: { new: number; learning: number; mastered: number };
+  totals: {
+    new: number;
+    learning: number;
+    mastered: number;
+    hard: number;
+    wrong: number;
+    total: number;
+  };
+  grades: {
+    again: number;
+    hard: number;
+    good: number;
+    easy: number;
+    total: number;
+  };
+  stats: {
+    avgEase: number;
+    totalReviews: number;
+    totalMinutes: number;
+    totalHours: string;
+    goalMetDays: number;
+    totalActiveDays: number;
+  };
   subjects: { subject: string; reviews: number; accuracy: number; mastered: number }[];
   daily: { day: string; cards: number; correct: number; minutes: number }[];
   heat: { day: string; cards: number }[];
@@ -524,7 +546,10 @@ export const studyDashboard = createServerFn({ method: "POST" })
     const since = new Date(Date.now() - 120 * 24 * 3600_000).toISOString();
 
     const [{ data: rows }, { data: events }, { data: days }, { data: prefRow }] = await Promise.all([
-      supabase.from("card_reviews").select("subject, state, due_at, suspended").eq("user_id", userId),
+      supabase
+        .from("card_reviews")
+        .select("subject, state, due_at, suspended, ease, lapses, leech, reps, interval_days")
+        .eq("user_id", userId),
       supabase
         .from("review_events")
         .select("subject, grade, elapsed_days, created_at")
@@ -539,18 +564,46 @@ export const studyDashboard = createServerFn({ method: "POST" })
       supabase.from("study_prefs").select("daily_goal").eq("user_id", userId).maybeSingle(),
     ]);
 
-    const totals = { new: 0, learning: 0, mastered: 0 };
+    const totals = { new: 0, learning: 0, mastered: 0, hard: 0, wrong: 0, total: 0 };
     const masteredBySubject = new Map<string, number>();
+    let totalEaseSum = 0;
+    let easeCount = 0;
+
     for (const r of rows ?? []) {
-      if (r.state === "mastered") {
+      totals.total += 1;
+      const isMastered = r.state === "mastered" || Number(r.interval_days ?? 0) >= 21;
+      const isWrong = Number(r.lapses ?? 0) >= 2 || !!r.leech;
+      const isHard = Number(r.lapses ?? 0) === 1 || (Number(r.ease ?? 2.5) < 2.3 && r.state !== "new");
+
+      if (isWrong) totals.wrong += 1;
+      if (isHard) totals.hard += 1;
+
+      if (isMastered) {
         totals.mastered += 1;
         masteredBySubject.set(r.subject, (masteredBySubject.get(r.subject) ?? 0) + 1);
-      } else if (r.state === "new") totals.new += 1;
-      else totals.learning += 1;
+      } else if (r.state === "new") {
+        totals.new += 1;
+      } else {
+        totals.learning += 1;
+      }
+
+      if (r.state !== "new" && typeof r.ease === "number" && r.ease > 0) {
+        totalEaseSum += r.ease;
+        easeCount += 1;
+      }
     }
 
+    // Grade breakdown from review events: Again (0), Hard (1), Good (2), Easy (3)
+    const grades = { again: 0, hard: 0, good: 0, easy: 0, total: 0 };
     const bySubject = new Map<string, { reviews: number; right: number }>();
+
     for (const e of events ?? []) {
+      grades.total += 1;
+      if (e.grade === 0) grades.again += 1;
+      else if (e.grade === 1) grades.hard += 1;
+      else if (e.grade === 2) grades.good += 1;
+      else if (e.grade === 3) grades.easy += 1;
+
       const key = e.subject || "Unsorted";
       const cur = bySubject.get(key) ?? { reviews: 0, right: 0 };
       cur.reviews += 1;
@@ -582,8 +635,22 @@ export const studyDashboard = createServerFn({ method: "POST" })
     const mature = (events ?? []).filter((e: any) => Number(e.elapsed_days ?? 0) >= 1);
     const recalled = mature.filter((e: any) => e.grade >= 1).length;
 
+    const totalMinutes = (days ?? []).reduce((acc: number, d: any) => acc + Math.round((d.ms || 0) / 60000), 0);
+    const goalMetDays = (days ?? []).filter((d: any) => d.goal_met).length;
+
+    const stats = {
+      avgEase: easeCount ? Number((totalEaseSum / easeCount).toFixed(2)) : 2.5,
+      totalReviews: grades.total,
+      totalMinutes,
+      totalHours: (totalMinutes / 60).toFixed(1),
+      goalMetDays,
+      totalActiveDays: (days ?? []).length,
+    };
+
     return {
       totals,
+      grades,
+      stats,
       subjects,
       daily,
       heat,
