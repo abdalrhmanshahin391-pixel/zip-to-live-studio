@@ -1,30 +1,39 @@
 /**
- * Server-side FSRS scheduler (FSRS-4.5 shaped) with Anki-style learning steps.
+ * Server-side SuperMemo SM-2 Spaced Repetition Scheduler.
  *
- * Grades: 0 again · 1 hard · 2 good · 3 easy  (FSRS G = grade + 1)
+ * Grades: 0 Again · 1 Hard · 2 Good · 3 Easy
  *
- * Every card carries three numbers:
- *  - difficulty  1..10  how much work this card is
- *  - stability   days   how long the memory lasts before recall drops to 90%
- *  - retrievability     the chance you'd recall it right now
+ * SM-2 Quality Score (q):
+ *  - Grade 0 (Again): q = 1 (failure / lapse)
+ *  - Grade 1 (Hard):  q = 3 (passed with difficulty)
+ *  - Grade 2 (Good):  q = 4 (passed with standard recall)
+ *  - Grade 3 (Easy):  q = 5 (effortless, instant recall)
  *
- * The next date is chosen so recall lands on the student's target retention.
+ * Easiness Factor (EF):
+ *  EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
+ *  Bound: 1.3 <= EF' <= 3.0 (default 2.5)
+ *
+ * Interval (days):
+ *  - If q < 3 (Again):
+ *      reps = 0, interval = 10 min (10 / 1440 days)
+ *  - If q >= 3:
+ *      reps = reps + 1
+ *      reps == 1 -> Hard: 1d, Good: 1d, Easy: 4d
+ *      reps == 2 -> Hard: 3d, Good: 6d, Easy: 8d
+ *      reps > 2  ->
+ *        Hard: max(prev + 1, round(prev * 1.2))
+ *        Good: max(prev + 1, round(prev * EF))
+ *        Easy: max(prev + 2, round(prev * EF * 1.3))
  */
 
-const W = [
-  0.4872, 1.4003, 3.7145, 13.8206, 5.1618, 1.2298, 0.8975, 0.031, 1.6474, 0.1367, 1.0461, 2.1072,
-  0.0793, 0.3246, 1.587, 0.2272, 2.8755,
-];
-
-const DECAY = -0.5;
-const FACTOR = 19 / 81;
-const DAY = 24 * 60 * 60_000;
-const MIN_MINUTES = 1 / 1440;
+export const DAY = 24 * 60 * 60_000;
+export const MIN_MINUTES = 1 / 1440;
+export const TEN_MINUTES = 10 / 1440;
 
 /** Same-session steps for a brand-new card, in days. */
-export const LEARN_STEPS = [MIN_MINUTES, 10 * MIN_MINUTES];
+export const LEARN_STEPS = [MIN_MINUTES, TEN_MINUTES];
 /** Steps a lapsed card walks back through. */
-export const RELEARN_STEPS = [10 * MIN_MINUTES];
+export const RELEARN_STEPS = [TEN_MINUTES];
 
 export const MAX_INTERVAL = 365 * 3;
 export const DEFAULT_RETENTION = 0.9;
@@ -60,53 +69,7 @@ export type PrevState = {
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const round = (v: number, p = 4) => Number(v.toFixed(p));
 
-/** Chance of recalling a card after `elapsed` days with this stability. */
-export function retrievability(elapsedDays: number, stability: number) {
-  if (!stability || stability <= 0) return 0;
-  return Math.pow(1 + (FACTOR * Math.max(0, elapsedDays)) / stability, DECAY);
-}
-
-/** How many days until recall falls to the requested retention. */
-export function intervalFor(stability: number, retention = DEFAULT_RETENTION) {
-  const r = clamp(retention, 0.7, 0.98);
-  return (stability / FACTOR) * (Math.pow(r, 1 / DECAY) - 1);
-}
-
-function initialStability(g: number) {
-  return clamp(W[g - 1]!, 0.1, 100);
-}
-
-function initialDifficulty(g: number) {
-  return clamp(W[4]! - (g - 3) * W[5]!, 1, 10);
-}
-
-function nextDifficulty(d: number, g: number) {
-  const delta = d - W[6]! * (g - 3);
-  // Mean reversion towards the "easy" anchor keeps difficulty from drifting.
-  return clamp(W[7]! * initialDifficulty(4) + (1 - W[7]!) * delta, 1, 10);
-}
-
-function stabilityAfterRecall(d: number, s: number, r: number, g: number) {
-  const hard = g === 2 ? W[15]! : 1;
-  const easy = g === 4 ? W[16]! : 1;
-  const growth =
-    1 +
-    Math.exp(W[8]!) *
-      (11 - d) *
-      Math.pow(s, -W[9]!) *
-      (Math.exp(W[10]! * (1 - r)) - 1) *
-      hard *
-      easy;
-  return clamp(s * growth, 0.1, 36500);
-}
-
-function stabilityAfterLapse(d: number, s: number, r: number) {
-  const next =
-    W[11]! * Math.pow(d, -W[12]!) * (Math.pow(s + 1, W[13]!) - 1) * Math.exp(W[14]! * (1 - r));
-  return clamp(Math.min(next, s), 0.1, 36500);
-}
-
-/** ±5% jitter so hundreds of cards don't all land on the same day. */
+/** ±5% jitter so cards don't all land on the exact same future day. */
 function fuzz(days: number, seed: string) {
   if (days < 2.5) return days;
   let h = 0;
@@ -123,136 +86,149 @@ export type ScheduleOpts = {
   seed?: string;
 };
 
+/**
+ * Standard SuperMemo SM-2 Easiness Factor update.
+ * EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
+ */
+export function calculateNextEase(currentEase: number, q: number): number {
+  const delta = 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02);
+  return clamp(round(currentEase + delta, 3), 1.3, 3.0);
+}
+
+/**
+ * Calculate the next review schedule using the SuperMemo SM-2 algorithm.
+ */
 export function schedule(prev: PrevState, grade: number, opts?: ScheduleOpts): ReviewState {
   const now = opts?.now ?? Date.now();
-  const retention = opts?.retention ?? DEFAULT_RETENTION;
-  const g = clamp(grade, 0, 3) + 1;
+  const clampedGrade = clamp(Math.round(grade), 0, 3);
+
+  // Map 4 UI grades to SM-2 quality scores (0..5):
+  // 0: Again -> 1 (Complete failure / lapse)
+  // 1: Hard  -> 3 (Pass with serious effort)
+  // 2: Good  -> 4 (Pass with normal effort)
+  // 3: Easy  -> 5 (Effortless recall)
+  const q = clampedGrade === 0 ? 1 : clampedGrade === 1 ? 3 : clampedGrade === 2 ? 4 : 5;
 
   const stateIn = prev.state ?? "new";
   let reps = prev.reps ?? 0;
   let lapses = prev.lapses ?? 0;
   let step = prev.step ?? 0;
+  const prevEase = clamp(Number(prev.ease ?? 2.5), 1.3, 3.0);
+  const prevInterval = Math.max(0, Number(prev.interval_days ?? 0));
 
-  const hadMemory = !!prev.stability && Number(prev.stability) > 0;
-  const elapsed = prev.last_review_at
-    ? Math.max(0, (now - new Date(prev.last_review_at).getTime()) / DAY)
-    : Number(prev.interval_days ?? 0);
+  const wasInReview = stateIn === "review" || stateIn === "mastered";
 
-  let difficulty: number;
-  let stability: number;
-
-  if (!hadMemory) {
-    difficulty = initialDifficulty(g);
-    stability = initialStability(g);
-  } else {
-    const d0 = clamp(Number(prev.difficulty ?? 5), 1, 10);
-    const s0 = clamp(Number(prev.stability), 0.1, 36500);
-    const r = retrievability(elapsed, s0);
-    difficulty = nextDifficulty(d0, g);
-    stability = g === 1 ? stabilityAfterLapse(difficulty, s0, r) : stabilityAfterRecall(difficulty, s0, r, g);
-  }
+  // Calculate new EF
+  const nextEase = calculateNextEase(prevEase, q);
 
   let interval: number;
   let state: string;
 
-  const graduate = () => {
-    state = "review";
-    step = 0;
-    return Math.max(1, intervalFor(stability, retention));
-  };
-
-  const wasInReview = stateIn === "review" || stateIn === "mastered";
-
-  if (g === 1) {
-    // Again — a lapse. Back into the same sitting, memory dented not erased.
+  if (q < 3) {
+    // Failure / Again: reset repetitions, mark lapse, and set for immediate review (~10 min)
     if (wasInReview) lapses += 1;
-    state = "relearning";
+    reps = 0;
     step = 0;
-    interval = RELEARN_STEPS[0]!;
-  } else if (stateIn === "new" || stateIn === "learning") {
+    state = "relearning";
+    interval = TEN_MINUTES;
+  } else {
+    // Success: increment repetition count
     reps += 1;
-    if (g === 4) {
-      interval = graduate();
-    } else if (g === 2) {
-      // Hard repeats the current step.
-      state = "learning";
-      interval = LEARN_STEPS[Math.min(step, LEARN_STEPS.length - 1)]!;
+    step = 0;
+
+    if (reps === 1) {
+      // First successful repetition
+      interval = clampedGrade === 1 ? 1 : clampedGrade === 2 ? 1 : 4;
+    } else if (reps === 2) {
+      // Second successful repetition
+      interval = clampedGrade === 1 ? 3 : clampedGrade === 2 ? 6 : 8;
     } else {
-      const next = step + 1;
-      if (next >= LEARN_STEPS.length) {
-        interval = graduate();
+      // Subsequent repetitions: interval multiplied by EF
+      const baseInterval = Math.max(1, prevInterval);
+      if (clampedGrade === 1) {
+        // Hard: conservative interval growth (1.2x)
+        interval = Math.max(baseInterval + 1, round(baseInterval * 1.2, 2));
+      } else if (clampedGrade === 2) {
+        // Good: standard SM-2 formula (interval * EF)
+        interval = Math.max(baseInterval + 1, round(baseInterval * nextEase, 2));
       } else {
-        state = "learning";
-        step = next;
-        interval = LEARN_STEPS[next]!;
+        // Easy: boosted interval (interval * EF * 1.3)
+        interval = Math.max(baseInterval + 2, round(baseInterval * nextEase * 1.3, 2));
       }
     }
-  } else if (stateIn === "relearning") {
-    reps += 1;
-    if (g === 2) {
-      state = "relearning";
-      interval = RELEARN_STEPS[Math.min(step, RELEARN_STEPS.length - 1)]!;
-    } else {
-      interval = graduate();
-    }
-  } else {
-    reps += 1;
-    state = "review";
-    interval = Math.max(1, intervalFor(stability, retention));
+
+    state = interval >= 21 ? "mastered" : "review";
   }
 
-  if (state! === "review") {
+  // Modifiers for active review states
+  if (state === "review" || state === "mastered") {
+    // Deterministic jitter for intervals >= 2.5 days
     interval = fuzz(interval, opts?.seed ?? "seed");
-    // A card you flagged is one you already know fights you: it comes back
-    // roughly twice as often until the flag is cleared.
-    if (opts?.flagged) interval = Math.max(1, interval * 0.5);
-    // Cards you keep losing get their growth capped so they can't run away.
-    if (lapses >= LEECH_THRESHOLD && interval > 7) interval = 7;
+
+    // Flagged cards return twice as often
+    if (opts?.flagged) {
+      interval = Math.max(1, interval * 0.5);
+    }
+
+    // Leech protection: if card failed >= 6 times, cap interval to 7 days
+    if (lapses >= LEECH_THRESHOLD && interval > 7) {
+      interval = 7;
+    }
+
     interval = clamp(interval, 1, MAX_INTERVAL);
+  } else {
+    interval = clamp(interval, TEN_MINUTES, MAX_INTERVAL);
   }
+
+  // Derive stability & difficulty metrics for UI bars
+  const stability = round(interval, 3);
+  const difficulty = round(clamp(10 - (nextEase - 1.3) * (9 / 1.7), 1, 10), 2);
 
   const dueMs = now + interval * DAY;
-  // "mastered" is a label for the student, not a scheduler state.
-  const label = state! === "review" && interval >= 21 ? "mastered" : state!;
 
   return {
-    ease: clamp(Number(prev.ease ?? 2.5), 1.3, 2.8),
-    difficulty: round(difficulty, 3),
-    stability: round(stability, 3),
+    ease: nextEase,
+    difficulty,
+    stability,
     interval_days: round(interval, 4),
     reps,
     lapses,
     step,
-    state: label,
+    state,
     due_at: new Date(dueMs).toISOString(),
     last_review_at: new Date(now).toISOString(),
   };
 }
 
 /**
- * What the student will see under each button before they press it. Kept in
- * one place so the preview and the real schedule can never drift apart.
+ * Preview intervals for each grade button: [Again, Hard, Good, Easy].
  */
 export function previewIntervals(prev: PrevState, opts?: ScheduleOpts) {
   return [0, 1, 2, 3].map((g) => schedule(prev, g, opts).interval_days);
 }
 
-/** Plain-language memory strength for the card's little meter. */
-export function memoryLabel(stability?: number | null) {
-  const s = Number(stability ?? 0);
-  if (!s) return "brand new";
-  const d = intervalFor(s, DEFAULT_RETENTION);
-  if (d < 1) return "fragile — minutes";
+/** Plain-language memory strength for the card's badge. */
+export function memoryLabel(stabilityOrDays?: number | null) {
+  const d = Number(stabilityOrDays ?? 0);
+  if (!d || d <= 0) return "brand new";
+  if (d < 0.05) return "fragile — 10 min";
+  if (d < 1) return "fragile — hours";
   if (d < 7) return `about ${Math.round(d)} day${Math.round(d) === 1 ? "" : "s"}`;
   if (d < 60) return `about ${Math.round(d / 7)} week${Math.round(d / 7) === 1 ? "" : "s"}`;
   if (d < 365) return `about ${Math.round(d / 30)} months`;
   return `over a year`;
 }
 
-/** 0..100 bar: how deep this memory is (a month of retention ≈ full bar). */
-export function memoryStrength(stability?: number | null) {
-  const d = intervalFor(Number(stability ?? 0) || 0.001, DEFAULT_RETENTION);
+/** 0..100 memory depth bar. */
+export function memoryStrength(stabilityOrDays?: number | null) {
+  const d = Number(stabilityOrDays ?? 0);
+  if (!d || d <= 0) return 0;
   return clamp(Math.round((Math.log(1 + d) / Math.log(1 + 120)) * 100), 0, 100);
+}
+
+/** Compatibility helper. */
+export function intervalFor(stability: number, _retention = DEFAULT_RETENTION) {
+  return stability;
 }
 
 /** Longest run of goal-met (or frozen) days ending today or yesterday. */
