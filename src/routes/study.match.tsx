@@ -190,7 +190,7 @@ function MemoryWorkspace() {
   return (
     <StudyLayout rail={rail} activeMode={mode} onModeChange={setMode}>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="max-h-[74vh] min-w-0 overflow-y-auto pr-1">
+        <div data-tour="ml-subjects" className="max-h-[74vh] min-w-0 overflow-y-auto pr-1">
           <SubjectBoard
             subjects={board.subjects}
             selection={selection}
@@ -224,7 +224,7 @@ function MemoryWorkspace() {
           )}
         </div>
 
-        <div className="flex flex-col gap-4 lg:sticky lg:top-0 lg:self-start">
+        <div data-tour="ml-modes" className="flex flex-col gap-4 lg:sticky lg:top-0 lg:self-start">
           <GameSetup
             mode={game}
             onMode={setGame}

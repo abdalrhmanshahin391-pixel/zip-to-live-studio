@@ -426,27 +426,128 @@ export const TOURS: Record<string, PageTourDef> = {
     title: { en: "Memory Lab & Dual-Coding Retention", ar: "مختبر الذاكرة والربط المعرفي المزدوج" },
     steps: [
       {
-        id: "ml-modes",
-        targetSelector: '[data-tour="ml-modes"], .grid:has(button)',
+        id: "ml-subjects",
+        targetSelector: '[data-tour="ml-subjects"]',
+        fallbackSelector: "main > div:first-child, .max-h-\\[74vh\\]",
         title: {
-          en: "Neuro-Associative Modes: Match, Speed, & Recall",
-          ar: "أنماط الربط العصبي: المطابقة، السرعة، والاسترجاع",
+          en: "Subject & Topic Hierarchy for Memory Pairs",
+          ar: "هيكلة المواد والمحاضرات لأزواج الذاكرة",
         },
         description: {
-          en: "Engineered to convert volatile, hard-to-memorize pairs (drugs & indications, microbial strains & virulence factors, enzymes & cofactors) into instant reflex associations.",
-          ar: "مصمم خصيصاً لتثبيت الثنائيات الطبية سريعة النسيان (أدوية واستطبابات، بكتيريا وعوامل ضراوة، إنزيمات ومعاملات حيوية) وتحويلها إلى استجابات فورية وتلقائية.",
+          en: "Organize volatile, hard-to-memorize facts into high-yield medical subjects and nested sub-topics. Selecting any topic immediately stages its paired items for play.",
+          ar: "تنظيم المعلومات سريعة النسيان في مواد رئيسية وفصول فرعية؛ تحديد أي موضوع يجهز أزواجه تلقائياً داخل محرك الألعاب.",
         },
         bullets: {
           en: [
-            "Match Round: Build initial associative links without time pressure.",
-            "Speed Round: High-intensity countdown forcing rapid subconscious pattern recognition.",
-            "Recall Mode: Tiles reveal after mental recall, strengthening synaptic retrieval pathways.",
+            "1. Subject Modules ('Sample subject — Cardiology'): Represents major clinical domains, tracking total sub-topics and active pairs.",
+            "2. Sub-Topic Chapters ('Sample · Myocardial infarction'): Concentrated topic blocks grouping specific disease mechanisms or drug classes.",
+            "3. Active Pair Badges ('6 cards / pairs'): Displays the exact volume of memory pairs stored inside each sub-topic.",
+            "4. Selection Checkboxes: Click the circular checkbox to select topics; you can combine multiple topics to practice across disciplines.",
+            "5. Reorder & Edit Controls: Use the chevron arrows to reorder, pencil icon to rename, and trash icon to delete.",
           ],
           ar: [
-            "نمط المطابقة: تكوين الروابط الذهنية الأولى بهدوء وتركيز.",
-            "جولة السرعة: منافسة الوقت لتدريب الدماغ على تمييز الأنماط السريرية واستدعاء الدواء فور رؤية المرض.",
-            "نمط الاسترجاع: إخفاء البطاقة المقابلة حتى تذكرها ذهنياً لتقوية مسارات الذاكرة العميقة.",
+            "١. مجلد المادة الكبرى ('Cardiology'): يمثل التخصص الطبي الرئيسي، مع بيان عدد الفصول الفرعية والأزواج المتاحة.",
+            "٢. الفصول والمحاضرات الفرعية ('Myocardial infarction'): وحدات مركزة تضم أزواج الأمراض، الأدوية، أو المعايير التشخيصية.",
+            "٣. شارات عدد الأزواج ('6 cards / pairs'): توضح عدد الأزواج الجاهزة للعب والمراجعة داخل كل موضوع فرعي.",
+            "٤. دوائر التحديد: اضغط على الدائرة لاختيار موضوع أو عدة موضوعات لبدء تدريب الذاكرة عليها فوراً.",
+            "٥. الترتيب والإجراءات المباشرة: أسهم لترتيب أولوية المواضيع، وقلم لتعديل الاسم، وسلة لحذف الموضوع عند الحاجة.",
           ],
+        },
+      },
+      {
+        id: "ml-rail",
+        targetSelector: '[data-tour="study-rail"]',
+        fallbackSelector: "aside",
+        title: {
+          en: "Left Rail: Fast Organization & Pair Creation",
+          ar: "شريط الأدوات الجانبي: تنظيم المناهج وبناء الأزواج",
+        },
+        description: {
+          en: "The vertical side rail provides fast, single-click shortcuts to build, organize, and manage your memory modules.",
+          ar: "يوفر الشريط الجانبي أدوات فورية لإضافة المواد، وبناء أزواج الذاكرة، وإدارة موضوعاتك بضغطة واحدة.",
+        },
+        bullets: {
+          en: [
+            "1. Add subject (New - Apricot): Creates a new primary course or medical specialty (e.g. Pharmacology, Pathology, Microbiology).",
+            "2. Add sub-subject (Nest - Sky): Nests a specific lecture, organ system, or diagnostic block inside your chosen subject.",
+            "3. Add pairs (Build the facts - Mint): Switches to Edit Mode and opens the two-column Pair Creator to enter left prompt (e.g. drug/disease) and right answer (e.g. mechanism/dose).",
+            "4. Remove (Delete - Clay): Safely deletes a selected lecture or subject folder with a confirmation dialog.",
+            "5. Edit (Rename - Lilac): Quickly renames subjects or sub-topics to keep your medical taxonomy accurate.",
+          ],
+          ar: [
+            "١. إضافة مادة (Add subject - برتقالي): لإنشاء تخصص طبي رئيسي جديد (مثل علم الأدوية، الأحياء الدقيقة، علم الأمراض).",
+            "٢. إضافة مادة فرعية (Add sub-subject - سماوي): لتفريع محاضرة أو فصل دراسي جديد داخل المادة المختارة.",
+            "٣. إضافة أزواج (Add pairs - أخضر نعناعي): ينتقل تلقائياً لوضع التحرير ويفتح منشئ الأزواج لكتابة الطرف الأيمن والطرف الأيسر المقابل له.",
+            "٤. حذف (Remove - أحمر طيني): لحذف المحاضرة أو المادة المحددة بأمان مع نافذة تأكيد لمنع الحذف العرضي.",
+            "٥. تعديل الاسم (Edit - بنفسجي): لتعديل وتحديث أسماء المواد والمحاضرات بسهولة.",
+          ],
+        },
+      },
+      {
+        id: "ml-modes",
+        targetSelector: '[data-tour="ml-modes"]',
+        fallbackSelector: "aside:has(button), .lg\\:sticky",
+        title: {
+          en: "Session Launchpad: 4 Game Modes & Challenge Toggles",
+          ar: "لوحة انطلاق الجلسة: 4 أنماط ألعاب ومفاتيح التحدي",
+        },
+        description: {
+          en: "Transform hard-to-memorize facts into reflex memory associations through four scientifically designed associative recall modes.",
+          ar: "حوّل المعلومات الطبية سريعة النسيان إلى استجابات فورية وتلقائية عبر 4 أنماط ألعاب علمية ومفاتيح تحدي متقدمة.",
+        },
+        bullets: {
+          en: [
+            "1. Audio FX Toggle (Volume icon): Header speaker button to enable or mute sound effects and celebration audio cues.",
+            "2. Pair Readiness Counter ('0 pairs ready · Tick a subject or sub-subject'): Live indicator of staged pairs from selected topics.",
+            "3. 'Match' Mode (Six on the left, six on the right): Classical associative grid matching; click matching tiles to clear the board at your own pace.",
+            "4. 'Speed' Mode (One prompt, four answers, 8 seconds): Rapid-fire drill; tests quick recall under a tight 8-second countdown.",
+            "5. 'Recall' Mode (Type the answer from memory): Pure active retrieval; requires typing the exact match from memory without visual clues.",
+            "6. 'Sequence' Mode (Drag five tiles into order): Chronological & procedural ordering for clinical pathways and diagnostic steps.",
+            "7. 'Sudden death' Toggle: High-stakes precision mode; a single incorrect match immediately ends the game.",
+            "8. 'Timed challenge' Toggle: Speed endurance mode; introduces a master countdown timer for the entire session.",
+            "9. 'Play' Button: Master green CTA button that launches the fullscreen interactive game once ≥2 pairs are ready.",
+          ],
+          ar: [
+            "١. مفتاح المؤثرات الصوتية (أيقونة الصوت): زر علوي للتحكم في كتم أو تفعيل الأصوات التفاعلية وأصوات الفوز.",
+            "٢. عداد جاهزية الأزواج ('0 pairs ready'): يوضح عدد الأزواج الجاهزة للعب بناءً على الموضوع المحدد.",
+            "٣. نمط المطابقة (Match - 6 في اليمين و6 في اليسار): الربط الكلاسيكي؛ يعرض عمودين بست بطاقات لتوصيل كل مصطلح بنظيره بهدوء وتركيز.",
+            "٤. نمط السرعة (Speed - خيار من 4 خلال 8 ثوانٍ): تدريب مكثف عالي الضغط؛ سؤال و4 خيارات مع مؤقت 8 ثوانٍ لتدريب العقل على الاستجابة اللحظية.",
+            "٥. نمط الاسترجاع (Recall - كتابة الإجابة غيباً): الاستدعاء النشط الخالص؛ يظهر المصطلح وعليك كتابة الجواب من الذاكرة لتقوية مسارات الحفظ العميق.",
+            "٦. نمط الترتيب (Sequence - سحب 5 بطاقات بالترتيب): الترتيب الإجرائي؛ اسحب 5 خطوات سريرية وضعها في تسلسلها الصحيح.",
+            "٧. مفتاح الموت المفاجئ (Sudden death): نمط التحدي الحاسم؛ أي خطأ واحد ينهي الجولة فوراً لتدريب النفس على الدقة المطلقة 100%.",
+            "٨. مفتاح التحدي الزمني (Timed challenge): مؤقت تنازلي للجولة لاختبار سرعتك وقدرتك على اتخاذ القرار الطبي تحت ضغط الوقت.",
+            "٩. زر بدء اللعب (Play): الزر الأخضر الأساسي الذي يفتح نافذة اللعبة التفاعلية فور تحديد زوجين على الأقل.",
+          ],
+        },
+      },
+      {
+        id: "ml-mode-switch",
+        targetSelector: '[data-tour="mode-switch"]',
+        fallbackSelector: "header",
+        title: {
+          en: "Top Workspace Switcher: Study vs Edit View",
+          ar: "مفتاح التبديل العلوي: وضع المذاكرة مقابل وضع التحرير وبناء الأزواج",
+        },
+        description: {
+          en: "Seamlessly switch between playing memory games and authoring new prompt-answer pairs.",
+          ar: "تبديل فوري بين بيئة اللعب والاختبار، وبين بيئة تأليف وكتابة أزواج الذاكرة الجديدة.",
+        },
+        bullets: {
+          en: [
+            "1. Study View ('Go through your cards'): Clean, focused gaming layout where you pick subjects and play the 4 associative memory modes.",
+            "2. Edit and adjust study view ('Build and rearrange your subjects'): Authoring mode unlocking the Pair Creator to write left/right pairs and organize chapters.",
+          ],
+          ar: [
+            "١. وضع المذاكرة (Study view - الأخضر): بيئة لعب مركزة وهادئة مخصصة لاختيار المواضيع وخوض أنماط الذاكرة الأربعة.",
+            "٢. وضع التعديل والضبط (Edit and adjust): بيئة التأليف التي تفتح منشئ الأزواج (Pair Creator) لكتابة أطراف البطاقات وتعديلها.",
+          ],
+        },
+        actionPrompt: {
+          label: {
+            en: "Switch to Edit View to explore Pair Creator →",
+            ar: "انتقل لوضع التعديل لاستكشاف منشئ الأزواج ←",
+          },
+          actionId: "toggle-edit-mode",
         },
       },
     ],
@@ -482,15 +583,90 @@ export const TOURS: Record<string, PageTourDef> = {
     title: { en: "Systematic Study Planning & Streaks", ar: "مخطط المذاكرة المنظم وسلاسل الالتزام" },
     steps: [
       {
-        id: "todo-planner",
-        targetSelector: '[data-tour="todo-tasks"], main',
+        id: "todo-nav",
+        targetSelector: '[data-tour="todo-nav"]',
+        fallbackSelector: "aside",
         title: {
-          en: "Goal Setting & Revision Habit Tracking",
-          ar: "تحديد الأهداف ومتابعة عادة المراجعة اليومية",
+          en: "Planner Navigation, Dates & Project Folders",
+          ar: "شريط التنقل، المواعيد ومجلدات المشاريع",
         },
         description: {
-          en: "Prioritize daily chapters, track your review quota, and protect your revision streak to maintain consistent compounding study momentum.",
-          ar: "رتّب مهام يومك حسب الأولوية القصوى، وتابع إنجاز حصتك اليومية، وحافظ على سلسلة أيامك المتتالية لترسيخ عادات التفوق الدراسي.",
+          en: "Your central navigation column to manage task flow across time horizons and clinical subjects.",
+          ar: "شريط التنقل المحوري لإدارة مهامك وجدولك الدراسي عبر مختلف الفترات الزمنية والمشاريع الأكاديمية.",
+        },
+        bullets: {
+          en: [
+            "1. Search Bar ('Search  /'): Fast search filter to find any task or lecture note instantly (press '/' anytime).",
+            "2. 'Inbox': The capture station for unscheduled tasks and quick study ideas that have not been assigned a specific date.",
+            "3. 'Today' (with Live Badge): Shows all tasks due today or overdue, with a live numeric counter to keep you focused on today's quota.",
+            "4. 'Upcoming' (with Live Badge): Chronological forward-looking planner organizing tasks day by day across the upcoming week.",
+            "5. Projects & '+ New project': Create dedicated color-coded project lists (e.g. Finals Week, Internal Medicine, Surgery Rotation) to group related tasks.",
+            "6. Labels ('#tags'): Contextual tags to group tasks across multiple projects (e.g. #high-yield, #dr-notes, #urgent).",
+          ],
+          ar: [
+            "١. شريط البحث الفوري ('Search  /'): بحث سريع للعثور على أي مهمة أو ملاحظة بمجرد كتابة أول حروف (أو الضغط على '/') في أي وقت.",
+            "٢. صندوق الوارد (Inbox): محطة استقبال الأفكار والمهام غير المجدولة لتدوينها فوراً قبل تعيين موعد محدد لها.",
+            "٣. اليوم (Today مع عداد حي): يعرض جميع المهام المستحقة اليوم مع عداد رقمي يوضح ما تبقى لإنجازه اليوم.",
+            "٤. القادم (Upcoming مع عداد حي): المخطط الزمني المستقبلي الذي يرتب مهامك يوماً بيوم خلال الأسبوع والشهر القادمين.",
+            "٥. المشاريع (+ New project): إنشاء مجلدات مخصصة وملونة لكل مادة أو امتحان (مثل: اختبار النصفي، باطنة، جراحة).",
+            "٦. التصنيفات (#Labels): وسوم لتصنيف المهام عبر المشاريع المختلفة (مثل: #مهم_جداً، #ملاحظات_الدكتور).",
+          ],
+        },
+      },
+      {
+        id: "todo-tasks",
+        targetSelector: '[data-tour="todo-tasks"]',
+        fallbackSelector: "main",
+        title: {
+          en: "Task Workspace, Scheduling & Overdue Control",
+          ar: "لوحة المهام، الجدولة والتحكم في المهام المتأخرة",
+        },
+        description: {
+          en: "The oversized calm board where you track daily study quotas, manage deadlines, and build compounding study streaks.",
+          ar: "اللوحة الرئيسية الهادئة والواضحة لمتابعة حصتك الدراسية اليومية، وإدارة مواعيد التسليم، وبناء سلاسل الإنجاز.",
+        },
+        bullets: {
+          en: [
+            "1. View Title & Pending Counter ('Upcoming · 1 task left'): Header displaying the active time view and count of remaining open tasks.",
+            "2. 'Hide / Show completed' Toggle: Instantly declutter your board by hiding finished tasks, or reveal them to celebrate completed work.",
+            "3. Overdue Notice & 'Reschedule': Warns you of lapsed tasks from past days, with a one-click 'Move all to today' button.",
+            "4. Task Item Row: Checkbox circle to mark done, title, drag handle to reorder, sub-tasks indicator, and edit pencil.",
+            "5. Day-by-Day Buckets ('Today · Sunday', 'Tomorrow · Monday'): Visual separation of tasks by calendar date.",
+            "6. Inline '+ Add task': Click on any specific day header to add a task pre-scheduled directly for that date.",
+            "7. Quick Add Shortcut (Key 'Q'): Press 'Q' anywhere on the page to immediately open the smart natural-language task composer.",
+          ],
+          ar: [
+            "١. عنوان العرض وعداد المهام المتبقية ('Upcoming · 1 task left'): يوضح اسم العرض الحالي وعدد المهام التي تنتظر إنجازها.",
+            "٢. زر إخفاء / إظهار المكتمل: تنظيف الشاشة بإخفاء المهام المنجزة، أو إظهارها للاطلاع على ما حققته اليوم.",
+            "٣. قسم المتأخرات (Overdue) وزر إعادة الجدولة: يبرز المهام المتأخرة من الأيام السابقة مع زر بضغطة واحدة لنقلها إلى اليوم.",
+            "٤. بطاقة المهمة: دائرة للإنجاز، عنوان المهمة، مقبض سحب لإعادة الترتيب، مؤشر المهام الفرعية، وقلم التعديل.",
+            "٥. أقسام الأيام (اليوم، غداً، الأيام القادمة): توزيع بصري مريح للمهام حسب تواريخ التقويم.",
+            "٦. إضافة مهمة مباشرة (+ Add task): زر في كل يوم لإضافة مهمة مجدولة في ذلك اليوم تحديداً.",
+            "٧. اختصار الإضافة السريع (مفتاح Q): اضغط حرف Q في أي مكان لفتح نافذة إضافة المهام الذكية فوراً.",
+          ],
+        },
+      },
+      {
+        id: "todo-header",
+        targetSelector: '[data-tour="todo-header"]',
+        fallbackSelector: "header, .border-b",
+        title: {
+          en: "Keep the Day Light: RitaJet Philosophy",
+          ar: "اجعل يومك خفيفاً: فلسفة ريتاجت في تنظيم المذاكرة",
+        },
+        description: {
+          en: "RitaJet's to-do planner is built on cognitive pacing: set realistic daily targets (3-5 high-yield tasks) to prevent burnout and maintain long-term momentum.",
+          ar: "مخطط مهام ريتاجت مبني على التوازن الذهني؛ حدد أهدافاً واقعية ومركزة (3 إلى 5 مهام نوعية يومياً) لمنع الإرهاق والحفاظ على الاستمرارية الطويلة.",
+        },
+        bullets: {
+          en: [
+            "1. Daily Goal Calibration: Avoid overloading your daily list; focus on completing your primary study targets first.",
+            "2. 'All study tools' Shortcut: Seamlessly navigate back to flashcards, question banks, or memory labs once your daily study plan is set.",
+          ],
+          ar: [
+            "١. ضبط الأهداف اليومية: تجنب تكديس المهام غير الواقعية؛ ركّز على إتمام أولوياتك الأكاديمية الكبرى أولاً.",
+            "٢. زر 'جميع أدوات الدراسة': انتقال فوري بضغطة واحدة إلى البطاقات، بنك الأسئلة، أو مختبر الذاكرة فور تنظيم جدول يومك.",
+          ],
         },
       },
     ],
