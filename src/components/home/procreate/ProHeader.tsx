@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  Bell,
   ChevronDown,
   Gauge,
   LayoutGrid,
@@ -208,15 +207,6 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
                     <Link to="/pricing" onClick={() => setAccountOpen(false)} className={menuLink}>
                       <ReceiptText size={16} className="text-white/50" />
                       Plans & pricing
-                    </Link>
-                    <Link
-                      to="/profile"
-                      hash="notifications"
-                      onClick={() => setAccountOpen(false)}
-                      className={menuLink}
-                    >
-                      <Bell size={16} className="text-white/50" />
-                      {t("cms.header.notifications", { defaultValue: "Notifications" })}
                     </Link>
                     <InstallAppButton className={menuLink} />
                     {isAdmin && (
