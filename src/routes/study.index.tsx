@@ -343,7 +343,7 @@ function StudyBoard() {
       onModeChange={(m) => setMode(m)}
     >
       <div className="grid min-h-[62vh] items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="min-w-0">
+        <div data-tour="subject-shelf" className="min-w-0">
           <PickerBoard
             accent={ACCENT}
             groups={groups}
@@ -371,7 +371,7 @@ function StudyBoard() {
           />
         </div>
 
-        <div className="grid gap-4 lg:sticky lg:top-4 lg:self-start">
+        <div data-tour="launch-panel" className="grid gap-4 lg:sticky lg:top-4 lg:self-start">
           <LaunchPanel
             accent={ACCENT}
             stat={sessionCards.length}
