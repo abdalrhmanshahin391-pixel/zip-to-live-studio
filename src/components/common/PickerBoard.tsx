@@ -100,7 +100,7 @@ export function PickerBoard({
 
   return (
     <div className="rounded-3xl border border-border bg-card p-3 shadow-sm sm:p-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 pb-3">
+      <div data-tour="subject-shelf-header" className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 pb-3">
         <div className="flex min-w-0 items-center gap-2 rounded-2xl bg-cream px-4 py-3">
           <Search size={17} className="shrink-0 text-muted-foreground" />
           <input
