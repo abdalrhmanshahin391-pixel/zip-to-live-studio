@@ -23,10 +23,10 @@ export function SectionPage({ id }: { id: SectionId }) {
   const sectionOff = !enabled(SECTION_FLAG(id));
 
   return (
-    <div className="min-h-screen" style={{ background: "#fbf5e9", color: "#23201d" }}>
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden" style={{ background: "#fbf5e9", color: "#23201d" }}>
       <SiteHeader />
 
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-8 md:px-8 md:pt-12">
+      <main className="mx-auto w-full max-w-6xl min-w-0 overflow-x-hidden px-4 pb-24 pt-8 md:px-8 md:pt-12">
         <Link
           to="/learn"
           className="inline-flex items-center gap-2 text-[13px] font-extrabold text-[#7a6f5f] hover:text-[#23201d]"
@@ -53,7 +53,7 @@ export function SectionPage({ id }: { id: SectionId }) {
         ) : null}
 
         <div
-          className={`mt-8 grid gap-6 ${s.columns.length > 1 ? "lg:grid-cols-2" : "grid-cols-1"}`}
+          className={`mt-8 grid w-full max-w-full min-w-0 gap-6 ${s.columns.length > 1 ? "lg:grid-cols-2" : "grid-cols-1"}`}
         >
           {s.columns.map((col) => {
             const list = tools.filter((t) => t.column === col.id);
@@ -64,7 +64,7 @@ export function SectionPage({ id }: { id: SectionId }) {
             return (
               <section
                 key={col.id}
-                className="rounded-[28px] border border-black/[0.08] bg-white/75 p-5 md:p-6 shadow-sm"
+                className="w-full max-w-full min-w-0 overflow-hidden rounded-[28px] border border-black/[0.08] bg-white/75 p-5 md:p-6 shadow-sm"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-black/[0.07]">
                   {isAi ? (
@@ -93,7 +93,7 @@ export function SectionPage({ id }: { id: SectionId }) {
                     {isAr ? col.note.ar : col.note.en}
                   </p>
                 </div>
-                <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="mt-5 grid w-full max-w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                   {list.map((t) => (
                     <ToolCard
                       key={t.key}

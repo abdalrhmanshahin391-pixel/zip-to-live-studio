@@ -81,26 +81,9 @@ function safeFindElement(selector?: string): HTMLElement | null {
     }
 
     if (el) {
-      const b = el.getBoundingClientRect();
-      const mobile = window.innerWidth < 768;
-      const reservedBottom = mobile ? 340 : 380;
-
-      // Ensure element is positioned in the upper portion of viewport with ample room below
-      const isComfortable =
-        b.top >= 70 &&
-        b.bottom <= window.innerHeight - reservedBottom;
-
-      if (!isComfortable) {
-        const targetScroll = window.scrollY + b.top - (mobile ? 75 : 95);
-        window.scrollTo({
-          top: Math.max(0, targetScroll),
-          behavior: "smooth",
-        });
-      }
-
       const freshRect = el.getBoundingClientRect();
+      const mobile = window.innerWidth < 768;
       const pad = mobile ? 6 : 10;
-      // Highlight the entire element accurately without artificial height cutoffs
       const elementHeight = freshRect.height;
 
       setRect({
@@ -126,18 +109,56 @@ function safeFindElement(selector?: string): HTMLElement | null {
     }
   }, [open, step]);
 
-  // Recalculate spotlight geometry on step change, resize, and scroll
+  // Smooth scroll target element into comfortable view once per step change
+  useEffect(() => {
+    if (!open || !step) return;
+
+    let el = safeFindElement(step.targetSelector);
+    if (!el && step.fallbackSelector) {
+      el = safeFindElement(step.fallbackSelector);
+    }
+    if (!el) return;
+
+    const b = el.getBoundingClientRect();
+    const mobile = window.innerWidth < 768;
+    const reservedBottom = mobile ? 280 : 360;
+
+    const isComfortable =
+      b.top >= (mobile ? 70 : 85) &&
+      b.bottom <= window.innerHeight - reservedBottom;
+
+    if (!isComfortable) {
+      const targetScroll = window.scrollY + b.top - (mobile ? 75 : 95);
+      window.scrollTo({
+        top: Math.max(0, targetScroll),
+        behavior: "smooth",
+      });
+    }
+  }, [open, stepIndex, step]);
+
+  // Recalculate spotlight geometry on step change, resize, and scroll with rAF throttling
   useEffect(() => {
     if (!open) return;
     updateRect();
     const timer = setTimeout(updateRect, 320); // allow smooth scroll to settle
 
-    window.addEventListener("scroll", updateRect, { passive: true });
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          updateRect();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", updateRect);
 
     return () => {
       clearTimeout(timer);
-      window.removeEventListener("scroll", updateRect);
+      window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", updateRect);
     };
   }, [open, stepIndex, updateRect]);
@@ -194,14 +215,21 @@ function safeFindElement(selector?: string): HTMLElement | null {
   const maxCardH = Math.min(480, window.innerHeight - 32);
 
   if (isMobile) {
-    // Docked mobile bottom sheet with safe area insets
+    // Dynamic top/bottom placement to guarantee the spotlighted target element is NEVER obscured
+    // If the spotlighted element's vertical center is in the lower half of the screen (> 45vh),
+    // dock the explanation card to the top so the element below remains 100% visible!
+    // Otherwise dock to the bottom.
+    const placeOnTop = rect ? (rect.top + rect.height / 2 > window.innerHeight * 0.45) : false;
+
     cardStyle = {
       position: "fixed",
-      bottom: "max(0.75rem, env(safe-area-inset-bottom))",
+      ...(placeOnTop
+        ? { top: "max(0.75rem, env(safe-area-inset-top))" }
+        : { bottom: "max(0.75rem, env(safe-area-inset-bottom))" }),
       left: "0.75rem",
       right: "0.75rem",
-      maxWidth: "34rem",
-      maxHeight: "min(420px, 62vh)",
+      maxWidth: "32rem",
+      maxHeight: "min(300px, 42vh)",
       margin: "0 auto",
       zIndex: 9999,
     };
@@ -319,28 +347,28 @@ function safeFindElement(selector?: string): HTMLElement | null {
         ref={cardRef}
         style={cardStyle}
         dir={isAr ? "rtl" : "ltr"}
-        className="flex flex-col overflow-hidden rounded-[26px] border border-black/[0.12] bg-[#fbf5e9] p-5 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.55)] animate-in fade-in zoom-in-95 duration-200"
+        className="flex flex-col overflow-hidden rounded-[24px] sm:rounded-[26px] border border-black/[0.12] bg-[#fbf5e9] p-3.5 sm:p-5 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.55)] animate-in fade-in zoom-in-95 duration-200"
       >
         {/* Card Top Navigation Bar */}
-        <div className="flex shrink-0 items-center justify-between border-b border-black/[0.08] pb-3">
-          <div className="flex items-center gap-2">
-            <span className="grid h-6 w-6 place-items-center rounded-full bg-[#2f7d55] text-[11px] font-black text-white shadow-xs">
+        <div className="flex shrink-0 items-center justify-between border-b border-black/[0.08] pb-2.5 sm:pb-3">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="grid h-5 w-5 sm:h-6 sm:w-6 place-items-center rounded-full bg-[#2f7d55] text-[10px] sm:text-[11px] font-black text-white shadow-xs">
               {stepIndex + 1}
             </span>
-            <span className="text-[11px] font-black uppercase tracking-wider text-[#6b655c]">
+            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-[#6b655c]">
               {isAr
                 ? `الخطوة ${stepIndex + 1} من ${tour.steps.length}`
                 : `Step ${stepIndex + 1} of ${tour.steps.length}`}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Prominent Language Switcher */}
             <div className="inline-flex items-center rounded-full border border-black/[0.09] bg-white p-0.5 shadow-xs" dir="ltr">
               <button
                 type="button"
                 onClick={() => onLang("en")}
-                className={`rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase transition-all ${
+                className={`rounded-full px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-black uppercase transition-all ${
                   lang === "en"
                     ? "bg-[#23201d] text-white shadow-xs"
                     : "text-[#6b655c] hover:text-[#23201d]"
@@ -351,7 +379,7 @@ function safeFindElement(selector?: string): HTMLElement | null {
               <button
                 type="button"
                 onClick={() => onLang("ar")}
-                className={`rounded-full px-2.5 py-0.5 text-[11px] font-black transition-all ${
+                className={`rounded-full px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-black transition-all ${
                   lang === "ar"
                     ? "bg-[#23201d] text-white shadow-xs"
                     : "text-[#6b655c] hover:text-[#23201d]"
@@ -365,7 +393,7 @@ function safeFindElement(selector?: string): HTMLElement | null {
             <button
               type="button"
               onClick={onClose}
-              className="text-[12px] font-extrabold text-[#7a7265] hover:text-[#23201d] px-1.5 transition-colors"
+              className="text-[11px] sm:text-[12px] font-extrabold text-[#7a7265] hover:text-[#23201d] px-1 transition-colors"
             >
               {isAr ? "تخطي" : "Skip"}
             </button>
@@ -374,29 +402,29 @@ function safeFindElement(selector?: string): HTMLElement | null {
               type="button"
               onClick={onClose}
               aria-label="Close tour"
-              className="grid h-7 w-7 place-items-center rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[#23201d] transition-colors"
+              className="grid h-6 w-6 sm:h-7 sm:w-7 place-items-center rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[#23201d] transition-colors"
             >
-              <X size={14} />
+              <X size={13} />
             </button>
           </div>
         </div>
 
         {/* Scrollable Content Body for Comprehensive Explanations */}
-        <div className="mt-3.5 min-h-0 flex-1 overflow-y-auto pr-1">
-          <h3 className="font-display text-[17px] sm:text-[18px] font-black leading-snug text-[#23201d]">
+        <div className="mt-2.5 sm:mt-3.5 min-h-0 flex-1 overflow-y-auto pr-1">
+          <h3 className="font-display text-[15px] sm:text-[18px] font-black leading-snug text-[#23201d]">
             {step.title[lang]}
           </h3>
 
-          <p className="mt-2 text-[13.5px] leading-relaxed text-[#4a453d] font-medium">
+          <p className="mt-1.5 sm:mt-2 text-[12px] sm:text-[13.5px] leading-relaxed text-[#4a453d] font-medium">
             {step.description[lang]}
           </p>
 
           {/* Key detailed bullets */}
           {step.bullets && (
-            <ul className="mt-3 space-y-2 text-[12.5px] text-[#3a352e]">
+            <ul className="mt-2.5 sm:mt-3 space-y-1.5 sm:space-y-2 text-[11.5px] sm:text-[12.5px] text-[#3a352e]">
               {step.bullets[lang].map((bullet, i) => (
-                <li key={i} className="flex items-start gap-2 leading-relaxed">
-                  <CheckCircle2 size={14} className="text-[#2f7d55] shrink-0 mt-0.5" />
+                <li key={i} className="flex items-start gap-1.5 sm:gap-2 leading-relaxed">
+                  <CheckCircle2 size={13} className="text-[#2f7d55] shrink-0 mt-0.5" />
                   <span className="flex-1">{bullet}</span>
                 </li>
               ))}
@@ -408,16 +436,16 @@ function safeFindElement(selector?: string): HTMLElement | null {
             <button
               type="button"
               onClick={() => handleAction(step.actionPrompt!.actionId)}
-              className="mt-3.5 flex w-full items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2.5 text-[12.5px] font-black text-emerald-950 transition-all hover:bg-emerald-100 active:scale-98 shadow-xs"
+              className="mt-2.5 sm:mt-3.5 flex w-full items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 px-3 sm:px-3.5 py-2 sm:py-2.5 text-[11.5px] sm:text-[12.5px] font-black text-emerald-950 transition-all hover:bg-emerald-100 active:scale-98 shadow-xs"
             >
               <span>{step.actionPrompt.label[lang]}</span>
-              <ArrowRight size={14} className={isAr ? "rotate-180" : ""} />
+              <ArrowRight size={13} className={isAr ? "rotate-180" : ""} />
             </button>
           )}
         </div>
 
         {/* Card Footer: Progress Dots & Navigation */}
-        <div className="mt-4 flex shrink-0 items-center justify-between border-t border-black/[0.07] pt-3.5">
+        <div className="mt-2.5 sm:mt-4 flex shrink-0 items-center justify-between border-t border-black/[0.07] pt-2.5 sm:pt-3.5">
           {/* Progress dots */}
           <div className="flex items-center gap-1.5" dir="ltr">
             {tour.steps.map((_, i) => (
@@ -426,22 +454,22 @@ function safeFindElement(selector?: string): HTMLElement | null {
                 onClick={() => setStepIndex(i)}
                 className={`cursor-pointer rounded-full transition-all ${
                   stepIndex === i
-                    ? "h-2 w-5 bg-[#2f7d55]"
-                    : "h-2 w-2 bg-black/20 hover:bg-black/40"
+                    ? "h-1.5 sm:h-2 w-4 sm:w-5 bg-[#2f7d55]"
+                    : "h-1.5 sm:h-2 w-1.5 sm:w-2 bg-black/20 hover:bg-black/40"
                 }`}
               />
             ))}
           </div>
 
           {/* Back & Next Navigation Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {stepIndex > 0 && (
               <button
                 type="button"
                 onClick={handleBack}
-                className="inline-flex items-center gap-1 rounded-full border border-black/[0.1] bg-white px-3.5 py-1.5 text-[12.5px] font-bold text-[#23201d] transition-colors hover:bg-black/[0.04]"
+                className="inline-flex items-center gap-1 rounded-full border border-black/[0.1] bg-white px-3 sm:px-3.5 py-1 sm:py-1.5 text-[11.5px] sm:text-[12.5px] font-bold text-[#23201d] transition-colors hover:bg-black/[0.04]"
               >
-                {isAr ? <ArrowRight size={13} /> : <ArrowLeft size={13} />}
+                {isAr ? <ArrowRight size={12} /> : <ArrowLeft size={12} />}
                 {isAr ? "السابق" : "Back"}
               </button>
             )}
@@ -449,7 +477,7 @@ function safeFindElement(selector?: string): HTMLElement | null {
             <button
               type="button"
               onClick={handleNext}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#2f7d55] px-4 py-1.5 text-[12.5px] font-black text-white shadow-sm transition-all hover:bg-[#256344] active:scale-98"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#2f7d55] px-3.5 sm:px-4 py-1 sm:py-1.5 text-[11.5px] sm:text-[12.5px] font-black text-white shadow-sm transition-all hover:bg-[#256344] active:scale-98"
             >
               <span>
                 {stepIndex === tour.steps.length - 1
@@ -461,7 +489,7 @@ function safeFindElement(selector?: string): HTMLElement | null {
                     : "Next"}
               </span>
               {stepIndex < tour.steps.length - 1 && (
-                isAr ? <ArrowLeft size={13} /> : <ArrowRight size={13} />
+                isAr ? <ArrowLeft size={12} /> : <ArrowRight size={12} />
               )}
             </button>
           </div>
