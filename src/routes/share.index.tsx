@@ -124,6 +124,7 @@ function SharePage() {
 
           {mode === "questions" ? (
             <Link
+              data-tour="share-create-btn"
               to="/share/questions/new"
               className="inline-flex items-center gap-2 rounded-full bg-[#8ec63f] px-6 py-3.5 text-[15px] font-black text-white shadow-[0_14px_30px_-16px_rgba(142,198,63,0.9)] transition hover:-translate-y-0.5"
             >
@@ -131,6 +132,7 @@ function SharePage() {
             </Link>
           ) : (
             <Link
+              data-tour="share-create-btn"
               to="/share/new"
               className="inline-flex items-center gap-2 rounded-full bg-[#8ec63f] px-6 py-3.5 text-[15px] font-black text-white shadow-[0_14px_30px_-16px_rgba(142,198,63,0.9)] transition hover:-translate-y-0.5"
             >
@@ -139,40 +141,42 @@ function SharePage() {
           )}
         </div>
 
-        {/* Mode Switcher: Flashcards vs Questions */}
-        <div className="mt-8 flex items-center gap-2 rounded-full border border-black/[0.08] bg-white p-1.5 w-fit shadow-sm">
-          <button
-            type="button"
-            onClick={() => {
-              setMode("flashcards");
-              setPage(0);
-            }}
-            className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13.5px] font-black transition ${
-              mode === "flashcards"
-                ? "bg-[#23201d] text-white shadow-sm"
-                : "text-[#6b655c] hover:bg-black/[0.04]"
-            }`}
-          >
-            <Layers size={15} /> Flashcards
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMode("questions");
-              setPage(0);
-            }}
-            className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13.5px] font-black transition ${
-              mode === "questions"
-                ? "bg-[#23201d] text-white shadow-sm"
-                : "text-[#6b655c] hover:bg-black/[0.04]"
-            }`}
-          >
-            <ListChecks size={15} /> Questions
-          </button>
-        </div>
+        {/* Mode Switcher & Filter Controls Container */}
+        <div data-tour="share-filters-switcher" className="mt-8 space-y-4">
+          {/* Mode Switcher: Flashcards vs Questions */}
+          <div className="flex items-center gap-2 rounded-full border border-black/[0.08] bg-white p-1.5 w-fit shadow-sm">
+            <button
+              type="button"
+              onClick={() => {
+                setMode("flashcards");
+                setPage(0);
+              }}
+              className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13.5px] font-black transition ${
+                mode === "flashcards"
+                  ? "bg-[#23201d] text-white shadow-sm"
+                  : "text-[#6b655c] hover:bg-black/[0.04]"
+              }`}
+            >
+              <Layers size={15} /> Flashcards
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode("questions");
+                setPage(0);
+              }}
+              className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13.5px] font-black transition ${
+                mode === "questions"
+                  ? "bg-[#23201d] text-white shadow-sm"
+                  : "text-[#6b655c] hover:bg-black/[0.04]"
+              }`}
+            >
+              <ListChecks size={15} /> Questions
+            </button>
+          </div>
 
-        {/* Filter Controls Row */}
-        <div className="mt-6 flex flex-wrap items-center gap-3">
+          {/* Filter Controls Row */}
+          <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 rounded-full border border-black/[0.08] bg-white px-4 py-2.5 shadow-sm">
             <Search size={15} className="text-[#a29a8d]" />
             <input
@@ -253,6 +257,7 @@ function SharePage() {
             </div>
           )}
         </div>
+        </div>
 
         {/* Quota dashboard in "My shared items" */}
         {tab === "mine" && user && (
@@ -304,7 +309,7 @@ function SharePage() {
             ) : (deckFeed.data?.decks.length ?? 0) === 0 ? (
               <Empty />
             ) : (
-              <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div data-tour="share-deck-grid" className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {deckFeed.data!.decks.map((d) => (
                   <DeckCard key={d.id} deck={d} author={deckFeed.data!.authors[d.owner_id] ?? null} />
                 ))}

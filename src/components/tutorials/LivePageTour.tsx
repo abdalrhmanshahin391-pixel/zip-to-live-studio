@@ -90,15 +90,15 @@ export function LivePageTour({
 
       const freshRect = el.getBoundingClientRect();
       const pad = mobile ? 6 : 10;
-      // Cap height if the container is excessively tall so spotlight doesn't swallow the whole page
-      const clampedHeight = Math.min(freshRect.height, window.innerHeight * 0.52);
+      // Highlight the entire element accurately without artificial height cutoffs
+      const elementHeight = freshRect.height;
 
       setRect({
         top: Math.max(0, freshRect.top - pad),
         left: Math.max(0, freshRect.left - pad),
         width: freshRect.width + pad * 2,
-        height: clampedHeight + pad * 2,
-        bottom: freshRect.top - pad + clampedHeight + pad * 2,
+        height: elementHeight + pad * 2,
+        bottom: freshRect.top - pad + elementHeight + pad * 2,
         right: freshRect.left - pad + freshRect.width + pad * 2,
       });
     } else {
@@ -181,7 +181,7 @@ export function LivePageTour({
 
   // --- Strict Viewport-Contained Collision-Free Card Placement ---
   let cardStyle: React.CSSProperties = {};
-  const maxCardH = Math.min(500, window.innerHeight - 32);
+  const maxCardH = Math.min(480, window.innerHeight - 32);
 
   if (isMobile) {
     // Docked mobile bottom sheet with safe area insets
@@ -191,27 +191,27 @@ export function LivePageTour({
       left: "0.75rem",
       right: "0.75rem",
       maxWidth: "34rem",
-      maxHeight: "min(440px, 62vh)",
+      maxHeight: "min(420px, 62vh)",
       margin: "0 auto",
       zIndex: 9999,
     };
   } else if (rect) {
     const cardWidth = Math.min(460, window.innerWidth - 32);
-    const estHeight = Math.min(cardHeight || 350, maxCardH);
+    const estHeight = Math.min(cardHeight || 340, maxCardH);
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceRight = window.innerWidth - rect.right;
     const spaceLeft = rect.left;
     const spaceAbove = rect.top;
 
-    let top = 0;
-    let left = rect.left;
+    let top: number | undefined = undefined;
+    let bottom: number | undefined = undefined;
+    let left: number | undefined = undefined;
+    let right: number | undefined = undefined;
 
     // 1. Preferred: cleanly below the highlighted element
     if (spaceBelow >= estHeight + 20) {
       top = rect.bottom + 16;
-      if (isAr) {
-        left = rect.right - cardWidth;
-      }
+      left = isAr ? Math.max(16, rect.right - cardWidth) : Math.max(16, rect.left);
     }
     // 2. Side-by-Side: Place to the right of the highlighted element
     else if (spaceRight >= cardWidth + 24) {
@@ -220,32 +220,31 @@ export function LivePageTour({
     }
     // 3. Side-by-Side: Place to the left of the highlighted element
     else if (spaceLeft >= cardWidth + 24) {
-      left = rect.left - cardWidth - 16;
+      left = Math.max(16, rect.left - cardWidth - 16);
       top = Math.max(16, Math.min(window.innerHeight - estHeight - 16, rect.top));
     }
     // 4. Above: Only if there is clean space above without touching the element
     else if (spaceAbove >= estHeight + 20) {
-      top = rect.top - estHeight - 16;
-      if (isAr) {
-        left = rect.right - cardWidth;
-      }
+      top = Math.max(16, rect.top - estHeight - 16);
+      left = isAr ? Math.max(16, rect.right - cardWidth) : Math.max(16, rect.left);
     }
-    // 5. Fallback: Position with safe viewport bottom margin
+    // 5. Fallback: For large elements (like calendar) where neither sides nor below have clearance,
+    // dock to the bottom corner so the card and its controls NEVER get pushed below the screen!
     else {
-      top = Math.max(16, window.innerHeight - estHeight - 20);
+      bottom = 16;
       if (isAr) {
-        left = rect.right - cardWidth;
+        left = 20;
+      } else {
+        right = 20;
       }
     }
-
-    // Strict boundary clamps: Card NEVER clips below bottom or above top of screen
-    top = Math.max(16, Math.min(window.innerHeight - estHeight - 16, top));
-    left = Math.max(16, Math.min(window.innerWidth - cardWidth - 16, left));
 
     cardStyle = {
       position: "fixed",
-      top: `${top}px`,
-      left: `${left}px`,
+      ...(top !== undefined ? { top: `${Math.max(16, Math.min(window.innerHeight - estHeight - 16, top))}px` } : {}),
+      ...(bottom !== undefined ? { bottom: `${bottom}px` } : {}),
+      ...(left !== undefined ? { left: `${Math.max(16, Math.min(window.innerWidth - cardWidth - 16, left))}px` } : {}),
+      ...(right !== undefined ? { right: `${right}px` } : {}),
       width: `${cardWidth}px`,
       maxHeight: `${maxCardH}px`,
       zIndex: 9999,

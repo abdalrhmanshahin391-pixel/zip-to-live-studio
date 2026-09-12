@@ -47,7 +47,7 @@ function ExamSchedulePage() {
           </p>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8" data-tour="exams-container">
           {loading ? (
             <div className="h-[60vh] animate-pulse rounded-[28px] bg-white/70" />
           ) : user ? (
