@@ -57,8 +57,8 @@ export function ProtectedContent({
 
   /** Deterrence + logging: everyone signed in except admins. */
   const active = settings.protect_enabled && !!user && !isAdmin && !loading;
-  /** The watermark itself is shown to admins too. */
-  const watermarked = settings.protect_enabled && !!user && !loading && !!identity;
+  /** The watermark itself is shown on pages, but disabled for cards (questions/options). */
+  const watermarked = settings.protect_enabled && !!user && !loading && !!identity && scope !== "card";
 
   const log = useCallback(
     (kind: string, meta: Record<string, unknown> = {}) => {
@@ -150,11 +150,18 @@ export function ProtectedContent({
     };
 
     const onBlur = () => {
-      if (settings.protect_blur_on_blur) setBlurred(true);
+      // Avoid blurring on mobile phone viewport shifts
+      if (settings.protect_blur_on_blur && typeof window !== "undefined" && window.innerWidth >= 1024) {
+        setBlurred(true);
+      }
     };
     const onFocus = () => setBlurred(false);
 
     const onContext = (e: MouseEvent) => {
+      // Don't intercept on mobile touch screens
+      if (typeof window !== "undefined" && ('ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0))) {
+        return;
+      }
       e.preventDefault();
       setAlarm("Right-click is disabled on protected content");
       if (alarmTimer.current) clearTimeout(alarmTimer.current);
@@ -197,9 +204,12 @@ export function ProtectedContent({
     };
   }, [active, settings, identity, log, raiseAlarm]);
 
-  // Devtools heuristic
+  // Devtools heuristic - only on desktop browsers, ignored on mobile phones
   useEffect(() => {
     if (!active || !settings.protect_devtools_guard) return;
+    if (typeof window !== "undefined" && ('ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) || window.innerWidth < 1024)) {
+      return;
+    }
     let flagged = false;
     const t = setInterval(() => {
       const wide = window.outerWidth - window.innerWidth > 220;
