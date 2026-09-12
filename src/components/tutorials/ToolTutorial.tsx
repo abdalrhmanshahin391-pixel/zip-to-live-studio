@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Languages } from "lucide-react";
+import { ArrowRight, Languages, Lock, Sparkles } from "lucide-react";
 import { ToolDemo } from "@/components/tutorials/ToolDemo";
 import type { ToolDef } from "@/lib/site-tools";
 
@@ -32,7 +32,23 @@ export function LangSwitch({
   );
 }
 
-/** The tutorial body: animated demo + numbered steps, in the chosen language. */
+function getToolUrl(tool: ToolDef): string {
+  if (tool.demo === "cards") return "ritajet.com/study/session";
+  if (tool.demo === "qbank") return "ritajet.com/courses/question-bank";
+  if (tool.demo === "match") return "ritajet.com/study/match";
+  if (tool.demo === "summary") return "ritajet.com/study/pdf";
+  if (tool.demo === "allinone") return "ritajet.com/study/all-in-one";
+  if (tool.demo === "todo") return "ritajet.com/study/todo";
+  if (tool.demo === "calendar") return "ritajet.com/study/exams";
+  if (tool.demo === "lecture") return "ritajet.com/study/lectures";
+  if (tool.demo === "share") return "ritajet.com/share";
+  if (tool.demo === "spaces") return "ritajet.com/spaces";
+  if (tool.demo === "german") return "ritajet.com/german";
+  if (tool.demo === "timer") return "ritajet.com/study/timer";
+  return `ritajet.com${tool.href}`;
+}
+
+/** The tutorial body: animated live browser demo + numbered steps, in the chosen language. */
 export function ToolTutorial({
   tool,
   lang,
@@ -48,12 +64,13 @@ export function ToolTutorial({
 }) {
   const dir = lang === "ar" ? "rtl" : "ltr";
   const Icon = tool.icon;
+  const isAr = lang === "ar";
 
   return (
-    <div dir={dir} className={lang === "ar" ? "text-right" : undefined}>
+    <div dir={dir} className={isAr ? "text-right" : undefined}>
       <div className="flex flex-wrap items-center gap-3" dir="ltr">
         <span
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl shadow-xs"
           style={{ background: tool.soft, color: tool.ink }}
         >
           <Icon size={22} />
@@ -76,31 +93,76 @@ export function ToolTutorial({
         ) : null}
       </div>
 
-      <p className="mt-4 text-[14.5px] leading-relaxed text-[#4a453d]">{tool.line[lang]}</p>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-[#4a453d]">{tool.line[lang]}</p>
 
-      <div className="mt-4">
-        <ToolDemo tool={tool} />
+      {/* Mini-Browser Chrome Window */}
+      <div className="mt-5 overflow-hidden rounded-[22px] border border-black/[0.12] bg-[#fbf5e9] shadow-md">
+        {/* Browser Top Navigation Bar */}
+        <div className="flex items-center justify-between border-b border-black/[0.08] bg-[#efe6d5]/90 px-4 py-2.5">
+          {/* Traffic Light Window Buttons */}
+          <div className="flex items-center gap-1.5" dir="ltr">
+            <span className="h-3 w-3 rounded-full bg-[#ff5f56] border border-[#e0443e]/40" />
+            <span className="h-3 w-3 rounded-full bg-[#ffbd2e] border border-[#dea123]/40" />
+            <span className="h-3 w-3 rounded-full bg-[#27c93f] border border-[#1aab29]/40" />
+          </div>
+
+          {/* Realistic Address Bar */}
+          <div
+            className="mx-2 flex max-w-sm flex-1 items-center justify-center gap-1.5 rounded-full border border-black/[0.08] bg-white px-3 py-1 text-[11.5px] font-bold text-[#5c5446] shadow-xs"
+            dir="ltr"
+          >
+            <Lock size={11} className="text-emerald-600 shrink-0" />
+            <span className="truncate">{getToolUrl(tool)}</span>
+          </div>
+
+          {/* Live Interactive Badge */}
+          <div className="flex items-center gap-1.5" dir="ltr">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            </span>
+            <span className="hidden sm:inline text-[10px] font-black uppercase tracking-wider text-[#6e6350]">
+              {isAr ? "معاينة حية وتفاعلية" : "Live interactive preview"}
+            </span>
+          </div>
+        </div>
+
+        {/* Demo Surface */}
+        <div className="p-3.5 sm:p-4 bg-[#f8f3ea]">
+          <ToolDemo tool={tool} lang={lang} />
+        </div>
       </div>
 
-      <ol className="mt-5 space-y-2.5">
-        {tool.steps.map((s, i) => (
-          <li key={i} className="flex items-start gap-3">
-            <span
-              className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-black text-white"
-              style={{ background: tool.ink }}
+      {/* Step by step guide */}
+      <div className="mt-6">
+        <div className="text-[11px] font-black uppercase tracking-[0.14em] text-[#a1957f]">
+          {isAr ? "خطوات العمل بالتفصيل" : "How it works step-by-step"}
+        </div>
+        <ol className="mt-3 space-y-3">
+          {tool.steps.map((s, i) => (
+            <li
+              key={i}
+              className="flex items-start gap-3 rounded-xl border border-black/[0.05] bg-[#fbf5e9]/60 p-3 transition-colors hover:bg-white"
             >
-              {i + 1}
-            </span>
-            <span className="text-[14.5px] leading-relaxed text-[#3a352e]">{s[lang]}</span>
-          </li>
-        ))}
-      </ol>
+              <span
+                className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-black text-white shadow-xs"
+                style={{ background: tool.ink }}
+              >
+                {i + 1}
+              </span>
+              <span className="text-[14px] font-bold leading-relaxed text-[#3a352e]">
+                {s[lang]}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
 
       {showOpenLink ? (
         <Link
           to={tool.to}
           params={tool.params as never}
-          className="mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-black text-white"
+          className="mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-black text-white transition-all shadow-sm hover:opacity-90 active:scale-98"
           style={{ background: tool.ink }}
         >
           {tool.cta[lang]}
