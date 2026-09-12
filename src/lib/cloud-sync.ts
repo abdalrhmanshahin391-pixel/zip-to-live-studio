@@ -210,11 +210,6 @@ export function startCloudSync(): Promise<void> {
     void flush();
   });
 
-
-  window.addEventListener("beforeunload", () => {
-    void flush();
-  });
-
   return readyPromise;
 }
 

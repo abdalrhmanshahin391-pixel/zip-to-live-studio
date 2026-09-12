@@ -28,7 +28,10 @@ import { DeferredOverlays } from "@/components/DeferredOverlays";
 // Language only — the seasonal theme comes from the server-rendered head script
 // so it can never flash a stale value from localStorage.
 const themeBootScript = `(function(){try{document.documentElement.classList.remove('dark');var l='en';try{l=localStorage.getItem('ysmu-lang')==='ar'?'ar':'en';}catch(_){}document.documentElement.setAttribute('lang',l);document.documentElement.setAttribute('dir',l==='ar'?'rtl':'ltr');}catch(e){}})();`;
-const recoveryBootScript = `(function(){var m='rita-recovered-build';function stale(e){var s=String((e&&e.reason&&e.reason.message)||(e&&e.message)||'');return /dynamically imported module|ChunkLoadError|Loading chunk|Importing a module script failed/i.test(s)}function recover(e){if(!stale(e))return;try{if(sessionStorage.getItem(m)!=='1'){sessionStorage.setItem(m,'1');location.reload();return}}catch(_){}document.body.innerHTML='<main style="min-height:100vh;display:grid;place-items:center;padding:24px;font:15px/1.5 system-ui;background:#faf8f2;color:#181817"><div style="max-width:430px;text-align:center"><h1 style="font-size:24px">RitaJet needs a refresh</h1><p>The site was updated while this page was open.</p><button onclick="location.reload()" style="border:0;border-radius:999px;padding:12px 20px;background:#0071e3;color:white;font-weight:700">Reload RitaJet</button></div></main>'}addEventListener('error',recover,true);addEventListener('unhandledrejection',recover);addEventListener('pageshow',function(){try{sessionStorage.removeItem(m)}catch(_){}})})();`;
+// A stale deployment can make a lazy-loaded chunk unavailable. Retry once, then
+// stop with a readable page. The old pageshow handler cleared this guard on the
+// retry itself, which turned one persistent chunk error into an endless reload.
+const recoveryBootScript = `(function(){var m='rita-recovered-build';var ttl=300000;function clearLater(){try{if(sessionStorage.getItem(m)==='1'){setTimeout(function(){try{sessionStorage.removeItem(m)}catch(_){}},ttl)}}catch(_){}}function stale(e){var s=String((e&&e.reason&&e.reason.message)||(e&&e.message)||'');return /dynamically imported module|ChunkLoadError|Loading chunk|Importing a module script failed/i.test(s)}function recover(e){if(!stale(e))return;try{if(sessionStorage.getItem(m)!=='1'){sessionStorage.setItem(m,'1');location.reload();return}}catch(_){}document.body.innerHTML='<main style="min-height:100vh;display:grid;place-items:center;padding:24px;font:15px/1.5 system-ui;background:#faf8f2;color:#181817"><div style="max-width:430px;text-align:center"><h1 style="font-size:24px">RitaJet needs a refresh</h1><p>The site was updated while this page was open. Try again after a moment, or return home.</p><button onclick="location.reload()" style="border:0;border-radius:999px;padding:12px 20px;background:#0071e3;color:white;font-weight:700">Reload RitaJet</button></div></main>'}clearLater();addEventListener('error',recover,true);addEventListener('unhandledrejection',recover);clearLater()})();`;
 
 function NotFoundComponent() {
   return (
@@ -214,6 +217,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const boot = Route.useLoaderData();
   const router = useRouter();
+  const { user, loading } = useAuth();
 
   // Seed the caches synchronously (before the first paint) so no component
   // has to refetch global settings/copy after hydration.
@@ -227,18 +231,23 @@ function RootComponent() {
 
 
   useEffect(() => {
+    if (loading) return;
     // Sample content is only added after the account's own kit has loaded, so
     // it can never overwrite real data or race the cloud copy.
-    // Defer to idle time so initial paint, hydration, and user tap responsiveness are instantaneous.
+    // Guests do not need cloud synchronization at all, so keep its network and
+    // storage work off the public landing-page startup path.
     let cancelled = false;
     const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number })
       .requestIdleCallback;
     const run = async () => {
       if (cancelled) return;
       try {
-        const sync = await import("@/lib/cloud-sync");
-        await sync.startCloudSync();
         const seed = await import("@/lib/demo-seed");
+        if (user) {
+          const sync = await import("@/lib/cloud-sync");
+          await sync.startCloudSync();
+        }
+        if (cancelled) return;
         seed.seedDemoContent();
       } catch (error) {
         reportLovableError(error, { boundary: "background_startup" });
@@ -251,7 +260,7 @@ function RootComponent() {
       if (idle && cancelIdle) cancelIdle(id as number);
       else window.clearTimeout(id as number);
     };
-  }, []);
+  }, [loading, user?.id]);
 
 
   useEffect(() => {
@@ -399,7 +408,7 @@ function DeviceTracker() {
           // reactivation screen instead of silently signing them out, so they
           // can redeem a code or contact support. Admins never hit this path.
           if (window.location.pathname !== "/locked") {
-            window.location.href = "/locked";
+            window.location.replace("/locked");
           }
         }
       } catch {
