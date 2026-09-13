@@ -21,8 +21,6 @@ import { avatarTone, useAvatarUrl } from "@/lib/avatars";
 import { RitaBrand } from "@/components/brand/RitaBrand";
 import { StartLearningLink } from "@/components/StartLearningLink";
 
-import { NAV_GROUPS } from "@/components/site-nav";
-
 const SIMPLE_LINKS: { to: string; label: string }[] = [
   { to: "/tutorial", label: "Tutorial" },
 ];
@@ -235,49 +233,41 @@ export function ProHeader({ variant = "transparent" }: { variant?: "transparent"
           )}
         </div>
 
-        <button
-          type="button"
-          aria-label="Menu"
-          onClick={() => setSheet((s) => !s)}
-          className={`${headerText} lg:hidden`}
-        >
-          {sheet ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        <div className="flex items-center gap-2.5 lg:hidden">
+          <StartLearningLink
+            className="rita-btn rita-btn-primary !h-9 !px-3.5 !text-[13px] font-bold shadow-xs"
+          >
+            Start learning
+          </StartLearningLink>
+
+          <button
+            type="button"
+            aria-label="Menu"
+            onClick={() => setSheet((s) => !s)}
+            className={`${headerText} p-1`}
+          >
+            {sheet ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </div>
 
       {sheet && (
         <div className="rita-panel relative mx-4 max-h-[80vh] overflow-y-auto rounded-2xl border border-black/[0.07] p-3 shadow-[0_28px_70px_-30px_rgba(60,45,20,0.45)] lg:hidden">
-          <StartLearningLink
-            onOpen={() => setSheet(false)}
-            className="rita-ink block w-full border-b border-black/[0.06] px-3 py-3 text-left text-[16px] font-semibold"
-          >
-            Start learning
-          </StartLearningLink>
-          {NAV_GROUPS.flatMap((g) => g.columns.flatMap((c) => c.items)).map((i) => (
-            <Link
-              key={i.to + i.label}
-              to={i.to as never}
-              params={i.params as never}
-              onClick={() => setSheet(false)}
-              className="rita-ink flex items-center gap-3 border-b border-black/[0.06] px-3 py-3 text-[15px]"
-              style={{ fontFamily: "var(--font-grotesk)" }}
+          <div className="pb-2 pt-1">
+            <StartLearningLink
+              onOpen={() => setSheet(false)}
+              className="rita-btn rita-btn-primary !w-full justify-center !py-3 !text-[15px] font-bold shadow-xs"
             >
-              <span
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-lg"
-                style={{ background: i.soft, color: i.ink }}
-              >
-                <i.icon size={15} />
-              </span>
-              {i.label}
-            </Link>
-          ))}
-          <div className="mx-1 my-2 border-t border-white/10" />
+              Start learning
+            </StartLearningLink>
+          </div>
+
           {SIMPLE_LINKS.map((l) => (
             <Link
               key={l.to}
               to={l.to as never}
               onClick={() => setSheet(false)}
-                className="rita-ink block border-b border-black/[0.06] px-3 py-3 text-[16px]"
+              className="rita-ink block border-b border-black/[0.06] px-3 py-3 text-[16px]"
               style={{ fontFamily: "var(--font-grotesk)" }}
             >
               {l.label}
