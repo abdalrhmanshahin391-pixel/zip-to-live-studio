@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { getPublicOfferMeta } from "@/lib/offer-center.functions";
 import toolkitArt from "@/assets/toolkit-girl-study.webp.asset.json";
 
 export const Route = createFileRoute("/offers")({
@@ -75,6 +76,12 @@ function OffersPage() {
       if (error) throw error;
       return (data ?? []) as Offer[];
     },
+  });
+
+  const { data: publicMeta } = useQuery({
+    queryKey: ["public-offer-meta"],
+    queryFn: () => getPublicOfferMeta(),
+    staleTime: 30_000,
   });
 
   async function claim(offer: Offer) {
@@ -167,6 +174,7 @@ function OffersPage() {
                 busy={busy === o.id}
                 onClaim={() => claim(o)}
                 signedIn={!!user}
+                meta={publicMeta?.[o.id]}
               />
             ))}
           </div>
@@ -188,6 +196,7 @@ function OfferCard({
   busy,
   onClaim,
   signedIn,
+  meta,
 }: {
   offer: Offer;
   code: string;
@@ -195,6 +204,7 @@ function OfferCard({
   busy: boolean;
   onClaim: () => void;
   signedIn: boolean;
+  meta?: { code: string | null; showPlaceholder: boolean };
 }) {
   const left = leftFrom(offer.expires_at);
   const months = Math.round(offer.duration_days / 30);
@@ -262,7 +272,11 @@ function OfferCard({
               <input
                 value={code}
                 onChange={(e) => onCode(e.target.value.toUpperCase())}
-                placeholder="YSMU"
+                placeholder={
+                  meta?.showPlaceholder !== false && (meta?.code || "YSMU")
+                    ? meta?.code || "YSMU"
+                    : "Enter promo code"
+                }
                 className="w-full bg-transparent text-[14px] font-bold tracking-wider text-[#2b2620] placeholder:text-[#b6ada0] focus:outline-none"
               />
             </label>
@@ -281,7 +295,11 @@ function OfferCard({
               <input
                 value={code}
                 onChange={(e) => onCode(e.target.value.toUpperCase())}
-                placeholder="YSMU"
+                placeholder={
+                  meta?.showPlaceholder !== false && (meta?.code || "YSMU")
+                    ? meta?.code || "YSMU"
+                    : "Enter promo code"
+                }
                 className="mt-2 w-full rounded-2xl border border-black/10 bg-[#fdf7ee] px-4 py-2.5 text-[14px] font-bold tracking-wider text-[#2b2620] placeholder:text-[#b6ada0] focus:outline-none"
               />
             </details>

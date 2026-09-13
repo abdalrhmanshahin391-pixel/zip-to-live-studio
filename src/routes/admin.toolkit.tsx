@@ -194,6 +194,21 @@ function AdminToolkit() {
           codes only.
         </p>
 
+        <div className="mb-6 flex items-center justify-between rounded-2xl border-2 border-emerald-800/30 bg-emerald-50 p-4 text-emerald-950">
+          <div>
+            <p className="text-sm font-black">Looking for the new Offer Center?</p>
+            <p className="text-xs text-emerald-800">
+              Manage plans, duration, promo codes, background placeholders (YSMU), and student announcements.
+            </p>
+          </div>
+          <Link
+            to="/admin/offers"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-800 px-4 py-2 text-xs font-black text-white shadow-xs hover:bg-emerald-900"
+          >
+            <Gift size={14} /> Open Offer Center →
+          </Link>
+        </div>
+
         <section className="rounded-2xl border-2 border-border bg-card p-6">
           <label className="flex items-center gap-3 text-sm font-bold">
             <input
