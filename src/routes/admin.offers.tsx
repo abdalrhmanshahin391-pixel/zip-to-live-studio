@@ -139,7 +139,12 @@ function AdminOfferCenter() {
         setAccent(activeOffer.accent || "#2f7d55");
         setImageUrl(activeOffer.image_url || "");
 
-        const linkedCode = data.codes.find((c) => c.offer_id === activeOffer.id);
+        const linkedCode =
+          data.codes.find((c) => c.offer_id === activeOffer.id && c.is_active) ||
+          data.codes.find((c) => c.offer_id === activeOffer.id) ||
+          data.codes.find((c) => c.plan_slug === (activeOffer.plan_slug || "toolkit") && c.is_active) ||
+          data.codes[0];
+
         if (linkedCode) {
           setPromoCode(linkedCode.code);
           setShowPlaceholder(linkedCode.label !== "hide_placeholder");
@@ -177,7 +182,11 @@ function AdminOfferCenter() {
     setIsActive(o.is_active ?? true);
     setAccent(o.accent || "#2f7d55");
     setImageUrl(o.image_url || "");
-    const linkedCode = data?.codes.find((c) => c.offer_id === o.id);
+    const linkedCode =
+      data?.codes.find((c) => c.offer_id === o.id && c.is_active) ||
+      data?.codes.find((c) => c.offer_id === o.id) ||
+      data?.codes.find((c) => c.plan_slug === (o.plan_slug || "toolkit") && c.is_active) ||
+      data?.codes[0];
     if (linkedCode) {
       setPromoCode(linkedCode.code);
       setShowPlaceholder(linkedCode.label !== "hide_placeholder");
@@ -199,13 +208,15 @@ function AdminOfferCenter() {
   const handleSave = async () => {
     let targetId = selectedOfferId || data?.offers?.[0]?.id;
     if (!targetId) {
-      targetId = crypto.randomUUID();
+      const existing = data?.offers?.find((o) => o.slug === "toolkit");
+      if (existing) targetId = existing.id;
     }
 
     const finalTitle = title.trim() || "The Rita Toolkit — free right now";
     const finalCode = promoCode.trim().toUpperCase() || "YSMU";
     const finalPlan = planSlug || "toolkit";
 
+    setPromoCode(finalCode);
     setSaving(true);
     try {
       const payload = {
@@ -238,19 +249,25 @@ function AdminOfferCenter() {
         offersPageEnabled: pageEnabled,
       };
 
-      // 1. TanStack Start server function save
+      // 1. TanStack Start server function save (runs as verified admin)
+      let srvSaved = false;
       try {
-        await saveOfferCenterConfig({ data: payload });
+        const srvRes = await saveOfferCenterConfig({ data: payload });
+        if (srvRes?.offerId) {
+          targetId = srvRes.offerId;
+          setSelectedOfferId(srvRes.offerId);
+        }
+        srvSaved = true;
       } catch (srvErr) {
         console.warn("Server action failed, proceeding with direct client save:", srvErr);
       }
 
       // 2. Direct browser client save (authenticated admin session in Supabase)
       try {
-        const { data: exOffer } = await (supabase.from as any)("special_offers")
-          .select("id")
-          .eq("id", targetId)
-          .maybeSingle();
+        let existingOfferId = targetId;
+        const { data: exOffer } = targetId
+          ? await (supabase.from as any)("special_offers").select("id").eq("id", targetId).maybeSingle()
+          : { data: null };
 
         const offerFields = {
           title: payload.offer.title,
@@ -267,28 +284,54 @@ function AdminOfferCenter() {
         };
 
         if (exOffer?.id) {
-          await (supabase.from as any)("special_offers").update(offerFields).eq("id", targetId);
+          existingOfferId = exOffer.id;
+          await (supabase.from as any)("special_offers").update(offerFields).eq("id", exOffer.id);
         } else {
-          await (supabase.from as any)("special_offers").insert({ id: targetId, slug: "toolkit", ...offerFields });
+          const { data: bySlug } = await (supabase.from as any)("special_offers").select("id").eq("slug", "toolkit").maybeSingle();
+          if (bySlug?.id) {
+            existingOfferId = bySlug.id;
+            await (supabase.from as any)("special_offers").update(offerFields).eq("id", bySlug.id);
+          } else {
+            const { data: ins } = await (supabase.from as any)("special_offers").insert({ slug: "toolkit", ...offerFields }).select("id").maybeSingle();
+            if (ins?.id) existingOfferId = ins.id;
+          }
         }
 
-        const { data: exCode } = await (supabase.from as any)("toolkit_codes")
-          .select("id")
-          .eq("offer_id", targetId)
-          .maybeSingle();
+        if (existingOfferId) {
+          setSelectedOfferId(existingOfferId);
+        }
 
         const codeFields = {
           code: finalCode,
+          offer_id: existingOfferId || targetId,
           plan_slug: finalPlan,
           label: showPlaceholder ? "show_placeholder" : "hide_placeholder",
           is_active: true,
           max_uses: maxUses ? Number(maxUses) : null,
         };
 
+        const { data: exCodeByOffer } = existingOfferId
+          ? await (supabase.from as any)("toolkit_codes").select("id").eq("offer_id", existingOfferId).maybeSingle()
+          : { data: null };
+
+        const { data: exCodeByStr } = await (supabase.from as any)("toolkit_codes")
+          .select("id")
+          .ilike("code", finalCode)
+          .maybeSingle();
+
+        const { data: exCodeByPlan } = await (supabase.from as any)("toolkit_codes")
+          .select("id")
+          .eq("plan_slug", finalPlan)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const exCode = exCodeByOffer || exCodeByStr || exCodeByPlan;
+
         if (exCode?.id) {
           await (supabase.from as any)("toolkit_codes").update(codeFields).eq("id", exCode.id);
         } else {
-          await (supabase.from as any)("toolkit_codes").insert({ ...codeFields, offer_id: targetId });
+          await (supabase.from as any)("toolkit_codes").insert(codeFields);
         }
 
         const { data: exSiteAnn } = await (supabase.from as any)("site_announcements")
@@ -335,20 +378,19 @@ function AdminOfferCenter() {
         await (supabase.from as any)("site_settings").update({ offers_page_enabled: pageEnabled }).eq("id", true);
       } catch (clientErr) {
         console.error("Direct client update error:", clientErr);
+        if (!srvSaved) throw clientErr;
       }
 
-      setSelectedOfferId(targetId);
       toast.success("Offer Center changes saved and published!");
 
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["admin-offer-center"] }),
         qc.invalidateQueries({ queryKey: ["offers-list"] }),
-        qc.invalidateQueries({ queryKey: ["announcements"] }),
+        qc.invalidateQueries({ queryKey: ["public-offer-meta"] }),
+        qc.invalidateQueries({ queryKey: ["toolkit-codes"] }),
+        qc.invalidateQueries({ queryKey: ["admin-offers"] }),
         qc.invalidateQueries({ queryKey: ["site-announcements"] }),
         qc.invalidateQueries({ queryKey: ["site-announcements-all"] }),
-        qc.invalidateQueries({ queryKey: ["ritax-live"] }),
-        qc.invalidateQueries({ queryKey: ["ritax-all"] }),
-        qc.invalidateQueries({ queryKey: ["ritax-stats"] }),
         qc.invalidateQueries({ queryKey: ["toolkit-settings"] }),
       ]);
     } catch (err: any) {

@@ -69,7 +69,13 @@ export const getOfferCenterData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<OfferCenterData> => {
     await assertAdmin(context);
-    const sb = context.supabase;
+    let sb: any = context.supabase;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+      if (supabaseAdmin) sb = supabaseAdmin;
+    } catch {
+      // fallback to context.supabase
+    }
 
     const [offersRes, plansRes, codesRes, siteAnnRes, ritaxRes, settingsRes] = await Promise.all([
       (sb.from as any)("special_offers").select("*").order("sort").catch(() => ({ data: null })),
@@ -95,39 +101,51 @@ export const getOfferCenterData = createServerFn({ method: "GET" })
     let offers = (offersRes?.data ?? []) as OfferCenterOffer[];
     let codes = (codesRes?.data ?? []) as OfferCenterCode[];
 
-    // Auto-seed default toolkit offer if none exist in the database
+    // Auto-seed or locate default toolkit offer
     if (offers.length === 0) {
       try {
-        const defaultOffer = {
-          slug: "toolkit",
-          title: "The Rita Toolkit — free right now",
-          subtitle: "Every study tool that costs us nothing to run, unlocked on your account for three months.",
-          badge: "FREE FOR 3 MONTHS",
-          bullets: [
-            "Unlimited flashcards",
-            "Unlimited to-do tasks",
-            "Unlimited calendar entries",
-            "Unlimited classrooms you create",
-            "Join unlimited classrooms",
-          ],
-          plan_slug: "toolkit",
-          duration_days: 90,
-          requires_code: true,
-          is_active: true,
-          accent: "#2f7d55",
-          sort: 0,
-        };
-        const { data: inserted } = await (sb.from as any)("special_offers")
-          .insert(defaultOffer)
+        const { data: existingOffer } = await (sb.from as any)("special_offers")
           .select("*")
+          .eq("slug", "toolkit")
           .maybeSingle();
 
-        if (inserted) {
-          offers = [inserted];
+        if (existingOffer) {
+          offers = [existingOffer];
+        } else {
+          const defaultOffer = {
+            slug: "toolkit",
+            title: "The Rita Toolkit — free right now",
+            subtitle: "Every study tool that costs us nothing to run, unlocked on your account for three months.",
+            badge: "FREE FOR 3 MONTHS",
+            bullets: [
+              "Unlimited flashcards",
+              "Unlimited to-do tasks",
+              "Unlimited calendar entries",
+              "Unlimited classrooms you create",
+              "Join unlimited classrooms",
+            ],
+            plan_slug: "toolkit",
+            duration_days: 90,
+            requires_code: true,
+            is_active: true,
+            accent: "#2f7d55",
+            sort: 0,
+          };
+          const { data: inserted } = await (sb.from as any)("special_offers")
+            .insert(defaultOffer)
+            .select("*")
+            .maybeSingle();
+
+          if (inserted) {
+            offers = [inserted];
+          }
+        }
+
+        if (offers[0]?.id && codes.length === 0) {
           const { data: codeInserted } = await (sb.from as any)("toolkit_codes")
             .insert({
               code: "YSMU",
-              offer_id: inserted.id,
+              offer_id: offers[0].id,
               plan_slug: "toolkit",
               label: "show_placeholder",
               is_active: true,
@@ -135,11 +153,22 @@ export const getOfferCenterData = createServerFn({ method: "GET" })
             .select("*")
             .maybeSingle();
           if (codeInserted) {
-            codes = [codeInserted, ...codes];
+            codes = [codeInserted];
           }
         }
       } catch (err) {
         console.warn("Could not auto-seed default special offer:", err);
+      }
+    }
+
+    // Ensure any unlinked codes are linked to the primary offer
+    if (offers.length > 0 && codes.length > 0) {
+      const primaryOfferId = offers[0].id;
+      for (const c of codes) {
+        if (!c.offer_id) {
+          c.offer_id = primaryOfferId;
+          await (sb.from as any)("toolkit_codes").update({ offer_id: primaryOfferId }).eq("id", c.id).catch(() => undefined);
+        }
       }
     }
 
@@ -186,7 +215,13 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const sb = context.supabase;
+    let sb: any = context.supabase;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+      if (supabaseAdmin) sb = supabaseAdmin;
+    } catch {
+      // fallback to context.supabase
+    }
 
     // 1. Update or upsert the special_offer in database
     const { offer, primaryCode, announcement, offersPageEnabled } = data;
@@ -205,32 +240,34 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
     if (offer.image_url !== undefined) offerPatch.image_url = offer.image_url;
 
     let targetOfferId = offer.id;
+    let existingOffer: any = null;
+
     if (targetOfferId) {
-      const { data: existingOffer } = await (sb.from as any)("special_offers")
-        .select("id")
+      const { data: byId } = await (sb.from as any)("special_offers")
+        .select("id, slug")
         .eq("id", targetOfferId)
         .maybeSingle();
+      existingOffer = byId;
+    }
 
-      if (existingOffer?.id) {
-        const { error: offerErr } = await (sb.from as any)("special_offers")
-          .update(offerPatch)
-          .eq("id", targetOfferId);
-        if (offerErr) throw offerErr;
-      } else {
-        const { data: inserted, error: offerErr } = await (sb.from as any)("special_offers")
-          .insert({
-            id: targetOfferId,
-            slug: offer.slug || "toolkit",
-            ...offerPatch,
-          })
-          .select("id")
-          .maybeSingle();
-        if (offerErr) throw offerErr;
-        if (inserted?.id) targetOfferId = inserted.id;
-      }
+    if (!existingOffer) {
+      const { data: bySlug } = await (sb.from as any)("special_offers")
+        .select("id, slug")
+        .eq("slug", offer.slug || "toolkit")
+        .maybeSingle();
+      existingOffer = bySlug;
+    }
+
+    if (existingOffer?.id) {
+      targetOfferId = existingOffer.id;
+      const { error: offerErr } = await (sb.from as any)("special_offers")
+        .update(offerPatch)
+        .eq("id", targetOfferId);
+      if (offerErr) throw offerErr;
     } else {
       const { data: inserted, error: offerErr } = await (sb.from as any)("special_offers")
         .insert({
+          id: targetOfferId || crypto.randomUUID(),
           slug: offer.slug || "toolkit",
           ...offerPatch,
         })
@@ -241,36 +278,52 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
     }
 
     // 2. Sync / Upsert primary promo code in toolkit_codes
-    const codeClean = (primaryCode.code || "").trim().toUpperCase();
-    if (codeClean && targetOfferId) {
+    const codeClean = (primaryCode.code || "").trim().toUpperCase() || "YSMU";
+    if (targetOfferId) {
       const codeLabel = primaryCode.showPlaceholder ? "show_placeholder" : "hide_placeholder";
+      const codeFields = {
+        code: codeClean,
+        offer_id: targetOfferId,
+        plan_slug: offer.plan_slug || "toolkit",
+        label: codeLabel,
+        is_active: true,
+        max_uses: primaryCode.maxUses ?? null,
+      };
 
-      const { data: existingCode } = await (sb.from as any)("toolkit_codes")
+      // Check existing code by offer_id
+      const { data: existingByOffer } = await (sb.from as any)("toolkit_codes")
         .select("id, code, offer_id")
         .eq("offer_id", targetOfferId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (existingCode) {
-        await (sb.from as any)("toolkit_codes")
-          .update({
-            code: codeClean,
-            plan_slug: offer.plan_slug || "toolkit",
-            label: codeLabel,
-            is_active: true,
-            max_uses: primaryCode.maxUses ?? null,
-          })
-          .eq("id", existingCode.id);
+      // Check existing code by code string
+      const { data: existingByCode } = await (sb.from as any)("toolkit_codes")
+        .select("id, code, offer_id")
+        .ilike("code", codeClean)
+        .limit(1)
+        .maybeSingle();
+
+      // Check existing code by plan_slug
+      const { data: existingByPlan } = await (sb.from as any)("toolkit_codes")
+        .select("id, code, offer_id")
+        .eq("plan_slug", offer.plan_slug || "toolkit")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const codeTarget = existingByOffer || existingByCode || existingByPlan;
+
+      if (codeTarget?.id) {
+        const { error: codeErr } = await (sb.from as any)("toolkit_codes")
+          .update(codeFields)
+          .eq("id", codeTarget.id);
+        if (codeErr) throw codeErr;
       } else {
-        await (sb.from as any)("toolkit_codes").insert({
-          code: codeClean,
-          offer_id: targetOfferId,
-          plan_slug: offer.plan_slug || "toolkit",
-          label: codeLabel,
-          is_active: true,
-          max_uses: primaryCode.maxUses ?? null,
-        });
+        const { error: codeErr } = await (sb.from as any)("toolkit_codes")
+          .insert(codeFields);
+        if (codeErr) throw codeErr;
       }
     }
 
@@ -354,16 +407,22 @@ export const getPublicOfferMeta = createServerFn({ method: "GET" }).handler(
   async (): Promise<Record<string, { code: string | null; showPlaceholder: boolean }>> => {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
-      const { data: codes } = await (supabaseAdmin.from as any)("toolkit_codes")
-        .select("offer_id, code, label, is_active")
-        .eq("is_active", true);
+      const [offersRes, codesRes] = await Promise.all([
+        (supabaseAdmin.from as any)("special_offers").select("id, slug, is_active"),
+        (supabaseAdmin.from as any)("toolkit_codes")
+          .select("id, offer_id, code, label, is_active, plan_slug")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false }),
+      ]);
+
+      const offers = (offersRes?.data ?? []) as any[];
+      const codes = (codesRes?.data ?? []) as any[];
 
       const result: Record<string, { code: string | null; showPlaceholder: boolean }> = {};
       if (Array.isArray(codes)) {
         for (const c of codes) {
           if (!c.offer_id) continue;
           const show = c.label === "show_placeholder";
-          // If already mapped and this one is show_placeholder, give preference to it
           if (!result[c.offer_id] || show) {
             result[c.offer_id] = {
               code: show ? c.code : null,
@@ -372,6 +431,18 @@ export const getPublicOfferMeta = createServerFn({ method: "GET" }).handler(
           }
         }
       }
+
+      // Ensure active offer has metadata even if code's offer_id was null
+      const activeOffer = offers.find((o) => o.slug === "toolkit" && o.is_active) || offers[0];
+      const primaryCode = codes[0];
+      if (activeOffer?.id && primaryCode && !result[activeOffer.id]) {
+        const show = primaryCode.label !== "hide_placeholder";
+        result[activeOffer.id] = {
+          code: show ? primaryCode.code : null,
+          showPlaceholder: show,
+        };
+      }
+
       return result;
     } catch {
       return {};
@@ -390,12 +461,18 @@ export const claimOfferAction = createServerFn({ method: "POST" })
     const userId = context.userId;
     if (!userId) throw new Error("Please sign in first to claim this offer.");
 
-    const sb = context.supabase;
+    let sb: any = context.supabase;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+      if (supabaseAdmin) sb = supabaseAdmin;
+    } catch {
+      // fallback
+    }
 
     // 1. Try atomic database RPC claim_offer first
     const codeStrInput = (data.code || "").trim().toUpperCase();
     try {
-      const { data: rpcRes, error: rpcErr } = await (sb.rpc as any)("claim_offer", {
+      const { data: rpcRes, error: rpcErr } = await (context.supabase.rpc as any)("claim_offer", {
         _offer_id: data.offerId,
         _code: codeStrInput || null,
       });
@@ -448,7 +525,7 @@ export const claimOfferAction = createServerFn({ method: "POST" })
     }
 
     // 4. Resolve code to use
-    let codeStr = (data.code || "").trim().toUpperCase();
+    let codeStr = codeStrInput;
     let codeRow: any = null;
 
     if (offer.requires_code || codeStr) {
@@ -464,6 +541,17 @@ export const claimOfferAction = createServerFn({ method: "POST" })
         if (autoCode) {
           codeStr = autoCode.code;
           codeRow = autoCode;
+        } else {
+          const { data: latestActive } = await (sb.from as any)("toolkit_codes")
+            .select("*")
+            .eq("is_active", true)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (latestActive) {
+            codeStr = latestActive.code;
+            codeRow = latestActive;
+          }
         }
       }
 
@@ -471,7 +559,7 @@ export const claimOfferAction = createServerFn({ method: "POST" })
         throw new Error("This offer needs a promo code.");
       }
 
-      // If codeRow not found yet, look it up by code string
+      // If codeRow not found yet, look it up by code string (case-insensitive)
       if (!codeRow) {
         const { data: foundCode } = await (sb.from as any)("toolkit_codes")
           .select("*")
@@ -485,8 +573,9 @@ export const claimOfferAction = createServerFn({ method: "POST" })
         throw new Error("That code does not work.");
       }
 
-      if (codeRow.offer_id && codeRow.offer_id !== offer.id) {
-        throw new Error("That code is for another offer.");
+      // If codeRow is unlinked or linked to old offer, link it to this active offer
+      if (!codeRow.offer_id) {
+        await (sb.from as any)("toolkit_codes").update({ offer_id: offer.id }).eq("id", codeRow.id);
       }
 
       if (codeRow.expires_at && new Date(codeRow.expires_at) < new Date()) {
@@ -496,7 +585,7 @@ export const claimOfferAction = createServerFn({ method: "POST" })
       if (
         codeRow.max_uses !== null &&
         codeRow.max_uses !== undefined &&
-        codeRow.used_count >= codeRow.max_uses
+        (codeRow.used_count || 0) >= codeRow.max_uses
       ) {
         throw new Error("That code is used up.");
       }
