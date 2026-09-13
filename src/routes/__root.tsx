@@ -23,6 +23,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { needsOnboarding } from "@/lib/onboarding";
 import "@/i18n";
 import { DeferredOverlays } from "@/components/DeferredOverlays";
+import { AnnouncementBar } from "@/components/AnnouncementBar";
 
 
 // Language only — the seasonal theme comes from the server-rendered head script
@@ -297,6 +298,7 @@ function RootComponent() {
           <PresenceTracker />
           <DeviceTracker />
           <OnboardingGate />
+          <AnnouncementBar />
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           <GlobalFooter />

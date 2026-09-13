@@ -11,9 +11,8 @@ export function DeferredOverlays() {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const [banner, announce, ritax, help, tour, auth, toaster, phoneTip] = await Promise.all([
+      const [banner, ritax, help, tour, auth, toaster, phoneTip] = await Promise.all([
         import("@/components/PaymentTestModeBanner"),
-        import("@/components/AnnouncementBar"),
         import("@/components/RitaXAnnouncements"),
         import("@/components/tutorials/HowItWorksButton"),
         import("@/components/tutorials/WelcomeTour"),
@@ -24,12 +23,11 @@ export function DeferredOverlays() {
         console.warn("Optional tools could not be loaded", error);
         return [];
       });
-      if (!banner || !announce || !ritax || !help || !tour || !auth || !toaster) return;
+      if (!banner || !ritax || !help || !tour || !auth || !toaster) return;
       if (cancelled) return;
       const Toasts = () => <toaster.Toaster richColors position="top-right" />;
       const activeParts = [
         banner.PaymentTestModeBanner,
-        announce.AnnouncementBar,
         ritax.RitaXAnnouncements,
         help.ToolTutorialLauncher,
         tour.WelcomeTour,

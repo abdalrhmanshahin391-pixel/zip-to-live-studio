@@ -328,31 +328,7 @@ function AdminOfferCenter() {
           .limit(1)
           .maybeSingle();
 
-        if (annEnabled) {
-          const ritaxData = {
-            name: "Special Offer - Study Toolkit",
-            status: "live",
-            layout: annStyle === "strip" ? "bar" : annStyle === "floating" ? "sheet" : "bar",
-            theme: "mint",
-            accent,
-            eyebrow: "🎁 SPECIAL OFFER",
-            title: payload.announcement.title,
-            body: payload.announcement.body,
-            emoji: "🎁",
-            confetti: true,
-            primary_label: payload.announcement.button_label,
-            primary_href: "/offers",
-            audience: "all",
-            frequency: "always",
-            priority: 100,
-            updated_at: new Date().toISOString(),
-          };
-          if (exRitax?.id) {
-            await (supabase.from as any)("announcements").update(ritaxData).eq("id", exRitax.id);
-          } else {
-            await (supabase.from as any)("announcements").insert(ritaxData);
-          }
-        } else if (exRitax?.id) {
+        if (exRitax?.id) {
           await (supabase.from as any)("announcements").update({ status: "paused" }).eq("id", exRitax.id);
         }
 

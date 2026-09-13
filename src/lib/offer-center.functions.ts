@@ -318,7 +318,7 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
       console.error("Failed to sync site_announcements:", siteErr);
     }
 
-    // 3B. Sync public.announcements (RitaX popup / sheet / bar)
+    // 3B. Deactivate duplicate RitaX announcement so it doesn't conflict with site banner
     try {
       const { data: existingRitax } = await (sb.from as any)("announcements")
         .select("id")
@@ -326,41 +326,7 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
         .limit(1)
         .maybeSingle();
 
-      if (announcement.enabled) {
-        const ritaxLayout =
-          announcement.style === "spotlight"
-            ? "modal"
-            : announcement.style === "floating"
-            ? "sheet"
-            : "bar";
-
-        const ritaxPayload = {
-          name: "Special Offer - Study Toolkit",
-          status: "live",
-          layout: ritaxLayout,
-          theme: "mint",
-          accent: announcement.accent || "#2f7d55",
-          eyebrow: "🎁 SPECIAL OFFER",
-          title: announcement.title.trim() || "🎁 Special Offer: The Rita Toolkit is free right now!",
-          body: announcement.body.trim() || "Claim your free 3 months access with code " + (codeClean || "YSMU") + ".",
-          emoji: "🎁",
-          confetti: true,
-          primary_label: announcement.button_label.trim() || "Claim offer →",
-          primary_href: "/offers",
-          audience: "all",
-          frequency: "always",
-          priority: 100,
-          updated_at: new Date().toISOString(),
-        };
-
-        if (existingRitax?.id) {
-          await (sb.from as any)("announcements")
-            .update(ritaxPayload)
-            .eq("id", existingRitax.id);
-        } else {
-          await (sb.from as any)("announcements").insert(ritaxPayload);
-        }
-      } else if (existingRitax?.id) {
+      if (existingRitax?.id) {
         await (sb.from as any)("announcements")
           .update({ status: "paused", updated_at: new Date().toISOString() })
           .eq("id", existingRitax.id);
