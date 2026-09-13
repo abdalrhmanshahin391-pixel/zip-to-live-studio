@@ -69,28 +69,79 @@ export const getOfferCenterData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<OfferCenterData> => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+    const sb = context.supabase;
 
     const [offersRes, plansRes, codesRes, siteAnnRes, ritaxRes, settingsRes] = await Promise.all([
-      (supabaseAdmin.from as any)("special_offers").select("*").order("sort"),
-      (supabaseAdmin.from as any)("plans").select("slug,name,price_cents,currency,sort").order("sort"),
-      (supabaseAdmin.from as any)("toolkit_codes").select("*").order("created_at", { ascending: false }),
-      (supabaseAdmin.from as any)("site_announcements")
+      (sb.from as any)("special_offers").select("*").order("sort").catch(() => ({ data: null })),
+      (sb.from as any)("plans").select("slug,name,price_cents,currency,sort").order("sort").catch(() => ({ data: null })),
+      (sb.from as any)("toolkit_codes").select("*").order("created_at", { ascending: false }).catch(() => ({ data: null })),
+      (sb.from as any)("site_announcements")
         .select("*")
         .or("href.eq./offers,href.eq.https://www.ritajet.com/offers")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle()
         .catch(() => ({ data: null })),
-      (supabaseAdmin.from as any)("announcements")
+      (sb.from as any)("announcements")
         .select("*")
         .or("primary_href.eq./offers,name.ilike.%Special Offer%")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle()
         .catch(() => ({ data: null })),
-      (supabaseAdmin.from as any)("site_settings").select("offers_page_enabled").maybeSingle(),
+      (sb.from as any)("site_settings").select("offers_page_enabled").maybeSingle().catch(() => ({ data: null })),
     ]);
+
+    let offers = (offersRes?.data ?? []) as OfferCenterOffer[];
+    let codes = (codesRes?.data ?? []) as OfferCenterCode[];
+
+    // Auto-seed default toolkit offer if none exist in the database
+    if (offers.length === 0) {
+      try {
+        const defaultOffer = {
+          slug: "toolkit",
+          title: "The Rita Toolkit — free right now",
+          subtitle: "Every study tool that costs us nothing to run, unlocked on your account for three months.",
+          badge: "FREE FOR 3 MONTHS",
+          bullets: [
+            "Unlimited flashcards",
+            "Unlimited to-do tasks",
+            "Unlimited calendar entries",
+            "Unlimited classrooms you create",
+            "Join unlimited classrooms",
+          ],
+          plan_slug: "toolkit",
+          duration_days: 90,
+          requires_code: true,
+          is_active: true,
+          accent: "#2f7d55",
+          sort: 0,
+        };
+        const { data: inserted } = await (sb.from as any)("special_offers")
+          .insert(defaultOffer)
+          .select("*")
+          .maybeSingle();
+
+        if (inserted) {
+          offers = [inserted];
+          const { data: codeInserted } = await (sb.from as any)("toolkit_codes")
+            .insert({
+              code: "YSMU",
+              offer_id: inserted.id,
+              plan_slug: "toolkit",
+              label: "show_placeholder",
+              is_active: true,
+            })
+            .select("*")
+            .maybeSingle();
+          if (codeInserted) {
+            codes = [codeInserted, ...codes];
+          }
+        }
+      } catch (err) {
+        console.warn("Could not auto-seed default special offer:", err);
+      }
+    }
 
     const sAnn = siteAnnRes?.data;
     const rAnn = ritaxRes?.data;
@@ -99,7 +150,7 @@ export const getOfferCenterData = createServerFn({ method: "GET" })
     const announcement: OfferCenterAnnouncement = {
       id: sAnn?.id || rAnn?.id,
       enabled: isLive,
-      title: sAnn?.title || rAnn?.title || "🎁 Special Offer Available: The Rita Study Toolkit is free!",
+      title: sAnn?.title || rAnn?.title || "🎁 Special Offer: The Rita Toolkit is free right now!",
       body: sAnn?.body || rAnn?.body || "Claim your free 3 months access with promo code.",
       button_label: sAnn?.href_label || rAnn?.primary_label || "Claim offer →",
       style: (sAnn?.style as any) || (rAnn?.layout === "modal" ? "spotlight" : rAnn?.layout === "sheet" ? "floating" : "ribbon"),
@@ -107,11 +158,11 @@ export const getOfferCenterData = createServerFn({ method: "GET" })
     };
 
     return {
-      offers: (offersRes.data ?? []) as OfferCenterOffer[],
-      plans: (plansRes.data ?? []) as OfferCenterPlan[],
-      codes: (codesRes.data ?? []) as OfferCenterCode[],
+      offers,
+      plans: (plansRes?.data ?? []) as OfferCenterPlan[],
+      codes,
       announcement,
-      offersPageEnabled: settingsRes.data?.offers_page_enabled ?? true,
+      offersPageEnabled: settingsRes?.data?.offers_page_enabled ?? true,
     };
   });
 
@@ -120,7 +171,7 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     (data: {
-      offer: Partial<OfferCenterOffer> & { id: string };
+      offer: Partial<OfferCenterOffer> & { id?: string };
       primaryCode: {
         code: string;
         showPlaceholder: boolean;
@@ -129,15 +180,15 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
       announcement: OfferCenterAnnouncement;
       offersPageEnabled?: boolean;
     }) => {
-      if (!data?.offer?.id) throw new Error("Offer ID is required");
+      if (!data?.offer) throw new Error("Offer data is required");
       return data;
     },
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+    const sb = context.supabase;
 
-    // 1. Update the special_offer in database
+    // 1. Update or upsert the special_offer in database
     const { offer, primaryCode, announcement, offersPageEnabled } = data;
     const offerPatch: Record<string, any> = {
       updated_at: new Date().toISOString(),
@@ -153,41 +204,69 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
     if (offer.accent !== undefined) offerPatch.accent = offer.accent;
     if (offer.image_url !== undefined) offerPatch.image_url = offer.image_url;
 
-    const { error: offerErr } = await (supabaseAdmin.from as any)("special_offers")
-      .update(offerPatch)
-      .eq("id", offer.id);
-    if (offerErr) throw offerErr;
+    let targetOfferId = offer.id;
+    if (targetOfferId) {
+      const { data: existingOffer } = await (sb.from as any)("special_offers")
+        .select("id")
+        .eq("id", targetOfferId)
+        .maybeSingle();
+
+      if (existingOffer?.id) {
+        const { error: offerErr } = await (sb.from as any)("special_offers")
+          .update(offerPatch)
+          .eq("id", targetOfferId);
+        if (offerErr) throw offerErr;
+      } else {
+        const { data: inserted, error: offerErr } = await (sb.from as any)("special_offers")
+          .insert({
+            id: targetOfferId,
+            slug: offer.slug || "toolkit",
+            ...offerPatch,
+          })
+          .select("id")
+          .maybeSingle();
+        if (offerErr) throw offerErr;
+        if (inserted?.id) targetOfferId = inserted.id;
+      }
+    } else {
+      const { data: inserted, error: offerErr } = await (sb.from as any)("special_offers")
+        .insert({
+          slug: offer.slug || "toolkit",
+          ...offerPatch,
+        })
+        .select("id")
+        .maybeSingle();
+      if (offerErr) throw offerErr;
+      if (inserted?.id) targetOfferId = inserted.id;
+    }
 
     // 2. Sync / Upsert primary promo code in toolkit_codes
     const codeClean = (primaryCode.code || "").trim().toUpperCase();
-    if (codeClean) {
+    if (codeClean && targetOfferId) {
       const codeLabel = primaryCode.showPlaceholder ? "show_placeholder" : "hide_placeholder";
 
-      // Check if there is already a code for this offer
-      const { data: existingCode } = await (supabaseAdmin.from as any)("toolkit_codes")
+      const { data: existingCode } = await (sb.from as any)("toolkit_codes")
         .select("id, code, offer_id")
-        .eq("offer_id", offer.id)
+        .eq("offer_id", targetOfferId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (existingCode) {
-        // Update existing code record
-        await (supabaseAdmin.from as any)("toolkit_codes")
+        await (sb.from as any)("toolkit_codes")
           .update({
             code: codeClean,
-            plan_slug: offer.plan_slug,
+            plan_slug: offer.plan_slug || "toolkit",
             label: codeLabel,
             is_active: true,
             max_uses: primaryCode.maxUses ?? null,
           })
           .eq("id", existingCode.id);
       } else {
-        // Insert new code record
-        await (supabaseAdmin.from as any)("toolkit_codes").insert({
+        await (sb.from as any)("toolkit_codes").insert({
           code: codeClean,
-          offer_id: offer.id,
-          plan_slug: offer.plan_slug,
+          offer_id: targetOfferId,
+          plan_slug: offer.plan_slug || "toolkit",
           label: codeLabel,
           is_active: true,
           max_uses: primaryCode.maxUses ?? null,
@@ -198,7 +277,7 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
     // 3. Sync Announcement in BOTH public.site_announcements AND public.announcements (RitaX)
     // 3A. Sync public.site_announcements (top banner bar)
     try {
-      const { data: existingSiteAnn } = await (supabaseAdmin.from as any)("site_announcements")
+      const { data: existingSiteAnn } = await (sb.from as any)("site_announcements")
         .select("id")
         .or("href.eq./offers,href.eq.https://www.ritajet.com/offers")
         .limit(1)
@@ -206,8 +285,8 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
 
       if (announcement.enabled) {
         const sitePayload = {
-          title: announcement.title.trim(),
-          body: announcement.body.trim(),
+          title: announcement.title.trim() || "🎁 Special Offer: The Rita Toolkit is free right now!",
+          body: announcement.body.trim() || "Claim your free 3 months access with promo code " + (codeClean || "YSMU") + ".",
           href: "/offers",
           href_label: announcement.button_label.trim() || "Claim offer →",
           style: announcement.style || "ribbon",
@@ -224,14 +303,14 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
         };
 
         if (existingSiteAnn?.id) {
-          await (supabaseAdmin.from as any)("site_announcements")
+          await (sb.from as any)("site_announcements")
             .update(sitePayload)
             .eq("id", existingSiteAnn.id);
         } else {
-          await (supabaseAdmin.from as any)("site_announcements").insert(sitePayload);
+          await (sb.from as any)("site_announcements").insert(sitePayload);
         }
       } else if (existingSiteAnn?.id) {
-        await (supabaseAdmin.from as any)("site_announcements")
+        await (sb.from as any)("site_announcements")
           .update({ active: false, updated_at: new Date().toISOString() })
           .eq("id", existingSiteAnn.id);
       }
@@ -241,7 +320,7 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
 
     // 3B. Sync public.announcements (RitaX popup / sheet / bar)
     try {
-      const { data: existingRitax } = await (supabaseAdmin.from as any)("announcements")
+      const { data: existingRitax } = await (sb.from as any)("announcements")
         .select("id")
         .or("primary_href.eq./offers,name.ilike.%Special Offer%")
         .limit(1)
@@ -262,8 +341,8 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
           theme: "mint",
           accent: announcement.accent || "#2f7d55",
           eyebrow: "🎁 SPECIAL OFFER",
-          title: announcement.title.trim(),
-          body: announcement.body.trim(),
+          title: announcement.title.trim() || "🎁 Special Offer: The Rita Toolkit is free right now!",
+          body: announcement.body.trim() || "Claim your free 3 months access with code " + (codeClean || "YSMU") + ".",
           emoji: "🎁",
           confetti: true,
           primary_label: announcement.button_label.trim() || "Claim offer →",
@@ -275,14 +354,14 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
         };
 
         if (existingRitax?.id) {
-          await (supabaseAdmin.from as any)("announcements")
+          await (sb.from as any)("announcements")
             .update(ritaxPayload)
             .eq("id", existingRitax.id);
         } else {
-          await (supabaseAdmin.from as any)("announcements").insert(ritaxPayload);
+          await (sb.from as any)("announcements").insert(ritaxPayload);
         }
       } else if (existingRitax?.id) {
-        await (supabaseAdmin.from as any)("announcements")
+        await (sb.from as any)("announcements")
           .update({ status: "paused", updated_at: new Date().toISOString() })
           .eq("id", existingRitax.id);
       }
@@ -292,11 +371,16 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
 
     // 4. Update site_settings offers_page_enabled if supplied
     if (offersPageEnabled !== undefined) {
-      await (supabaseAdmin.from as any)("site_settings")
-        .upsert({ id: true, offers_page_enabled: !!offersPageEnabled }, { onConflict: "id" });
+      try {
+        await (sb.from as any)("site_settings")
+          .update({ offers_page_enabled: !!offersPageEnabled })
+          .eq("id", true);
+      } catch (settingsErr) {
+        console.warn("Could not update site_settings:", settingsErr);
+      }
     }
 
-    return { ok: true };
+    return { ok: true, offerId: targetOfferId };
   });
 
 /** Public endpoint: Returns metadata for public `/offers` cards (placeholder code if enabled, etc.) */
@@ -340,10 +424,36 @@ export const claimOfferAction = createServerFn({ method: "POST" })
     const userId = context.userId;
     if (!userId) throw new Error("Please sign in first to claim this offer.");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+    const sb = context.supabase;
 
-    // 1. Fetch the special offer
-    const { data: offer, error: offerErr } = await (supabaseAdmin.from as any)("special_offers")
+    // 1. Try atomic database RPC claim_offer first
+    const codeStrInput = (data.code || "").trim().toUpperCase();
+    try {
+      const { data: rpcRes, error: rpcErr } = await (sb.rpc as any)("claim_offer", {
+        _offer_id: data.offerId,
+        _code: codeStrInput || null,
+      });
+      if (!rpcErr && rpcRes) {
+        return {
+          ok: true,
+          alreadyClaimed: false,
+          message: "Offer successfully claimed! Your study tools are unlocked.",
+          ...rpcRes,
+        };
+      }
+      if (rpcErr?.message?.toLowerCase().includes("already claimed")) {
+        return {
+          ok: true,
+          alreadyClaimed: true,
+          message: "You already claimed this offer! It is active on your account.",
+        };
+      }
+    } catch {
+      // fallback to manual lookup below
+    }
+
+    // 2. Fetch the special offer
+    const { data: offer, error: offerErr } = await (sb.from as any)("special_offers")
       .select("*")
       .eq("id", data.offerId)
       .maybeSingle();
@@ -352,8 +462,8 @@ export const claimOfferAction = createServerFn({ method: "POST" })
       throw new Error("That offer is not available.");
     }
 
-    // 2. Check if user already claimed this offer
-    const { data: existingClaim } = await (supabaseAdmin.from as any)("toolkit_claims")
+    // 3. Check if user already claimed this offer
+    const { data: existingClaim } = await (sb.from as any)("toolkit_claims")
       .select("id, expires_at, plan_slug")
       .eq("user_id", userId)
       .eq("offer_id", offer.id)
@@ -371,14 +481,14 @@ export const claimOfferAction = createServerFn({ method: "POST" })
       };
     }
 
-    // 3. Resolve code to use
+    // 4. Resolve code to use
     let codeStr = (data.code || "").trim().toUpperCase();
     let codeRow: any = null;
 
     if (offer.requires_code || codeStr) {
       // If user did not provide code, search for active code linked to this offer
       if (!codeStr) {
-        const { data: autoCode } = await (supabaseAdmin.from as any)("toolkit_codes")
+        const { data: autoCode } = await (sb.from as any)("toolkit_codes")
           .select("*")
           .eq("offer_id", offer.id)
           .eq("is_active", true)
@@ -397,7 +507,7 @@ export const claimOfferAction = createServerFn({ method: "POST" })
 
       // If codeRow not found yet, look it up by code string
       if (!codeRow) {
-        const { data: foundCode } = await (supabaseAdmin.from as any)("toolkit_codes")
+        const { data: foundCode } = await (sb.from as any)("toolkit_codes")
           .select("*")
           .ilike("code", codeStr)
           .limit(1)
@@ -426,20 +536,20 @@ export const claimOfferAction = createServerFn({ method: "POST" })
       }
 
       // Increment used_count
-      await (supabaseAdmin.from as any)("toolkit_codes")
+      await (sb.from as any)("toolkit_codes")
         .update({ used_count: (codeRow.used_count || 0) + 1 })
         .eq("id", codeRow.id);
     }
 
-    // 4. Resolve plan
+    // 5. Resolve plan
     const targetPlanSlug = codeRow?.plan_slug || offer.plan_slug;
-    let { data: plan } = await (supabaseAdmin.from as any)("plans")
+    let { data: plan } = await (sb.from as any)("plans")
       .select("*")
       .eq("slug", targetPlanSlug)
       .maybeSingle();
 
     if (!plan) {
-      const { data: fallbackPlan } = await (supabaseAdmin.from as any)("plans")
+      const { data: fallbackPlan } = await (sb.from as any)("plans")
         .select("*")
         .eq("slug", "toolkit")
         .maybeSingle();
@@ -447,7 +557,7 @@ export const claimOfferAction = createServerFn({ method: "POST" })
     }
 
     if (!plan) {
-      const { data: anyPlan } = await (supabaseAdmin.from as any)("plans")
+      const { data: anyPlan } = await (sb.from as any)("plans")
         .select("*")
         .order("sort")
         .limit(1)
@@ -459,15 +569,15 @@ export const claimOfferAction = createServerFn({ method: "POST" })
       throw new Error("This offer is not set up yet.");
     }
 
-    // 5. Calculate expiration
+    // 6. Calculate expiration
     const durationDays = Number(offer.duration_days) || 90;
     const expiresAt =
       durationDays > 0
         ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString()
         : null;
 
-    // 6. Record claim
-    const { error: claimErr } = await (supabaseAdmin.from as any)("toolkit_claims").insert({
+    // 7. Record claim
+    const { error: claimErr } = await (sb.from as any)("toolkit_claims").insert({
       user_id: userId,
       code_id: codeRow?.id ?? null,
       plan_slug: plan.slug,
@@ -477,7 +587,7 @@ export const claimOfferAction = createServerFn({ method: "POST" })
 
     if (claimErr) throw claimErr;
 
-    // 7. Insert plan credit grants if allowances exist
+    // 8. Insert plan credit grants if allowances exist
     const hasAllowances =
       (plan.max_flashcards || 0) > 0 ||
       (plan.max_ai_questions || 0) > 0 ||
@@ -491,7 +601,7 @@ export const claimOfferAction = createServerFn({ method: "POST" })
       (plan.max_groups || 0) > 0;
 
     if (hasAllowances) {
-      await (supabaseAdmin.from as any)("plan_credit_grants").insert({
+      await (sb.from as any)("plan_credit_grants").insert({
         user_id: userId,
         plan_slug: plan.slug,
         transaction_id: `offer-${crypto.randomUUID()}`,

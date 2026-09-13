@@ -276,31 +276,38 @@ export function AnnouncementBar() {
   const toast = toasts[0];
   const modal = modals[0];
 
+  const mounted = useMounted();
+
+  if (!mounted) return null;
   if (!ribbon && !float && !spot && !strip && !marquee && !toast && !inline && !modal) return null;
 
   return (
     <>
       <style>{`@keyframes aq-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}`}</style>
 
-      {ribbon && (
+      {ribbon && createPortal(
         <div
-          className="relative z-40 w-full text-white"
+          className="fixed top-0 inset-x-0 z-[60] w-full text-white shadow-md animate-in fade-in slide-in-from-top duration-300"
           style={{ background: `linear-gradient(90deg, ${ribbon.accent}, color-mix(in oklab, ${ribbon.accent} 70%, black))` }}
         >
           <div className="mx-auto flex max-w-6xl items-center gap-2.5 px-4 py-2 text-[12px]">
             <Megaphone size={13} strokeWidth={2.8} className="shrink-0" />
-            <div key={ribbon.id} className="flex flex-1 flex-wrap items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-500">
+            <div key={ribbon.id} className="flex flex-1 flex-wrap items-center gap-2">
               <Body a={ribbon} />
             </div>
             <CloseBtn a={ribbon} onClose={() => close(ribbon.id)} />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {strip && (
-        <div className="relative z-40 w-full text-white" style={{ background: bg(strip, 60) }}>
-          <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-4">
-            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/20">
+      {strip && createPortal(
+        <div
+          className="fixed top-0 inset-x-0 z-[60] w-full text-white shadow-lg animate-in fade-in slide-in-from-top duration-300"
+          style={{ background: bg(strip, 60) }}
+        >
+          <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 md:py-4">
+            <span className="inline-flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-2xl bg-white/20">
               <Megaphone size={18} strokeWidth={3} />
             </span>
             <div className="flex flex-1 flex-wrap items-center gap-2 text-sm md:text-base">
@@ -309,7 +316,8 @@ export function AnnouncementBar() {
             {strip.pinned && <Pin size={14} className="opacity-60" />}
             <CloseBtn a={strip} onClose={() => close(strip.id)} size={15} />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {marquee && (
