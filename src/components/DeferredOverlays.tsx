@@ -11,7 +11,7 @@ export function DeferredOverlays() {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const [banner, announce, ritax, help, tour, auth, toaster] = await Promise.all([
+      const [banner, announce, ritax, help, tour, auth, toaster, phoneTip] = await Promise.all([
         import("@/components/PaymentTestModeBanner"),
         import("@/components/AnnouncementBar"),
         import("@/components/RitaXAnnouncements"),
@@ -19,6 +19,7 @@ export function DeferredOverlays() {
         import("@/components/tutorials/WelcomeTour"),
         import("@/components/auth/AuthDialog"),
         import("@/components/ui/sonner"),
+        import("@/components/PhoneExperienceTip"),
       ]).catch((error) => {
         console.warn("Optional tools could not be loaded", error);
         return [];
@@ -26,7 +27,7 @@ export function DeferredOverlays() {
       if (!banner || !announce || !ritax || !help || !tour || !auth || !toaster) return;
       if (cancelled) return;
       const Toasts = () => <toaster.Toaster richColors position="top-right" />;
-      setParts([
+      const activeParts = [
         banner.PaymentTestModeBanner,
         announce.AnnouncementBar,
         ritax.RitaXAnnouncements,
@@ -34,7 +35,11 @@ export function DeferredOverlays() {
         tour.WelcomeTour,
         auth.AuthDialogHost,
         Toasts,
-      ]);
+      ];
+      if (phoneTip?.PhoneExperienceTip) {
+        activeParts.push(phoneTip.PhoneExperienceTip);
+      }
+      setParts(activeParts);
     };
 
     const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number })

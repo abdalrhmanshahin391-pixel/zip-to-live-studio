@@ -71,28 +71,39 @@ export const getOfferCenterData = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
 
-    const [offersRes, plansRes, codesRes, annRes, settingsRes] = await Promise.all([
+    const [offersRes, plansRes, codesRes, siteAnnRes, ritaxRes, settingsRes] = await Promise.all([
       (supabaseAdmin.from as any)("special_offers").select("*").order("sort"),
       (supabaseAdmin.from as any)("plans").select("slug,name,price_cents,currency,sort").order("sort"),
       (supabaseAdmin.from as any)("toolkit_codes").select("*").order("created_at", { ascending: false }),
-      (supabaseAdmin.from as any)("announcements")
+      (supabaseAdmin.from as any)("site_announcements")
         .select("*")
         .or("href.eq./offers,href.eq.https://www.ritajet.com/offers")
         .order("created_at", { ascending: false })
         .limit(1)
-        .maybeSingle(),
+        .maybeSingle()
+        .catch(() => ({ data: null })),
+      (supabaseAdmin.from as any)("announcements")
+        .select("*")
+        .or("primary_href.eq./offers,name.ilike.%Special Offer%")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        .catch(() => ({ data: null })),
       (supabaseAdmin.from as any)("site_settings").select("offers_page_enabled").maybeSingle(),
     ]);
 
-    const rawAnn = annRes.data;
+    const sAnn = siteAnnRes?.data;
+    const rAnn = ritaxRes?.data;
+    const isLive = !!sAnn?.active || rAnn?.status === "live";
+
     const announcement: OfferCenterAnnouncement = {
-      id: rawAnn?.id,
-      enabled: !!rawAnn?.active,
-      title: rawAnn?.title || "🎁 Special Offer Available: The Rita Study Toolkit is free!",
-      body: rawAnn?.body || "Claim your free 3 months access with promo code.",
-      button_label: rawAnn?.href_label || rawAnn?.button_label || "Claim offer →",
-      style: (rawAnn?.style as any) || "ribbon",
-      accent: rawAnn?.accent || "#2f7d55",
+      id: sAnn?.id || rAnn?.id,
+      enabled: isLive,
+      title: sAnn?.title || rAnn?.title || "🎁 Special Offer Available: The Rita Study Toolkit is free!",
+      body: sAnn?.body || rAnn?.body || "Claim your free 3 months access with promo code.",
+      button_label: sAnn?.href_label || rAnn?.primary_label || "Claim offer →",
+      style: (sAnn?.style as any) || (rAnn?.layout === "modal" ? "spotlight" : rAnn?.layout === "sheet" ? "floating" : "ribbon"),
+      accent: sAnn?.accent || rAnn?.accent || "#2f7d55",
     };
 
     return {
@@ -184,40 +195,99 @@ export const saveOfferCenterConfig = createServerFn({ method: "POST" })
       }
     }
 
-    // 3. Sync Announcement in public.announcements
-    const { data: existingAnn } = await (supabaseAdmin.from as any)("announcements")
-      .select("id")
-      .or("href.eq./offers,href.eq.https://www.ritajet.com/offers")
-      .limit(1)
-      .maybeSingle();
+    // 3. Sync Announcement in BOTH public.site_announcements AND public.announcements (RitaX)
+    // 3A. Sync public.site_announcements (top banner bar)
+    try {
+      const { data: existingSiteAnn } = await (supabaseAdmin.from as any)("site_announcements")
+        .select("id")
+        .or("href.eq./offers,href.eq.https://www.ritajet.com/offers")
+        .limit(1)
+        .maybeSingle();
 
-    if (announcement.enabled) {
-      const annPayload = {
-        title: announcement.title.trim(),
-        body: announcement.body.trim(),
-        href: "/offers",
-        href_label: announcement.button_label.trim() || "Claim offer →",
-        style: announcement.style || "ribbon",
-        accent: announcement.accent || "#2f7d55",
-        active: true,
-        pinned: true,
-        urgent: false,
-        sort: 0,
-        updated_at: new Date().toISOString(),
-      };
+      if (announcement.enabled) {
+        const sitePayload = {
+          title: announcement.title.trim(),
+          body: announcement.body.trim(),
+          href: "/offers",
+          href_label: announcement.button_label.trim() || "Claim offer →",
+          style: announcement.style || "ribbon",
+          accent: announcement.accent || "#2f7d55",
+          active: true,
+          pinned: true,
+          urgent: false,
+          sort: 0,
+          paths: [],
+          trigger: "open",
+          delay_seconds: 0,
+          frequency: "always",
+          updated_at: new Date().toISOString(),
+        };
 
-      if (existingAnn?.id) {
-        await (supabaseAdmin.from as any)("announcements")
-          .update(annPayload)
-          .eq("id", existingAnn.id);
-      } else {
-        await (supabaseAdmin.from as any)("announcements").insert(annPayload);
+        if (existingSiteAnn?.id) {
+          await (supabaseAdmin.from as any)("site_announcements")
+            .update(sitePayload)
+            .eq("id", existingSiteAnn.id);
+        } else {
+          await (supabaseAdmin.from as any)("site_announcements").insert(sitePayload);
+        }
+      } else if (existingSiteAnn?.id) {
+        await (supabaseAdmin.from as any)("site_announcements")
+          .update({ active: false, updated_at: new Date().toISOString() })
+          .eq("id", existingSiteAnn.id);
       }
-    } else if (existingAnn?.id) {
-      // Deactivate the announcement if toggled off
-      await (supabaseAdmin.from as any)("announcements")
-        .update({ active: false, updated_at: new Date().toISOString() })
-        .eq("id", existingAnn.id);
+    } catch (siteErr) {
+      console.error("Failed to sync site_announcements:", siteErr);
+    }
+
+    // 3B. Sync public.announcements (RitaX popup / sheet / bar)
+    try {
+      const { data: existingRitax } = await (supabaseAdmin.from as any)("announcements")
+        .select("id")
+        .or("primary_href.eq./offers,name.ilike.%Special Offer%")
+        .limit(1)
+        .maybeSingle();
+
+      if (announcement.enabled) {
+        const ritaxLayout =
+          announcement.style === "spotlight"
+            ? "modal"
+            : announcement.style === "floating"
+            ? "sheet"
+            : "bar";
+
+        const ritaxPayload = {
+          name: "Special Offer - Study Toolkit",
+          status: "live",
+          layout: ritaxLayout,
+          theme: "mint",
+          accent: announcement.accent || "#2f7d55",
+          eyebrow: "🎁 SPECIAL OFFER",
+          title: announcement.title.trim(),
+          body: announcement.body.trim(),
+          emoji: "🎁",
+          confetti: true,
+          primary_label: announcement.button_label.trim() || "Claim offer →",
+          primary_href: "/offers",
+          audience: "all",
+          frequency: "always",
+          priority: 100,
+          updated_at: new Date().toISOString(),
+        };
+
+        if (existingRitax?.id) {
+          await (supabaseAdmin.from as any)("announcements")
+            .update(ritaxPayload)
+            .eq("id", existingRitax.id);
+        } else {
+          await (supabaseAdmin.from as any)("announcements").insert(ritaxPayload);
+        }
+      } else if (existingRitax?.id) {
+        await (supabaseAdmin.from as any)("announcements")
+          .update({ status: "paused", updated_at: new Date().toISOString() })
+          .eq("id", existingRitax.id);
+      }
+    } catch (ritaxErr) {
+      console.error("Failed to sync RitaX announcements:", ritaxErr);
     }
 
     // 4. Update site_settings offers_page_enabled if supplied

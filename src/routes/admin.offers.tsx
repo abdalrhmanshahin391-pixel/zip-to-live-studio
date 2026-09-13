@@ -231,6 +231,11 @@ function AdminOfferCenter() {
       qc.invalidateQueries({ queryKey: ["admin-offer-center"] });
       qc.invalidateQueries({ queryKey: ["offers-list"] });
       qc.invalidateQueries({ queryKey: ["announcements"] });
+      qc.invalidateQueries({ queryKey: ["site-announcements"] });
+      qc.invalidateQueries({ queryKey: ["site-announcements-all"] });
+      qc.invalidateQueries({ queryKey: ["ritax-live"] });
+      qc.invalidateQueries({ queryKey: ["ritax-all"] });
+      qc.invalidateQueries({ queryKey: ["ritax-stats"] });
     } catch (err: any) {
       toast.error(err?.message || "Failed to save Offer Center changes.");
     } finally {
