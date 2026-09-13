@@ -7,7 +7,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { supabase } from "@/integrations/supabase/legacy-client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { getPublicOfferMeta } from "@/lib/offer-center.functions";
+import { getPublicOfferMeta, claimOfferAction } from "@/lib/offer-center.functions";
 import toolkitArt from "@/assets/toolkit-girl-study.webp.asset.json";
 
 export const Route = createFileRoute("/offers")({
@@ -68,6 +68,8 @@ function OffersPage() {
   const qc = useQueryClient();
   const [code, setCode] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const [claimedMap, setClaimedMap] = useState<Record<string, boolean>>({});
+  const [cardErrors, setCardErrors] = useState<Record<string, string | null>>({});
 
   const { data, isLoading } = useQuery({
     queryKey: ["offers-list", user?.id ?? "anon"],
@@ -87,19 +89,33 @@ function OffersPage() {
   async function claim(offer: Offer) {
     if (!user) return navigate({ to: "/login" });
     setBusy(offer.id);
+    setCardErrors((errs) => ({ ...errs, [offer.id]: null }));
     try {
-      const given = (code[offer.id] ?? "").trim();
-      const { error } = await (supabase.rpc as any)("claim_offer", {
-        _offer_id: offer.id,
-        _code: given || null,
+      const configuredCode = publicMeta?.[offer.id]?.code;
+      const typed = (code[offer.id] ?? "").trim();
+      const codeToUse = typed || (configuredCode ? configuredCode.trim() : "");
+
+      const result = await claimOfferAction({
+        data: {
+          offerId: offer.id,
+          code: codeToUse || undefined,
+        },
       });
-      if (error) throw error;
-      toast.success("It's yours — added to your account.");
+
+      if (result.alreadyClaimed) {
+        toast.info(result.message || "This offer is active on your account.");
+      } else {
+        toast.success("🎉 It's yours — added to your account!");
+      }
+
+      setClaimedMap((m) => ({ ...m, [offer.id]: true }));
       setCode((c) => ({ ...c, [offer.id]: "" }));
-      qc.invalidateQueries({ queryKey: ["offers-list"] });
-      qc.invalidateQueries({ queryKey: ["my-plan-usage"] });
+      await qc.invalidateQueries({ queryKey: ["offers-list"] });
+      await qc.invalidateQueries({ queryKey: ["my-plan-usage"] });
     } catch (e: any) {
-      toast.error(e?.message || "Could not claim this offer");
+      const msg = e?.message || "Could not claim this offer. Please check the code and try again.";
+      setCardErrors((errs) => ({ ...errs, [offer.id]: msg }));
+      toast.error(msg);
     } finally {
       setBusy(null);
     }
@@ -168,13 +184,20 @@ function OffersPage() {
             {offers.map((o) => (
               <OfferCard
                 key={o.id}
-                offer={o}
+                offer={{
+                  ...o,
+                  claimed: o.claimed || !!claimedMap[o.id],
+                }}
                 code={code[o.id] ?? ""}
-                onCode={(v) => setCode((c) => ({ ...c, [o.id]: v }))}
+                onCode={(v) => {
+                  setCardErrors((errs) => ({ ...errs, [o.id]: null }));
+                  setCode((c) => ({ ...c, [o.id]: v }));
+                }}
                 busy={busy === o.id}
                 onClaim={() => claim(o)}
                 signedIn={!!user}
                 meta={publicMeta?.[o.id]}
+                error={cardErrors[o.id] ?? null}
               />
             ))}
           </div>
@@ -197,6 +220,7 @@ function OfferCard({
   onClaim,
   signedIn,
   meta,
+  error,
 }: {
   offer: Offer;
   code: string;
@@ -205,9 +229,11 @@ function OfferCard({
   onClaim: () => void;
   signedIn: boolean;
   meta?: { code: string | null; showPlaceholder: boolean };
+  error?: string | null;
 }) {
   const left = leftFrom(offer.expires_at);
   const months = Math.round(offer.duration_days / 30);
+  const hasAutoCode = meta?.showPlaceholder !== false && !!meta?.code;
 
   return (
     <article className="relative overflow-hidden rounded-[30px] border border-black/5 bg-white p-7 shadow-[0_24px_50px_-34px_rgba(43,38,32,0.45)]">
@@ -255,7 +281,7 @@ function OfferCard({
           <p className="mt-1 text-[14px] font-semibold text-muted-foreground">
             {left
               ? `${left.days}d ${left.hours}h ${left.minutes}m left before it runs out.`
-              : "This one has run out."}
+              : "This offer is active on your account."}
           </p>
           <Link
             to="/my-plan"
@@ -266,29 +292,44 @@ function OfferCard({
         </div>
       ) : (
         <div className="mt-6">
+          {error && (
+            <div className="mb-3.5 flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-3.5 text-[13px] font-bold text-rose-800 animate-in fade-in slide-in-from-top-1 duration-200">
+              <span className="shrink-0 text-base leading-none">⚠️</span>
+              <p className="flex-1 leading-snug">{error}</p>
+            </div>
+          )}
+
           {offer.requires_code && (
-            <label className="mb-3 flex items-center gap-2 rounded-2xl border border-black/10 bg-[#fdf7ee] px-4 py-2.5">
+            <label className="mb-3 flex items-center gap-2 rounded-2xl border border-black/10 bg-[#fdf7ee] px-4 py-2.5 focus-within:border-emerald-600 focus-within:ring-1 focus-within:ring-emerald-600 transition-all">
               <KeyRound size={15} className="shrink-0 text-muted-foreground" />
               <input
                 value={code}
                 onChange={(e) => onCode(e.target.value.toUpperCase())}
                 placeholder={
-                  meta?.showPlaceholder !== false && (meta?.code || "YSMU")
+                  hasAutoCode
                     ? meta?.code || "YSMU"
                     : "Enter promo code"
                 }
                 className="w-full bg-transparent text-[14px] font-bold tracking-wider text-[#2b2620] placeholder:text-[#b6ada0] focus:outline-none"
               />
+              {!code && hasAutoCode && (
+                <span className="shrink-0 rounded-md bg-emerald-100 px-2 py-0.5 text-[10.5px] font-black uppercase tracking-wider text-emerald-800">
+                  Ready
+                </span>
+              )}
             </label>
           )}
+
           <button
+            type="button"
             onClick={onClaim}
             disabled={busy}
-            className="rita-btn rita-btn-primary inline-flex disabled:opacity-60"
+            className="rita-btn rita-btn-primary inline-flex disabled:opacity-60 cursor-pointer shadow-xs hover:shadow-md transition-all active:scale-[0.99]"
           >
             {busy ? <Loader2 size={17} className="animate-spin" /> : <Gift size={17} />}
             {signedIn ? "Get it free" : "Sign in and get it free"}
           </button>
+
           {!offer.requires_code && (
             <details className="mt-3 text-[13px] font-semibold text-muted-foreground">
               <summary className="cursor-pointer">Got a code instead?</summary>
@@ -296,7 +337,7 @@ function OfferCard({
                 value={code}
                 onChange={(e) => onCode(e.target.value.toUpperCase())}
                 placeholder={
-                  meta?.showPlaceholder !== false && (meta?.code || "YSMU")
+                  hasAutoCode
                     ? meta?.code || "YSMU"
                     : "Enter promo code"
                 }

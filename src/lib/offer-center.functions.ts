@@ -258,3 +258,193 @@ export const getPublicOfferMeta = createServerFn({ method: "GET" }).handler(
     }
   },
 );
+
+/** Claim an offer for the currently authenticated user (robust server-side claim with promo code & plan fallback) */
+export const claimOfferAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { offerId: string; code?: string }) => {
+    if (!data?.offerId) throw new Error("Offer ID is required");
+    return data;
+  })
+  .handler(async ({ data, context }) => {
+    const userId = context.userId;
+    if (!userId) throw new Error("Please sign in first to claim this offer.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/legacy-client.server");
+
+    // 1. Fetch the special offer
+    const { data: offer, error: offerErr } = await (supabaseAdmin.from as any)("special_offers")
+      .select("*")
+      .eq("id", data.offerId)
+      .maybeSingle();
+
+    if (offerErr || !offer || !offer.is_active) {
+      throw new Error("That offer is not available.");
+    }
+
+    // 2. Check if user already claimed this offer
+    const { data: existingClaim } = await (supabaseAdmin.from as any)("toolkit_claims")
+      .select("id, expires_at, plan_slug")
+      .eq("user_id", userId)
+      .eq("offer_id", offer.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingClaim) {
+      return {
+        ok: true,
+        alreadyClaimed: true,
+        message: "You already claimed this offer! It is active on your account.",
+        expires_at: existingClaim.expires_at,
+        plan: existingClaim.plan_slug,
+      };
+    }
+
+    // 3. Resolve code to use
+    let codeStr = (data.code || "").trim().toUpperCase();
+    let codeRow: any = null;
+
+    if (offer.requires_code || codeStr) {
+      // If user did not provide code, search for active code linked to this offer
+      if (!codeStr) {
+        const { data: autoCode } = await (supabaseAdmin.from as any)("toolkit_codes")
+          .select("*")
+          .eq("offer_id", offer.id)
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (autoCode) {
+          codeStr = autoCode.code;
+          codeRow = autoCode;
+        }
+      }
+
+      if (!codeStr) {
+        throw new Error("This offer needs a promo code.");
+      }
+
+      // If codeRow not found yet, look it up by code string
+      if (!codeRow) {
+        const { data: foundCode } = await (supabaseAdmin.from as any)("toolkit_codes")
+          .select("*")
+          .ilike("code", codeStr)
+          .limit(1)
+          .maybeSingle();
+        codeRow = foundCode;
+      }
+
+      if (!codeRow || !codeRow.is_active) {
+        throw new Error("That code does not work.");
+      }
+
+      if (codeRow.offer_id && codeRow.offer_id !== offer.id) {
+        throw new Error("That code is for another offer.");
+      }
+
+      if (codeRow.expires_at && new Date(codeRow.expires_at) < new Date()) {
+        throw new Error("That code has expired.");
+      }
+
+      if (
+        codeRow.max_uses !== null &&
+        codeRow.max_uses !== undefined &&
+        codeRow.used_count >= codeRow.max_uses
+      ) {
+        throw new Error("That code is used up.");
+      }
+
+      // Increment used_count
+      await (supabaseAdmin.from as any)("toolkit_codes")
+        .update({ used_count: (codeRow.used_count || 0) + 1 })
+        .eq("id", codeRow.id);
+    }
+
+    // 4. Resolve plan
+    const targetPlanSlug = codeRow?.plan_slug || offer.plan_slug;
+    let { data: plan } = await (supabaseAdmin.from as any)("plans")
+      .select("*")
+      .eq("slug", targetPlanSlug)
+      .maybeSingle();
+
+    if (!plan) {
+      const { data: fallbackPlan } = await (supabaseAdmin.from as any)("plans")
+        .select("*")
+        .eq("slug", "toolkit")
+        .maybeSingle();
+      plan = fallbackPlan;
+    }
+
+    if (!plan) {
+      const { data: anyPlan } = await (supabaseAdmin.from as any)("plans")
+        .select("*")
+        .order("sort")
+        .limit(1)
+        .maybeSingle();
+      plan = anyPlan;
+    }
+
+    if (!plan) {
+      throw new Error("This offer is not set up yet.");
+    }
+
+    // 5. Calculate expiration
+    const durationDays = Number(offer.duration_days) || 90;
+    const expiresAt =
+      durationDays > 0
+        ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString()
+        : null;
+
+    // 6. Record claim
+    const { error: claimErr } = await (supabaseAdmin.from as any)("toolkit_claims").insert({
+      user_id: userId,
+      code_id: codeRow?.id ?? null,
+      plan_slug: plan.slug,
+      offer_id: offer.id,
+      expires_at: expiresAt,
+    });
+
+    if (claimErr) throw claimErr;
+
+    // 7. Insert plan credit grants if allowances exist
+    const hasAllowances =
+      (plan.max_flashcards || 0) > 0 ||
+      (plan.max_ai_questions || 0) > 0 ||
+      (plan.max_summaries || 0) > 0 ||
+      (plan.max_todo_tasks || 0) > 0 ||
+      (plan.max_calendar_items || 0) > 0 ||
+      (plan.max_all_in_one_lectures || 0) > 0 ||
+      (plan.max_all_in_one_questions || 0) > 0 ||
+      (plan.max_archive_questions || 0) > 0 ||
+      (plan.max_rita_questions || 0) > 0 ||
+      (plan.max_groups || 0) > 0;
+
+    if (hasAllowances) {
+      await (supabaseAdmin.from as any)("plan_credit_grants").insert({
+        user_id: userId,
+        plan_slug: plan.slug,
+        transaction_id: `offer-${crypto.randomUUID()}`,
+        environment: "live",
+        expires_at: expiresAt,
+        flashcards: plan.max_flashcards || 0,
+        ai_questions: plan.max_ai_questions || 0,
+        summaries: plan.max_summaries || 0,
+        todo_tasks: plan.max_todo_tasks || 0,
+        calendar_items: plan.max_calendar_items || 0,
+        all_in_one_lectures: plan.max_all_in_one_lectures || 0,
+        all_in_one_questions: plan.max_all_in_one_questions || 0,
+        archive_questions: plan.max_archive_questions || 0,
+        rita_questions: plan.max_rita_questions || 0,
+        groups: plan.max_groups || 0,
+      });
+    }
+
+    return {
+      ok: true,
+      alreadyClaimed: false,
+      plan: plan.slug,
+      name: plan.name,
+      expires_at: expiresAt,
+    };
+  });
