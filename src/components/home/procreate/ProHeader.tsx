@@ -25,6 +25,7 @@ import { StartLearningLink } from "@/components/StartLearningLink";
 import { NAV_GROUPS } from "@/components/site-nav";
 
 const SIMPLE_LINKS: { to: string; label: string }[] = [
+  { to: "/rita-live", label: "Talk to Rita" },
   { to: "/tutorial", label: "Tutorial" },
 ];
 

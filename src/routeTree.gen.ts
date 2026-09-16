@@ -26,6 +26,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RitaLiveRouteImport } from './routes/rita-live'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StudyRouteImport } from './routes/study'
 import { Route as SupportRouteImport } from './routes/support'
@@ -44,6 +45,7 @@ import { Route as AdminDevicesRouteImport } from './routes/admin.devices'
 import { Route as AdminGermanRouteImport } from './routes/admin.german'
 import { Route as AdminGroupsRouteImport } from './routes/admin.groups'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
+import { Route as AdminPaddleSyncRouteImport } from './routes/admin.paddle-sync'
 import { Route as AdminPeopleRouteImport } from './routes/admin.people'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminPromoCodesRouteImport } from './routes/admin.promo-codes'
@@ -92,6 +94,7 @@ import { Route as ApiPublicArchiveSolverRouteImport } from './routes/api/public/
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicPushDispatchRouteImport } from './routes/api/public/push-dispatch'
 import { Route as ApiPublicRitaWorkerRouteImport } from './routes/api/public/rita-worker'
+import { Route as ApiRitaLiveRouteImport } from './routes/api/rita/live'
 import { Route as CoursesCourseIdIndexRouteImport } from './routes/courses.$courseId.index'
 import { Route as CoursesCourseIdAddQuestionsRouteImport } from './routes/courses.$courseId.add-questions'
 import { Route as CoursesCourseIdRunRouteImport } from './routes/courses.$courseId.run'
@@ -101,11 +104,11 @@ import { Route as GermanCourseIdMatchRouteImport } from './routes/german.$course
 import { Route as GermanCourseIdReviewRouteImport } from './routes/german.$courseId.review'
 import { Route as GermanCourseIdRunRouteImport } from './routes/german.$courseId.run'
 import { Route as GermanCourseIdTapRouteImport } from './routes/german.$courseId.tap'
-import { Route as StudyAllInOneIndexRouteImport } from './routes/study.all-in-one.index'
-import { Route as StudyAllInOneLectureIdRouteImport } from './routes/study.all-in-one.$lectureId'
 import { Route as ShareQuestionsIndexRouteImport } from './routes/share.questions.index'
 import { Route as ShareQuestionsSetIdRouteImport } from './routes/share.questions.$setId'
 import { Route as ShareQuestionsNewRouteImport } from './routes/share.questions.new'
+import { Route as StudyAllInOneIndexRouteImport } from './routes/study.all-in-one.index'
+import { Route as StudyAllInOneLectureIdRouteImport } from './routes/study.all-in-one.$lectureId'
 import { Route as StudyLecturesIndexRouteImport } from './routes/study.lectures.index'
 import { Route as StudyLecturesNewRouteImport } from './routes/study.lectures.new'
 import { Route as StudyLecturesRunRouteImport } from './routes/study.lectures.run'
@@ -202,6 +205,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RitaLiveRoute = RitaLiveRouteImport.update({
+  id: '/rita-live',
+  path: '/rita-live',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -292,6 +300,11 @@ const AdminGroupsRoute = AdminGroupsRouteImport.update({
 const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
   id: '/admin/notifications',
   path: '/admin/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPaddleSyncRoute = AdminPaddleSyncRouteImport.update({
+  id: '/admin/paddle-sync',
+  path: '/admin/paddle-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminPeopleRoute = AdminPeopleRouteImport.update({
@@ -535,6 +548,11 @@ const ApiPublicRitaWorkerRoute = ApiPublicRitaWorkerRouteImport.update({
   path: '/api/public/rita-worker',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRitaLiveRoute = ApiRitaLiveRouteImport.update({
+  id: '/api/rita/live',
+  path: '/api/rita/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CoursesCourseIdIndexRoute = CoursesCourseIdIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -678,6 +696,7 @@ export interface FileRoutesByFullPath {
   '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rita-live': typeof RitaLiveRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/study': typeof StudyRouteWithChildren
   '/support': typeof SupportRoute
@@ -695,6 +714,7 @@ export interface FileRoutesByFullPath {
   '/admin/german': typeof AdminGermanRouteWithChildren
   '/admin/groups': typeof AdminGroupsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/paddle-sync': typeof AdminPaddleSyncRoute
   '/admin/people': typeof AdminPeopleRoute
   '/admin/plans': typeof AdminPlansRoute
   '/admin/promo-codes': typeof AdminPromoCodesRoute
@@ -742,6 +762,7 @@ export interface FileRoutesByFullPath {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
+  '/api/rita/live': typeof ApiRitaLiveRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
   '/courses/$courseId/run': typeof CoursesCourseIdRunRoute
   '/german/$courseId/exam': typeof GermanCourseIdExamRoute
@@ -786,6 +807,7 @@ export interface FileRoutesByTo {
   '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rita-live': typeof RitaLiveRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
@@ -801,6 +823,7 @@ export interface FileRoutesByTo {
   '/admin/devices': typeof AdminDevicesRoute
   '/admin/groups': typeof AdminGroupsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/paddle-sync': typeof AdminPaddleSyncRoute
   '/admin/people': typeof AdminPeopleRoute
   '/admin/plans': typeof AdminPlansRoute
   '/admin/promo-codes': typeof AdminPromoCodesRoute
@@ -847,6 +870,7 @@ export interface FileRoutesByTo {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
+  '/api/rita/live': typeof ApiRitaLiveRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
   '/courses/$courseId/run': typeof CoursesCourseIdRunRoute
   '/german/$courseId/exam': typeof GermanCourseIdExamRoute
@@ -892,6 +916,7 @@ export interface FileRoutesById {
   '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rita-live': typeof RitaLiveRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/study': typeof StudyRouteWithChildren
   '/support': typeof SupportRoute
@@ -909,6 +934,7 @@ export interface FileRoutesById {
   '/admin/german': typeof AdminGermanRouteWithChildren
   '/admin/groups': typeof AdminGroupsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/paddle-sync': typeof AdminPaddleSyncRoute
   '/admin/people': typeof AdminPeopleRoute
   '/admin/plans': typeof AdminPlansRoute
   '/admin/promo-codes': typeof AdminPromoCodesRoute
@@ -956,6 +982,7 @@ export interface FileRoutesById {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
+  '/api/rita/live': typeof ApiRitaLiveRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
   '/courses/$courseId/run': typeof CoursesCourseIdRunRoute
   '/german/$courseId/exam': typeof GermanCourseIdExamRoute
@@ -1003,6 +1030,7 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/register'
     | '/reset-password'
+    | '/rita-live'
     | '/sitemap.xml'
     | '/study'
     | '/support'
@@ -1020,6 +1048,7 @@ export interface FileRouteTypes {
     | '/admin/german'
     | '/admin/groups'
     | '/admin/notifications'
+    | '/admin/paddle-sync'
     | '/admin/people'
     | '/admin/plans'
     | '/admin/promo-codes'
@@ -1067,6 +1096,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
+    | '/api/rita/live'
     | '/courses/$courseId/add-questions'
     | '/courses/$courseId/run'
     | '/german/$courseId/exam'
@@ -1074,10 +1104,6 @@ export interface FileRouteTypes {
     | '/german/$courseId/review'
     | '/german/$courseId/run'
     | '/german/$courseId/tap'
-    | '/share/questions/$setId'
-    | '/share/questions/new'
-    | '/share/questions/$setId'
-    | '/share/questions/new'
     | '/share/questions/$setId'
     | '/share/questions/new'
     | '/study/all-in-one/$lectureId'
@@ -1088,7 +1114,6 @@ export interface FileRouteTypes {
     | '/admin/spaces/'
     | '/courses/$courseId/'
     | '/german/$courseId/'
-    | '/share/questions/'
     | '/share/questions/'
     | '/study/all-in-one/'
     | '/study/lectures/'
@@ -1116,6 +1141,7 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/register'
     | '/reset-password'
+    | '/rita-live'
     | '/sitemap.xml'
     | '/support'
     | '/terms'
@@ -1131,6 +1157,7 @@ export interface FileRouteTypes {
     | '/admin/devices'
     | '/admin/groups'
     | '/admin/notifications'
+    | '/admin/paddle-sync'
     | '/admin/people'
     | '/admin/plans'
     | '/admin/promo-codes'
@@ -1177,12 +1204,15 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
+    | '/api/rita/live'
     | '/courses/$courseId/add-questions'
     | '/courses/$courseId/run'
     | '/german/$courseId/exam'
     | '/german/$courseId/match'
     | '/german/$courseId/run'
     | '/german/$courseId/tap'
+    | '/share/questions/$setId'
+    | '/share/questions/new'
     | '/study/all-in-one/$lectureId'
     | '/study/lectures/new'
     | '/study/lectures/run'
@@ -1219,6 +1249,7 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/register'
     | '/reset-password'
+    | '/rita-live'
     | '/sitemap.xml'
     | '/study'
     | '/support'
@@ -1236,6 +1267,7 @@ export interface FileRouteTypes {
     | '/admin/german'
     | '/admin/groups'
     | '/admin/notifications'
+    | '/admin/paddle-sync'
     | '/admin/people'
     | '/admin/plans'
     | '/admin/promo-codes'
@@ -1283,6 +1315,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
+    | '/api/rita/live'
     | '/courses/$courseId/add-questions'
     | '/courses/$courseId/run'
     | '/german/$courseId/exam'
@@ -1290,6 +1323,8 @@ export interface FileRouteTypes {
     | '/german/$courseId/review'
     | '/german/$courseId/run'
     | '/german/$courseId/tap'
+    | '/share/questions/$setId'
+    | '/share/questions/new'
     | '/study/all-in-one/$lectureId'
     | '/study/lectures/new'
     | '/study/lectures/run'
@@ -1298,6 +1333,7 @@ export interface FileRouteTypes {
     | '/admin/spaces/'
     | '/courses/$courseId/'
     | '/german/$courseId/'
+    | '/share/questions/'
     | '/study/all-in-one/'
     | '/study/lectures/'
     | '/admin/german/$courseId/manage'
@@ -1326,6 +1362,7 @@ export interface RootRouteChildren {
   RefundPolicyRoute: typeof RefundPolicyRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  RitaLiveRoute: typeof RitaLiveRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StudyRoute: typeof StudyRouteWithChildren
   SupportRoute: typeof SupportRoute
@@ -1343,6 +1380,7 @@ export interface RootRouteChildren {
   AdminGermanRoute: typeof AdminGermanRouteWithChildren
   AdminGroupsRoute: typeof AdminGroupsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
+  AdminPaddleSyncRoute: typeof AdminPaddleSyncRoute
   AdminPeopleRoute: typeof AdminPeopleRoute
   AdminPlansRoute: typeof AdminPlansRoute
   AdminPromoCodesRoute: typeof AdminPromoCodesRoute
@@ -1375,6 +1413,7 @@ export interface RootRouteChildren {
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicPushDispatchRoute: typeof ApiPublicPushDispatchRoute
   ApiPublicRitaWorkerRoute: typeof ApiPublicRitaWorkerRoute
+  ApiRitaLiveRoute: typeof ApiRitaLiveRoute
   ShareQuestionsSetIdRoute: typeof ShareQuestionsSetIdRoute
   ShareQuestionsNewRoute: typeof ShareQuestionsNewRoute
   AdminSpacesIndexRoute: typeof AdminSpacesIndexRoute
@@ -1505,6 +1544,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rita-live': {
+      id: '/rita-live'
+      path: '/rita-live'
+      fullPath: '/rita-live'
+      preLoaderRoute: typeof RitaLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -1629,6 +1675,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/notifications'
       fullPath: '/admin/notifications'
       preLoaderRoute: typeof AdminNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/paddle-sync': {
+      id: '/admin/paddle-sync'
+      path: '/admin/paddle-sync'
+      fullPath: '/admin/paddle-sync'
+      preLoaderRoute: typeof AdminPaddleSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/people': {
@@ -1967,6 +2020,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRitaWorkerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rita/live': {
+      id: '/api/rita/live'
+      path: '/api/rita/live'
+      fullPath: '/api/rita/live'
+      preLoaderRoute: typeof ApiRitaLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/courses/$courseId/': {
       id: '/courses/$courseId/'
       path: '/'
@@ -2288,6 +2348,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundPolicyRoute: RefundPolicyRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  RitaLiveRoute: RitaLiveRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StudyRoute: StudyRouteWithChildren,
   SupportRoute: SupportRoute,
@@ -2306,6 +2367,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminGermanRoute: AdminGermanRouteWithChildren,
   AdminGroupsRoute: AdminGroupsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
+  AdminPaddleSyncRoute: AdminPaddleSyncRoute,
   AdminPeopleRoute: AdminPeopleRoute,
   AdminPlansRoute: AdminPlansRoute,
   AdminPromoCodesRoute: AdminPromoCodesRoute,
@@ -2338,6 +2400,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicPushDispatchRoute: ApiPublicPushDispatchRoute,
   ApiPublicRitaWorkerRoute: ApiPublicRitaWorkerRoute,
+  ApiRitaLiveRoute: ApiRitaLiveRoute,
   ShareQuestionsSetIdRoute: ShareQuestionsSetIdRoute,
   ShareQuestionsNewRoute: ShareQuestionsNewRoute,
   AdminSpacesIndexRoute: AdminSpacesIndexRoute,
