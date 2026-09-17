@@ -35,15 +35,17 @@ import {
 } from "@/lib/my-archive";
 
 import { ensureFreeEnrollment } from "@/lib/course-access";
+import { resolveCourseId } from "@/lib/course-constants";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/courses/$courseId/")({
   loader: async ({ params }) => {
     try {
+      const realId = resolveCourseId(params.courseId);
       const { data } = await supabase
         .from("courses")
         .select("title,year")
-        .eq("id", params.courseId)
+        .eq("id", realId)
         .maybeSingle();
       return { title: (data?.title as string | undefined) ?? null, year: (data?.year as number | undefined) ?? null };
     } catch {
@@ -101,7 +103,8 @@ type Subject = {
 };
 
 function CourseDetailPage() {
-  const { courseId } = Route.useParams();
+  const { courseId: routeCourseId } = Route.useParams();
+  const courseId = useMemo(() => resolveCourseId(routeCourseId), [routeCourseId]);
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const updateAccess = useServerFn(setSubjectAccess);
@@ -328,7 +331,7 @@ function CourseDetailPage() {
     const subjectIds = selected.size ? Array.from(selected).join(",") : "all";
     navigate({
       to: "/courses/$courseId/run",
-      params: { courseId },
+      params: { courseId: routeCourseId },
       search: {
         mode,
         subjects: subjectIds,
@@ -595,7 +598,7 @@ function CourseDetailPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
           {/* LEFT — curriculum */}
-          <section>
+          <section data-tour="qb-topics">
 
             <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
               <div>
@@ -832,7 +835,7 @@ function CourseDetailPage() {
                   })()}
 
 
-                  <div className="px-5 py-3 space-y-3 text-sm">
+                  <div data-tour="qb-modes" className="px-5 py-3 space-y-3 text-sm">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Timer className="w-4 h-4 text-primary" />
@@ -881,7 +884,7 @@ function CourseDetailPage() {
                     </div>
                   </div>
 
-                  <div className="px-5 pb-5 space-y-2">
+                  <div data-tour="qb-start" className="px-5 pb-5 space-y-2">
                     <button
                       onClick={() => startSession("study")}
                       className="w-full py-2.5 rounded-xl border border-primary/30 text-primary font-bold text-sm hover:bg-primary/10 transition-colors inline-flex items-center justify-center gap-2"
@@ -914,6 +917,36 @@ function CourseDetailPage() {
             </div>
           </aside>
         </div>
+
+        {/* Mobile sticky action bar */}
+        {!locked && (
+          <div className="lg:hidden fixed bottom-0 inset-x-0 bg-card/95 backdrop-blur border-t border-border p-3 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <span className="block text-xs font-bold text-foreground truncate">
+                {selected.size === 0 ? "All questions" : `${selected.size} sub-subjects`}
+              </span>
+              <span className="block text-[11px] text-muted-foreground">
+                {totalQuestions} questions ready
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => startSession("study")}
+                className="px-3.5 py-2 rounded-xl border border-primary/40 text-primary font-bold text-xs hover:bg-primary/10 transition-colors"
+              >
+                Study
+              </button>
+              <button
+                type="button"
+                onClick={() => startSession("session")}
+                className="magnetic-cta px-4 py-2 rounded-xl text-primary-foreground font-bold text-xs"
+              >
+                <span className="relative z-10">Start session</span>
+              </button>
+            </div>
+          </div>
+        )}
       </main>
 
       <PromptDialog

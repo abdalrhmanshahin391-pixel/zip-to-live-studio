@@ -84,7 +84,7 @@ function GermanHub() {
     <div className="min-h-screen" style={{ background: "#fbf5e9", color: "#23201d" }}>
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-4 py-14 md:px-8 md:py-20">
-        <div className="grid items-center gap-10 md:grid-cols-[1.1fr_1fr]">
+        <div data-tour="german-hero" className="grid items-center gap-10 md:grid-cols-[1.1fr_1fr]">
           <div>
             <span className="inline-block rounded-full border border-black/[0.08] bg-white/70 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-[#1f4c6d]">
               German Lab
@@ -112,7 +112,7 @@ function GermanHub() {
           />
         </div>
 
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
+        <div data-tour="german-modes" className="mt-12 grid gap-6 md:grid-cols-2">
           {visible.map((c) => (
             <Link
               key={c.to}

@@ -6,12 +6,10 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { GoldenBadge } from "@/components/GoldenBadge";
 import { CommitteeBadge } from "@/components/CommitteeBadge";
 import { AdminBadge, StudentBadge } from "@/components/RoleBadge";
-import { PushToggle } from "@/components/PushToggle";
 import { toast } from "sonner";
 import { avatarTone, removeAvatar, uploadAvatar, useAvatarUrl } from "@/lib/avatars";
 import {
   AlertCircle,
-  Bell,
   Camera,
   Loader2,
   Share2,
@@ -354,11 +352,6 @@ function ProfilePage() {
               {savingInfo ? "Saving…" : "Save Changes"}
             </button>
           </form>
-        </SectionCard>
-
-        {/* Change Password */}
-        <SectionCard icon={<Bell size={18} />} title="Notifications">
-          <PushToggle />
         </SectionCard>
 
         <SectionCard icon={<KeyRound size={18} />} title="Change Password">

@@ -255,6 +255,16 @@ export function RitaXAnnouncements() {
     if (current) void trackRitaX(current.id, "view");
   }, [current]);
 
+  useEffect(() => {
+    if (current?.layout === "bar") {
+      const prev = document.body.style.paddingTop;
+      document.body.style.paddingTop = "44px";
+      return () => {
+        document.body.style.paddingTop = prev;
+      };
+    }
+  }, [current?.id, current?.layout]);
+
   if (!mounted || !current) return null;
 
   const close = () => {

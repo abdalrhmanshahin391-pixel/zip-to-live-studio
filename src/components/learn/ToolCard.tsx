@@ -28,17 +28,19 @@ export function ToolCard({
     <>
       <div className="h-1.5 w-full" style={{ background: tool.ink }} />
       {tool.image ? (
-        <div className="relative h-32 overflow-hidden" style={{ background: tool.soft }}>
+        <div className="relative h-32 w-full max-w-full overflow-hidden" style={{ background: tool.soft }}>
           <img
             src={tool.image}
             alt=""
+            width={900}
+            height={600}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
           />
         </div>
       ) : null}
 
-      <div className="flex flex-1 flex-col p-5">
+      <div className="flex w-full min-w-0 flex-1 flex-col p-5">
         <div className="flex items-center gap-3">
           <span
             className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
@@ -83,7 +85,7 @@ export function ToolCard({
   );
 
   const shell =
-    "group flex flex-col overflow-hidden rounded-3xl border border-black/[0.07] bg-white transition-all duration-300";
+    "group flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-3xl border border-black/[0.07] bg-white transition-all duration-300";
 
   if (locked) {
     return <div className={`${shell} opacity-60`}>{body}</div>;

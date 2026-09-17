@@ -343,7 +343,7 @@ function StudyBoard() {
       onModeChange={(m) => setMode(m)}
     >
       <div className="grid min-h-[62vh] items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="min-w-0">
+        <div data-tour="subject-shelf" className="min-w-0">
           <PickerBoard
             accent={ACCENT}
             groups={groups}
@@ -371,96 +371,98 @@ function StudyBoard() {
           />
         </div>
 
-        <div className="grid gap-4 lg:sticky lg:top-4 lg:self-start">
-          <LaunchPanel
-            accent={ACCENT}
-            stat={sessionCards.length}
-            statLabel={`card${sessionCards.length === 1 ? "" : "s"} ready`}
-            rows={[
-              { label: "From", value: scope.label },
-              { label: "Due now", value: String(scopedQueue.length) },
-              { label: "Flagged", value: String(flaggedCards.length) },
-            ]}
-            actions={[
-              {
-                label: "Study mode",
-                icon: <GraduationCap size={16} />,
-                onClick: () => startSession(false),
-                disabled: sessionCards.length === 0,
-                tone: "outline",
-              },
-              {
-                label: "Shuffle and study",
-                icon: <Shuffle size={15} />,
-                onClick: () => startSession(true),
-                disabled: sessionCards.length === 0,
-                tone: "outline",
-              },
-              {
-                label: `Smart review${scopedQueue.length ? ` · ${scopedQueue.length}` : ""}`,
-                icon: <Sparkles size={16} />,
-                onClick: startSmartReview,
-                disabled: review.isLoading,
-                tone: "solid",
-              },
-            ]}
-
-            footnote={
-              picked.length === 0
-                ? "Smart review uses the schedule; Study mode is a free practice run."
-                : "Tick as many sub-subjects as you like — Smart review only shows what is due in them."
-            }
-
-          >
-            <div className="flex gap-1.5 rounded-xl bg-[#faf6ee] p-1">
-              <button
-                type="button"
-                onClick={() => setSessionScope("all")}
-                className="h-8 flex-1 rounded-lg text-[12px] font-extrabold transition-colors"
-                style={
-                  sessionScope === "all" ? { background: "#fff", color: "#23201d" } : { color: "#a29a8d" }
-                }
-              >
-                All ticked
-              </button>
-              <button
-                type="button"
-                onClick={() => setSessionScope("flagged")}
-                className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg text-[12px] font-extrabold transition-colors"
-                style={
-                  sessionScope === "flagged"
-                    ? { background: "#f6ddd5", color: "#7d3421" }
-                    : { color: "#a29a8d" }
-                }
-              >
-                <Flag size={12} /> Flagged {flaggedCards.length > 0 ? flaggedCards.length : ""}
-              </button>
-            </div>
-
-            {picked.length > 0 && (
-              <div className="mt-3">
-                <div className="flex max-h-32 flex-wrap gap-1.5 overflow-y-auto">
-                  {picked.map((p) => (
-                    <button
-                      key={p.key}
-                      onClick={() => toggle(p.key)}
-                      className="inline-flex items-center gap-1 rounded-full bg-[#f3ece0] px-2.5 py-1 text-[12px] font-extrabold text-[#5a4a2e] hover:bg-[#e9dfcd]"
-                    >
-                      {p.sub} <X size={12} />
-                    </button>
-                  ))}
-                </div>
+        <div data-tour="launch-panel" className="grid gap-4 lg:sticky lg:top-4 lg:self-start">
+          <div data-tour="start-session">
+            <LaunchPanel
+              accent={ACCENT}
+              stat={sessionCards.length}
+              statLabel={`card${sessionCards.length === 1 ? "" : "s"} ready`}
+              rows={[
+                { label: "From", value: scope.label },
+                { label: "Due now", value: String(scopedQueue.length) },
+                { label: "Flagged", value: String(flaggedCards.length) },
+              ]}
+              actions={[
+                {
+                  label: "Study mode",
+                  icon: <GraduationCap size={16} />,
+                  onClick: () => startSession(false),
+                  disabled: sessionCards.length === 0,
+                  tone: "outline",
+                },
+                {
+                  label: "Shuffle and study",
+                  icon: <Shuffle size={15} />,
+                  onClick: () => startSession(true),
+                  disabled: sessionCards.length === 0,
+                  tone: "outline",
+                },
+                {
+                  label: `Smart review${scopedQueue.length ? ` · ${scopedQueue.length}` : ""}`,
+                  icon: <Sparkles size={16} />,
+                  onClick: startSmartReview,
+                  disabled: review.isLoading,
+                  tone: "solid",
+                },
+              ]}
+              footnote={
+                picked.length === 0
+                  ? "Smart review uses the schedule; Study mode is a free practice run."
+                  : "Tick as many sub-subjects as you like — Smart review only shows what is due in them."
+              }
+            >
+              <div className="flex gap-1.5 rounded-xl bg-[#faf6ee] p-1">
                 <button
-                  onClick={() => setSelected([])}
-                  className="mt-2 text-[12px] font-extrabold text-[#a89e90] hover:text-[#b13636]"
+                  type="button"
+                  onClick={() => setSessionScope("all")}
+                  className="h-8 flex-1 rounded-lg text-[12px] font-extrabold transition-colors"
+                  style={
+                    sessionScope === "all" ? { background: "#fff", color: "#23201d" } : { color: "#a29a8d" }
+                  }
                 >
-                  Clear selection
+                  All ticked
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSessionScope("flagged")}
+                  className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg text-[12px] font-extrabold transition-colors"
+                  style={
+                    sessionScope === "flagged"
+                      ? { background: "#f6ddd5", color: "#7d3421" }
+                      : { color: "#a29a8d" }
+                  }
+                >
+                  <Flag size={12} /> Flagged {flaggedCards.length > 0 ? flaggedCards.length : ""}
                 </button>
               </div>
-            )}
-          </LaunchPanel>
 
-          <DailyPanel onReview={(items) => setReviewItems(items)} />
+              {picked.length > 0 && (
+                <div className="mt-3">
+                  <div className="flex max-h-32 flex-wrap gap-1.5 overflow-y-auto">
+                    {picked.map((p) => (
+                      <button
+                        key={p.key}
+                        onClick={() => toggle(p.key)}
+                        className="inline-flex items-center gap-1 rounded-full bg-[#f3ece0] px-2.5 py-1 text-[12px] font-extrabold text-[#5a4a2e] hover:bg-[#e9dfcd]"
+                      >
+                        {p.sub} <X size={12} />
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setSelected([])}
+                    className="mt-2 text-[12px] font-extrabold text-[#a89e90] hover:text-[#b13636]"
+                  >
+                    Clear selection
+                  </button>
+                </div>
+              )}
+            </LaunchPanel>
+          </div>
+
+          <div data-tour="daily-schedule">
+            <DailyPanel onReview={(items) => setReviewItems(items)} />
+          </div>
         </div>
       </div>
 

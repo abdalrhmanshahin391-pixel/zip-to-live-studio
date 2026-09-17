@@ -109,7 +109,7 @@ function SpacesPage() {
                 decks, members and announcements.
               </p>
 
-              <div className="mt-7 rounded-[24px] border border-black/[0.08] bg-[#fbf5e9] p-5">
+              <div data-tour="spaces-join" className="mt-7 rounded-[24px] border border-black/[0.08] bg-[#fbf5e9] p-5">
                 <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7a4b16]">
                   Have a code? Enter it here
                 </p>
@@ -131,6 +131,7 @@ function SpacesPage() {
 
 
         <Section
+          dataTour="spaces-classrooms"
           icon={<GraduationCap size={16} />}
           title="Classrooms"
           note="A whole class sharing one organised deck library."
@@ -139,6 +140,7 @@ function SpacesPage() {
           loading={spaces.isLoading}
         />
         <Section
+          dataTour="spaces-groups"
           icon={<Users size={16} />}
           title="Study groups"
           note="A small circle where everyone adds decks."
@@ -175,6 +177,7 @@ function Section({
   onCreate,
   items,
   loading,
+  dataTour,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -182,9 +185,10 @@ function Section({
   onCreate: () => void;
   items: ReturnType<typeof useMySpaces>["data"];
   loading: boolean;
+  dataTour?: string;
 }) {
   return (
-    <section className="mt-12">
+    <section className="mt-12" data-tour={dataTour}>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white/70 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-[#7a4b16]">

@@ -7,6 +7,7 @@ import { ExplanationPanel, type CapturePayload } from "@/components/ExplanationP
 import { SaveNoteDialog, type SaveNotePayload } from "@/components/SaveNoteDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { ProtectedContent } from "@/components/protect/ProtectedContent";
+import { resolveCourseId } from "@/lib/course-constants";
 import {
   Flag,
   CheckCircle2,
@@ -53,7 +54,8 @@ type Question = {
 };
 
 function RunPage() {
-  const { courseId } = Route.useParams();
+  const { courseId: routeCourseId } = Route.useParams();
+  const courseId = useMemo(() => resolveCourseId(routeCourseId), [routeCourseId]);
   const { mode, subjects, timed, duration, pool } = Route.useSearch();
   const navigate = useNavigate();
   const { isAdmin, user } = useAuth();
@@ -82,7 +84,6 @@ function RunPage() {
       setAccessReady(true);
       return;
     }
-    if (!user) return;
     let cancelled = false;
     (async () => {
       const { data: c } = await (supabase.from as any)("courses")
@@ -91,12 +92,21 @@ function RunPage() {
         .maybeSingle();
       const price = Number(c?.price ?? 0);
       if (price <= 0) {
-        // Free course: enrol first so the content becomes readable, then load.
-        await (supabase.from as any)("user_courses").upsert(
-          { user_id: user.id, course_id: courseId },
-          { onConflict: "user_id,course_id" },
-        );
+        // Free course: enrol if user signed in, allow access directly
+        if (user) {
+          await (supabase.from as any)("user_courses").upsert(
+            { user_id: user.id, course_id: courseId },
+            { onConflict: "user_id,course_id" },
+          );
+        }
         if (!cancelled) setAccessReady(true);
+        return;
+      }
+      if (!user) {
+        if (!cancelled) {
+          setAccessDenied(true);
+          navigate({ to: "/pricing" });
+        }
         return;
       }
       const { data: enr } = await (supabase.from as any)("user_courses")
@@ -333,7 +343,7 @@ function RunPage() {
                   : "No questions in the selected sub-subjects yet."}
             </p>
             <Link
-              to="/courses/$courseId" params={{ courseId }}
+              to="/courses/$courseId" params={{ courseId: routeCourseId }}
               className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:bg-primary/90"
             >
               Back to subject <ArrowRight className="w-4 h-4" />
@@ -344,7 +354,7 @@ function RunPage() {
     );
   }
 
-  const goToCourse = () => navigate({ to: "/courses/$courseId", params: { courseId } });
+  const goToCourse = () => navigate({ to: "/courses/$courseId", params: { courseId: routeCourseId } });
 
   async function setCorrectOption(questionId: string, optionId: string) {
     const q = questions.find((x) => x.id === questionId);
@@ -633,7 +643,6 @@ function QuestionCard({
           </button>
         )}
       </div>
-      <ProtectedContent context="quiz" scope="card">
       {q.image_url ? (
         <div className="px-6 py-6"><QuestionImage path={q.image_url} /></div>
       ) : (
@@ -691,7 +700,6 @@ function QuestionCard({
           );
         })}
       </div>
-      </ProtectedContent>
 
       {submitted && q.explanation && (
         <ExplanationPanel explanation={q.explanation} onCapture={onCapture} />
@@ -749,7 +757,6 @@ function ExamCard({
           {isFlagged ? "Flagged" : "Flag question"}
         </button>
       </div>
-      <ProtectedContent context="exam" scope="card">
       <div className="px-5 py-5">
         {q.image_url ? (
           <div className="mb-4"><QuestionImage path={q.image_url} /></div>
@@ -778,7 +785,6 @@ function ExamCard({
           ))}
         </div>
       </div>
-      </ProtectedContent>
     </div>
   );
 }

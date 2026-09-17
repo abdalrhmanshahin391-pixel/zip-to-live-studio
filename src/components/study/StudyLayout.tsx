@@ -67,7 +67,7 @@ export function StudyLayout({
             <KitaBrand size={38} />
           </Link>
 
-          <div className="grid flex-1 gap-3 sm:grid-cols-2 md:max-w-[46rem]">
+          <div data-tour="mode-switch" className="grid flex-1 gap-3 sm:grid-cols-2 md:max-w-[46rem]">
             {MODES.map((m) => {
               const on = mode === m.key;
               const Icon = m.icon;
@@ -104,7 +104,7 @@ export function StudyLayout({
       </header>
 
       <div className="mx-auto grid max-w-[96rem] gap-6 px-4 py-6 md:px-8 md:py-8 lg:grid-cols-[17rem_minmax(0,1fr)]">
-        <aside className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+        <aside data-tour="study-rail" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
           {rail.map((item) => (
             <RailTile key={item.label} item={item} />
           ))}

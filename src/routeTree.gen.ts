@@ -23,6 +23,7 @@ import { Route as OffersRouteImport } from './routes/offers'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as QuestionBankRouteImport } from './routes/question-bank'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -45,6 +46,7 @@ import { Route as AdminDevicesRouteImport } from './routes/admin.devices'
 import { Route as AdminGermanRouteImport } from './routes/admin.german'
 import { Route as AdminGroupsRouteImport } from './routes/admin.groups'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
+import { Route as AdminOffersRouteImport } from './routes/admin.offers'
 import { Route as AdminPaddleSyncRouteImport } from './routes/admin.paddle-sync'
 import { Route as AdminPeopleRouteImport } from './routes/admin.people'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
@@ -190,6 +192,11 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QuestionBankRoute = QuestionBankRouteImport.update({
+  id: '/question-bank',
+  path: '/question-bank',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RefundPolicyRoute = RefundPolicyRouteImport.update({
   id: '/refund-policy',
   path: '/refund-policy',
@@ -300,6 +307,11 @@ const AdminGroupsRoute = AdminGroupsRouteImport.update({
 const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
   id: '/admin/notifications',
   path: '/admin/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminOffersRoute = AdminOffersRouteImport.update({
+  id: '/admin/offers',
+  path: '/admin/offers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminPaddleSyncRoute = AdminPaddleSyncRouteImport.update({
@@ -693,6 +705,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/profile': typeof ProfileRoute
+  '/question-bank': typeof QuestionBankRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -714,6 +727,7 @@ export interface FileRoutesByFullPath {
   '/admin/german': typeof AdminGermanRouteWithChildren
   '/admin/groups': typeof AdminGroupsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/offers': typeof AdminOffersRoute
   '/admin/paddle-sync': typeof AdminPaddleSyncRoute
   '/admin/people': typeof AdminPeopleRoute
   '/admin/plans': typeof AdminPlansRoute
@@ -804,6 +818,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/profile': typeof ProfileRoute
+  '/question-bank': typeof QuestionBankRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -823,6 +838,7 @@ export interface FileRoutesByTo {
   '/admin/devices': typeof AdminDevicesRoute
   '/admin/groups': typeof AdminGroupsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/offers': typeof AdminOffersRoute
   '/admin/paddle-sync': typeof AdminPaddleSyncRoute
   '/admin/people': typeof AdminPeopleRoute
   '/admin/plans': typeof AdminPlansRoute
@@ -913,6 +929,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/profile': typeof ProfileRoute
+  '/question-bank': typeof QuestionBankRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -934,6 +951,7 @@ export interface FileRoutesById {
   '/admin/german': typeof AdminGermanRouteWithChildren
   '/admin/groups': typeof AdminGroupsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/offers': typeof AdminOffersRoute
   '/admin/paddle-sync': typeof AdminPaddleSyncRoute
   '/admin/people': typeof AdminPeopleRoute
   '/admin/plans': typeof AdminPlansRoute
@@ -1027,6 +1045,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy-policy'
     | '/profile'
+    | '/question-bank'
     | '/refund-policy'
     | '/register'
     | '/reset-password'
@@ -1048,6 +1067,7 @@ export interface FileRouteTypes {
     | '/admin/german'
     | '/admin/groups'
     | '/admin/notifications'
+    | '/admin/offers'
     | '/admin/paddle-sync'
     | '/admin/people'
     | '/admin/plans'
@@ -1138,6 +1158,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy-policy'
     | '/profile'
+    | '/question-bank'
     | '/refund-policy'
     | '/register'
     | '/reset-password'
@@ -1157,6 +1178,7 @@ export interface FileRouteTypes {
     | '/admin/devices'
     | '/admin/groups'
     | '/admin/notifications'
+    | '/admin/offers'
     | '/admin/paddle-sync'
     | '/admin/people'
     | '/admin/plans'
@@ -1246,6 +1268,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy-policy'
     | '/profile'
+    | '/question-bank'
     | '/refund-policy'
     | '/register'
     | '/reset-password'
@@ -1267,6 +1290,7 @@ export interface FileRouteTypes {
     | '/admin/german'
     | '/admin/groups'
     | '/admin/notifications'
+    | '/admin/offers'
     | '/admin/paddle-sync'
     | '/admin/people'
     | '/admin/plans'
@@ -1359,6 +1383,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   ProfileRoute: typeof ProfileRoute
+  QuestionBankRoute: typeof QuestionBankRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -1380,6 +1405,7 @@ export interface RootRouteChildren {
   AdminGermanRoute: typeof AdminGermanRouteWithChildren
   AdminGroupsRoute: typeof AdminGroupsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
+  AdminOffersRoute: typeof AdminOffersRoute
   AdminPaddleSyncRoute: typeof AdminPaddleSyncRoute
   AdminPeopleRoute: typeof AdminPeopleRoute
   AdminPlansRoute: typeof AdminPlansRoute
@@ -1521,6 +1547,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/question-bank': {
+      id: '/question-bank'
+      path: '/question-bank'
+      fullPath: '/question-bank'
+      preLoaderRoute: typeof QuestionBankRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/refund-policy': {
@@ -1675,6 +1708,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/notifications'
       fullPath: '/admin/notifications'
       preLoaderRoute: typeof AdminNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/offers': {
+      id: '/admin/offers'
+      path: '/admin/offers'
+      fullPath: '/admin/offers'
+      preLoaderRoute: typeof AdminOffersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/paddle-sync': {
@@ -2345,6 +2385,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   ProfileRoute: ProfileRoute,
+  QuestionBankRoute: QuestionBankRoute,
   RefundPolicyRoute: RefundPolicyRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
@@ -2367,6 +2408,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminGermanRoute: AdminGermanRouteWithChildren,
   AdminGroupsRoute: AdminGroupsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
+  AdminOffersRoute: AdminOffersRoute,
   AdminPaddleSyncRoute: AdminPaddleSyncRoute,
   AdminPeopleRoute: AdminPeopleRoute,
   AdminPlansRoute: AdminPlansRoute,

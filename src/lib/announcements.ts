@@ -99,13 +99,26 @@ export function useAnnouncements() {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["site-announcements", user?.id ?? "anon"],
-    staleTime: 60_000,
-    // Only signed-in accounts may read their announcements; asking as a visitor
-    // returned a permission error on every public page load.
-    enabled: !!user,
+    staleTime: 30_000,
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("my_announcements");
-      if (error) throw error;
+      if (user) {
+        try {
+          const { data, error } = await (supabase.rpc as any)("my_announcements");
+          if (!error && Array.isArray(data) && data.length > 0) {
+            return data as Announcement[];
+          }
+        } catch {
+          // fallback to direct table query below
+        }
+      }
+
+      const { data, error } = await (supabase.from as any)("site_announcements")
+        .select("*")
+        .eq("active", true)
+        .order("sort", { ascending: true })
+        .order("created_at", { ascending: false });
+
+      if (error) return [];
       return (data ?? []) as Announcement[];
     },
   });

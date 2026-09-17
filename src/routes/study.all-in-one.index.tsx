@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ArrowLeft, FileUp, Layers, ListChecks, ScrollText, Sparkles, Type, Wand2 } from "lucide-react";
@@ -89,6 +89,11 @@ function AllInOneUpload() {
   const [pasted, setPasted] = useState("");
   const [rows, setRows] = useState<Row[]>([]);
 
+  // Retain only Tuberculosis Handbook as the universal example card and exclude others
+  const displayRows = useMemo(() => {
+    return rows.filter((r) => !r.example || r.title.toLowerCase().includes("tuberculosis"));
+  }, [rows]);
+
   const [busy, setBusy] = useState(false);
   const [stage, setStage] = useState("");
   const [done, setDone] = useState<string[]>([]);
@@ -108,6 +113,7 @@ function AllInOneUpload() {
   }, [user, refresh]);
 
   async function run() {
+    if (!gate.check({ feature: "feature_all_in_one", kind: "all_in_one_lectures" })) return;
     if (source === "pdf" && !file) return toast.error("Choose a PDF, or switch to pasted text.");
     if (source === "text" && pasted.trim().length < 200) {
       return toast.error("Paste a bit more of the lecture (a couple of paragraphs at least).");
@@ -228,7 +234,7 @@ function AllInOneUpload() {
       <SiteHeader />
       <UpgradeWall block={gate.block} onClose={gate.closeBlock} />
       <main className="mx-auto w-full max-w-[980px] px-4 pb-24 pt-8">
-        <Link to="/study" className="inline-flex items-center gap-2 text-[13px] font-extrabold text-[#6b6357] hover:text-[#23201d]">
+        <Link to="/learn" className="inline-flex items-center gap-2 text-[13px] font-extrabold text-[#6b6357] hover:text-[#23201d]">
           <ArrowLeft size={15} /> Back to Start learning
         </Link>
 
@@ -247,7 +253,7 @@ function AllInOneUpload() {
           </p>
         </header>
 
-        <section className="mt-6 rounded-[28px] border border-black/[0.07] bg-white p-5 sm:p-6">
+        <section data-tour="aio-studio-box" className="mt-6 rounded-[28px] border border-black/[0.07] bg-white p-5 sm:p-6">
           <div className="flex gap-2">
             {(["pdf", "text"] as const).map((s) => (
               <button
@@ -263,7 +269,22 @@ function AllInOneUpload() {
           </div>
 
           {source === "pdf" ? (
-            <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-black/10 bg-[#fbf8f2] px-4 py-14 text-center">
+            <label
+              data-tour="aio-dropzone"
+              onClick={(e) => {
+                if (!gate.check({ feature: "feature_all_in_one", kind: "all_in_one_lectures" })) {
+                  e.preventDefault();
+                }
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (!gate.check({ feature: "feature_all_in_one", kind: "all_in_one_lectures" })) return;
+                const f = e.dataTransfer.files?.[0] ?? null;
+                if (f) setFile(f);
+              }}
+              className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-black/10 bg-[#fbf8f2] px-4 py-14 text-center"
+            >
               <FileUp size={26} style={{ color: ACCENT }} />
               <span className="mt-3 text-[16px] font-black">{file ? file.name : "Drop your lecture PDF"}</span>
               <span className="mt-1 text-[12.5px] text-[#6b6357]">Any size. Scans work too.</span>
@@ -343,13 +364,14 @@ function AllInOneUpload() {
 
         <section className="mt-9">
           <h2 className="font-display text-[20px] font-black">Your lectures</h2>
-          {rows.length === 0 ? (
+          {displayRows.length === 0 ? (
             <p className="mt-2 text-[14px] text-[#6b6357]">Nothing yet — your first lecture will appear here.</p>
           ) : (
             <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {rows.map((r) => (
+              {displayRows.map((r, i) => (
                 <Link
                   key={r.id}
+                  data-tour={r.example && i === 0 ? "aio-sample-card" : undefined}
                   to="/study/all-in-one/$lectureId"
                   params={{ lectureId: r.id }}
                   className={`group flex aspect-square flex-col justify-between rounded-3xl border bg-white p-4 transition hover:-translate-y-1 hover:shadow-[0_20px_40px_-26px_rgba(0,0,0,0.35)] ${r.example ? "border-[#3f2c73]/25" : "border-black/[0.07]"}`}

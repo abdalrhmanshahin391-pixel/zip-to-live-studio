@@ -46,16 +46,16 @@ const GRADES = [
 ] as const;
 
 function human(days: number) {
-  if (days <= 0) return "in 10 minutes";
-  if (days < 1) return "in a few hours";
+  if (days <= 0.02) return "in 10 minutes";
+  if (days < 1) return `in ${Math.max(1, Math.round(days * 24))} hours`;
   if (days < 30) return `in ${Math.round(days)} day${Math.round(days) === 1 ? "" : "s"}`;
   if (days < 365) return `in ${Math.round(days / 30)} month${Math.round(days / 30) === 1 ? "" : "s"}`;
   return "in over a year";
 }
 
 function shortGap(days: number) {
-  if (days <= 0) return "10 min";
-  if (days < 1) return `${Math.round(days * 24)} h`;
+  if (days <= 0.02) return "10 min";
+  if (days < 1) return `${Math.max(1, Math.round(days * 24))} h`;
   if (days < 30) return `${Math.round(days)} d`;
   if (days < 365) return `${Math.round(days / 30)} mo`;
   return `${(days / 365).toFixed(1)} y`;
