@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { AiEnginePanel } from "@/components/admin/AiEnginePanel";
+import { testRitaLiveKey } from "@/lib/rita-live.functions";
 import {
   saveAiKey,
   deleteAiKey,
@@ -37,16 +38,16 @@ const SINGLE_PROVIDERS: {
 }[] = [
   {
     id: "openai",
-    name: "OpenAI",
-    tier: "Cheap (< $1 / 1K images)",
-    model: "gpt-4o-mini",
+    name: "OpenAI — Rita Live",
+    tier: "Live voice · $0.05/min",
+    model: "gpt-live-1 · marin voice",
     color: "from-emerald-400 to-teal-500",
     url: "https://platform.openai.com/api-keys",
     steps: [
       "Go to platform.openai.com → API keys.",
-      "Add a payment method (vision needs a paid project).",
+      "Add a payment method to the OpenAI API project.",
       "Click ‘Create new secret key’, copy the sk-… value.",
-      "Paste it here. We use gpt-4o-mini for ultra-cheap vision.",
+      "Paste it here. Rita uses it only on the server for full-duplex live voice.",
     ],
   },
   {
@@ -72,6 +73,7 @@ function AiKeysPage() {
   const save = useServerFn(saveAiKey);
   const del = useServerFn(deleteAiKey);
   const setModel = useServerFn(savePreferredGeminiModel);
+  const testOpenAi = useServerFn(testRitaLiveKey);
 
   // gemini[slot] = updated_at | null
   const [geminiSlots, setGeminiSlots] = useState<(string | null)[]>([null, null, null, null, null]);
@@ -193,6 +195,19 @@ function AiKeysPage() {
       refresh();
     } catch (e: any) {
       toast.error(e?.message || "Delete failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function testOpenAiLive() {
+    setBusy("openai-test");
+    try {
+      const result = await testOpenAi();
+      if (result.ok) toast.success(result.message);
+      else toast.error(result.message);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "OpenAI test failed");
     } finally {
       setBusy(null);
     }
@@ -396,7 +411,23 @@ function AiKeysPage() {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}
+                  {p.id === "openai" && isSet && (
+                    <button
+                      onClick={testOpenAiLive}
+                      disabled={busy === "openai-test"}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-bold text-emerald-200 hover:bg-emerald-400/15 disabled:opacity-50"
+                    >
+                      {busy === "openai-test" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                      Test Rita Live
+                    </button>
+                  )}
                 </div>
+
+                {p.id === "openai" && (
+                  <p className="mb-4 rounded-xl border border-emerald-400/15 bg-emerald-400/[0.06] px-4 py-3 text-xs leading-relaxed text-emerald-100/80">
+                    This protected key enables Rita’s natural two-way conversation. Without it, students automatically get the turn-by-turn demo voice instead.
+                  </p>
+                )}
 
                 <details className="group">
                   <summary className="cursor-pointer text-xs font-semibold text-violet-300 hover:text-violet-200 select-none">

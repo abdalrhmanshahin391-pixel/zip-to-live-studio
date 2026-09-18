@@ -1773,6 +1773,23 @@ hairline borders and generous radii.
   background: linear-gradient(118deg, color-mix(in oklab, white 8%, transparent), transparent 32%);
 }
 
+/* Rita Live character motion. The expression frames remain still images so the
+   lesson stays light on phones; these small movements make them feel alive. */
+@keyframes rita-live-breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.008); }
+}
+@keyframes rita-live-talk {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+.rita-breathe { animation: rita-live-breathe 3.2s ease-in-out infinite; }
+.rita-talk { animation: rita-live-talk 360ms ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .rita-breathe,
+  .rita-talk { animation: none !important; }
+}
+
 .rita-install-banner,
 .rita-install-sheet {
   border-color: color-mix(in oklab, var(--pro-ink) 10%, transparent);

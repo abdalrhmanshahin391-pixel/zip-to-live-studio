@@ -96,6 +96,7 @@ import { Route as ApiPublicArchiveSolverRouteImport } from './routes/api/public/
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicPushDispatchRouteImport } from './routes/api/public/push-dispatch'
 import { Route as ApiPublicRitaWorkerRouteImport } from './routes/api/public/rita-worker'
+import { Route as ApiRitaDemoRouteImport } from './routes/api/rita/demo'
 import { Route as ApiRitaLiveRouteImport } from './routes/api/rita/live'
 import { Route as CoursesCourseIdIndexRouteImport } from './routes/courses.$courseId.index'
 import { Route as CoursesCourseIdAddQuestionsRouteImport } from './routes/courses.$courseId.add-questions'
@@ -560,6 +561,11 @@ const ApiPublicRitaWorkerRoute = ApiPublicRitaWorkerRouteImport.update({
   path: '/api/public/rita-worker',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRitaDemoRoute = ApiRitaDemoRouteImport.update({
+  id: '/api/rita/demo',
+  path: '/api/rita/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRitaLiveRoute = ApiRitaLiveRouteImport.update({
   id: '/api/rita/live',
   path: '/api/rita/live',
@@ -776,6 +782,7 @@ export interface FileRoutesByFullPath {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
+  '/api/rita/demo': typeof ApiRitaDemoRoute
   '/api/rita/live': typeof ApiRitaLiveRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
   '/courses/$courseId/run': typeof CoursesCourseIdRunRoute
@@ -886,6 +893,7 @@ export interface FileRoutesByTo {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
+  '/api/rita/demo': typeof ApiRitaDemoRoute
   '/api/rita/live': typeof ApiRitaLiveRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
   '/courses/$courseId/run': typeof CoursesCourseIdRunRoute
@@ -1000,6 +1008,7 @@ export interface FileRoutesById {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
+  '/api/rita/demo': typeof ApiRitaDemoRoute
   '/api/rita/live': typeof ApiRitaLiveRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
   '/courses/$courseId/run': typeof CoursesCourseIdRunRoute
@@ -1116,6 +1125,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
+    | '/api/rita/demo'
     | '/api/rita/live'
     | '/courses/$courseId/add-questions'
     | '/courses/$courseId/run'
@@ -1226,6 +1236,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
+    | '/api/rita/demo'
     | '/api/rita/live'
     | '/courses/$courseId/add-questions'
     | '/courses/$courseId/run'
@@ -1339,6 +1350,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
+    | '/api/rita/demo'
     | '/api/rita/live'
     | '/courses/$courseId/add-questions'
     | '/courses/$courseId/run'
@@ -1439,6 +1451,7 @@ export interface RootRouteChildren {
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicPushDispatchRoute: typeof ApiPublicPushDispatchRoute
   ApiPublicRitaWorkerRoute: typeof ApiPublicRitaWorkerRoute
+  ApiRitaDemoRoute: typeof ApiRitaDemoRoute
   ApiRitaLiveRoute: typeof ApiRitaLiveRoute
   ShareQuestionsSetIdRoute: typeof ShareQuestionsSetIdRoute
   ShareQuestionsNewRoute: typeof ShareQuestionsNewRoute
@@ -2060,6 +2073,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRitaWorkerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rita/demo': {
+      id: '/api/rita/demo'
+      path: '/api/rita/demo'
+      fullPath: '/api/rita/demo'
+      preLoaderRoute: typeof ApiRitaDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rita/live': {
       id: '/api/rita/live'
       path: '/api/rita/live'
@@ -2442,6 +2462,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicPushDispatchRoute: ApiPublicPushDispatchRoute,
   ApiPublicRitaWorkerRoute: ApiPublicRitaWorkerRoute,
+  ApiRitaDemoRoute: ApiRitaDemoRoute,
   ApiRitaLiveRoute: ApiRitaLiveRoute,
   ShareQuestionsSetIdRoute: ShareQuestionsSetIdRoute,
   ShareQuestionsNewRoute: ShareQuestionsNewRoute,
