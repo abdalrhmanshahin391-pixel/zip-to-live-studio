@@ -401,13 +401,13 @@ function RitaLivePage() {
 
   if (!loading && !user) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#100f12] text-white">
-        <div className="max-w-sm p-8 text-center">
-          <Bot className="mx-auto mb-4 text-orange-300" />
-          <h1 className="text-2xl font-bold">Sign in to talk with Rita</h1>
+      <div className="grid min-h-screen place-items-center bg-[#faf9f3] p-5 text-[#292821]">
+        <div className="max-w-sm rounded-[28px] border border-[#e8e4d8] bg-[#fffef9] p-8 text-center shadow-[0_24px_70px_-48px_rgba(53,50,37,.55)]">
+          <Bot className="mx-auto mb-4 text-[#62a832]" />
+          <h1 className="font-display text-2xl font-extrabold">Sign in to talk with Rita</h1>
           <Link
             to="/login"
-            className="mt-6 inline-block rounded-xl bg-orange-300 px-5 py-3 font-bold text-stone-950"
+            className="mt-6 inline-block rounded-xl bg-[#66ae36] px-5 py-3 font-extrabold text-white shadow-[0_4px_0_#4b8f28] transition hover:bg-[#579d2d]"
           >
             Sign in
           </Link>
@@ -420,49 +420,64 @@ function RitaLivePage() {
     mode === "live" ? "Start live conversation" : recording ? "Finish my turn" : "Speak to Rita";
 
   return (
-    <main className="min-h-screen bg-[#130e0c] p-2 text-white md:p-5">
+    <main className="min-h-screen bg-[#faf9f3] p-2 text-[#292821] md:p-5">
       <audio ref={audio} autoPlay />
-      <div className="mx-auto grid min-h-[calc(100vh-1rem)] max-w-[1680px] overflow-hidden rounded-[24px] border border-white/10 bg-[#19130f] shadow-2xl md:min-h-[calc(100vh-2.5rem)] md:grid-cols-[minmax(0,1fr)_minmax(440px,1fr)] md:rounded-[38px]">
-        <section className="order-2 flex min-h-[58vh] flex-col bg-[#fbf6ed] text-stone-900 md:order-1 md:min-h-0">
-          <header className="flex items-center justify-between gap-3 border-b border-stone-200/80 px-4 py-4 md:px-7 md:py-5">
+      <div className="mx-auto grid min-h-[calc(100vh-1rem)] max-w-[1680px] overflow-hidden rounded-[24px] border border-[#e8e4d8] bg-[#fffef9] shadow-[0_28px_80px_-52px_rgba(53,50,37,.56)] md:min-h-[calc(100vh-2.5rem)] md:grid-cols-[minmax(0,1.15fr)_minmax(430px,.85fr)] md:rounded-[34px]">
+        <section className="order-2 flex min-h-[58vh] flex-col bg-[#fffef9] text-[#292821] md:order-1 md:min-h-0">
+          <header className="border-b border-[#ece8dc] px-4 py-4 md:px-7 md:py-5">
             <div>
-              <div className="flex items-center gap-2">
-                <p className="text-[10px] font-black tracking-[.19em] text-orange-600 md:text-xs">
-                  YOUR LIVE LESSON
-                </p>
-                <span
-                  className={`rounded-full px-2 py-1 text-[10px] font-black ${mode === "live" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}
-                >
-                  {mode === "checking" ? "CHECKING" : mode === "live" ? "GPT LIVE" : "DEMO VOICE"}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    aria-label="Leave Rita Live"
+                    onClick={() => {
+                      endSession();
+                      navigate({ to: "/" });
+                    }}
+                    className="grid h-8 w-8 place-items-center rounded-full text-[#9a978d] transition hover:bg-[#f1efe7] hover:text-[#292821]"
+                  >
+                    <X size={18} />
+                  </button>
+                  <p className="text-xs font-bold text-[#9a978d] md:text-sm">
+                    Rita Live · Your lesson
+                  </p>
+                </div>
+                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#6b9f36]">
+                  <span className="h-2 w-2 rounded-full bg-[#70b840]" />
+                  {mode === "checking"
+                    ? "Preparing"
+                    : mode === "live"
+                      ? "Live voice"
+                      : "Demo voice"}
                 </span>
               </div>
-              <h1 className="mt-1 text-lg font-extrabold md:text-xl">Talk with Rita</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setSettingsOpen((open) => !open)}
-                className="inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold shadow-sm"
-              >
-                <Sparkles size={14} /> <span className="hidden sm:inline">Rita’s style</span>{" "}
-                <ChevronDown size={14} />
-              </button>
-              <button
-                type="button"
-                aria-label="Leave Rita Live"
-                onClick={() => {
-                  endSession();
-                  navigate({ to: "/" });
-                }}
-                className="grid h-9 w-9 place-items-center rounded-full border border-stone-200 bg-white text-stone-500 hover:text-stone-900"
-              >
-                <X size={18} />
-              </button>
+              <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#f0eee6]">
+                <div className="h-full w-[22%] rounded-full bg-[#72b941]" />
+              </div>
+              <div className="mt-4 flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black tracking-[.16em] text-[#6b9f36] md:text-xs">
+                    YOUR LIVE LESSON
+                  </p>
+                  <h1 className="mt-1 font-display text-xl font-extrabold tracking-[-.02em] md:text-2xl">
+                    Talk with Rita
+                  </h1>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSettingsOpen((open) => !open)}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-[#e8e4d8] bg-[#fbfaf5] px-3 py-2 text-xs font-bold text-[#5f5c53] shadow-sm transition hover:bg-white"
+                >
+                  <Sparkles size={14} /> <span className="hidden sm:inline">Rita’s style</span>{" "}
+                  <ChevronDown size={14} />
+                </button>
+              </div>
             </div>
           </header>
 
           {settingsOpen && (
-            <div className="border-b border-stone-200 bg-white p-4 md:p-5">
+            <div className="border-b border-[#ece8dc] bg-[#fbfaf5] p-4 md:p-5">
               <div className="grid gap-2 sm:grid-cols-2">
                 {(Object.keys(personaCopy) as Persona[]).map((item) => (
                   <button
@@ -470,10 +485,10 @@ function RitaLivePage() {
                     key={item}
                     disabled={mode === "live" && active}
                     onClick={() => setPersona(item)}
-                    className={`rounded-xl border p-3 text-left text-sm transition-colors disabled:opacity-50 ${persona === item ? "border-orange-400 bg-orange-50" : "border-stone-200 bg-white"}`}
+                    className={`rounded-2xl border p-3 text-left text-sm transition-colors disabled:opacity-50 ${persona === item ? "border-[#8bc65d] bg-[#f1f8e9] text-[#335b1b]" : "border-[#e8e4d8] bg-white hover:border-[#cdddbd]"}`}
                   >
                     <b>{personaCopy[item].label}</b>
-                    <span className="mt-1 block text-xs text-stone-500">
+                    <span className="mt-1 block text-xs text-[#858177]">
                       {personaCopy[item].detail}
                     </span>
                   </button>
@@ -485,7 +500,7 @@ function RitaLivePage() {
                   value={language}
                   disabled={mode === "live" && active}
                   onChange={(event) => setLanguage(event.target.value)}
-                  className="min-w-0 flex-1 rounded-lg border border-stone-200 bg-white p-2"
+                  className="min-w-0 flex-1 rounded-xl border border-[#e8e4d8] bg-white p-2"
                 >
                   {languages.map((item) => (
                     <option key={item}>{item}</option>
@@ -493,34 +508,34 @@ function RitaLivePage() {
                 </select>
               </label>
               {mode === "live" && active && (
-                <p className="mt-2 text-xs text-stone-500">
+                <p className="mt-2 text-xs text-[#858177]">
                   End this session to change Rita’s live teaching style.
                 </p>
               )}
             </div>
           )}
 
-          <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-7">
+          <div className="flex-1 space-y-5 overflow-y-auto p-5 md:p-8">
             {messages.map((message) => (
               <article
                 key={message.id}
                 className={`flex gap-3 ${message.role === "you" ? "justify-end" : ""}`}
               >
                 {message.role === "rita" && (
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-orange-200 text-orange-900">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#e8f4dc] text-[#4e8628]">
                     <Sparkles size={15} />
                   </span>
                 )}
                 <div
-                  className={`max-w-[84%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${message.role === "rita" ? "bg-white shadow-sm ring-1 ring-stone-900/5" : "bg-stone-900 text-white"}`}
+                  className={`max-w-[84%] rounded-[18px] px-4 py-3 text-[15px] leading-relaxed ${message.role === "rita" ? "bg-[#f5f3eb] text-[#36342e]" : "bg-[#6eaf3d] text-white shadow-[0_4px_0_#57952d]"}`}
                 >
                   {message.text}
                 </div>
               </article>
             ))}
             {busy && (
-              <div className="flex items-center gap-2 text-sm text-stone-500">
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-orange-100">
+              <div className="flex items-center gap-2 text-sm text-[#858177]">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-[#edf6e4] text-[#5d9f30]">
                   <Volume2 size={15} />
                 </span>
                 <Loader2 size={15} className="animate-spin" /> Rita is thinking…
@@ -537,33 +552,40 @@ function RitaLivePage() {
             <div ref={messageEnd} />
           </div>
 
-          <form onSubmit={sendText} className="border-t border-stone-200 bg-white p-4 md:p-5">
-            <div className="flex gap-2">
-              <input
-                value={draft}
-                disabled={busy}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder="Type to Rita…"
-                className="min-w-0 flex-1 rounded-xl border border-stone-200 px-4 py-3 outline-none focus:border-orange-400 disabled:bg-stone-50"
-              />
-              <button
-                disabled={!draft.trim() || busy}
-                className="grid h-12 w-12 place-items-center rounded-xl bg-stone-900 text-white disabled:opacity-40"
-                aria-label="Send message"
-              >
-                <Send size={18} />
-              </button>
+          <form onSubmit={sendText} className="border-t border-[#ece8dc] bg-[#fffef9] p-4 md:p-5">
+            <div className="rounded-[18px] border border-[#e7e3d8] bg-white p-2 shadow-[0_10px_26px_-22px_rgba(53,50,37,.75)]">
+              <div className="flex gap-2">
+                <input
+                  value={draft}
+                  disabled={busy}
+                  onChange={(event) => setDraft(event.target.value)}
+                  placeholder="Type to Rita…"
+                  className="min-w-0 flex-1 bg-transparent px-3 py-2 outline-none placeholder:text-[#aaa69b] focus:ring-0 disabled:bg-transparent"
+                />
+                <button
+                  disabled={!draft.trim() || busy}
+                  className="grid h-11 w-11 place-items-center rounded-xl bg-[#70b840] text-white shadow-[0_3px_0_#57952d] transition hover:bg-[#63a735] disabled:opacity-40"
+                  aria-label="Send message"
+                >
+                  <Send size={18} />
+                </button>
+              </div>
+              <div className="mt-1 flex items-center justify-between gap-2 px-1 pb-1">
+                <span className="text-[11px] font-medium text-[#aaa69b]">
+                  Ask a question, practise, or get feedback.
+                </span>
+              </div>
             </div>
             <button
               type="button"
               disabled={mode === "checking" || busy}
               onClick={mode === "live" ? (active ? endSession : beginLive) : toggleDemoRecording}
-              className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black shadow-sm transition-colors disabled:cursor-wait disabled:opacity-50 ${
+              className={`mt-3 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold shadow-[0_3px_0_rgba(71,121,35,.32)] transition-colors disabled:cursor-wait disabled:opacity-50 ${
                 active && mode === "live"
                   ? "bg-rose-600 text-white"
                   : recording
-                    ? "bg-orange-600 text-white"
-                    : "bg-orange-100 text-orange-950 ring-1 ring-orange-200"
+                    ? "bg-[#579a2e] text-white"
+                    : "bg-[#70b840] text-white hover:bg-[#63a735]"
               }`}
             >
               {busy || mode === "checking" ? (
@@ -575,7 +597,7 @@ function RitaLivePage() {
               )}
               {active && mode === "live" ? "End live lesson" : startLabel}
             </button>
-            <p className="mt-2 text-center text-[11px] leading-relaxed text-stone-500">
+            <p className="mt-2 text-left text-[11px] leading-relaxed text-[#959187]">
               {mode === "live"
                 ? "Full-duplex OpenAI voice is active. Rita listens and answers naturally."
                 : "Demo voice records one turn at a time and uses the available RitaJet AI credits plus your browser voice."}
