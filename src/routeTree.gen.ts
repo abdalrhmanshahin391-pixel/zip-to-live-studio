@@ -97,7 +97,11 @@ import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicPushDispatchRouteImport } from './routes/api/public/push-dispatch'
 import { Route as ApiPublicRitaWorkerRouteImport } from './routes/api/public/rita-worker'
 import { Route as ApiRitaDemoRouteImport } from './routes/api/rita/demo'
+import { Route as ApiRitaLearningRouteImport } from './routes/api/rita/learning'
 import { Route as ApiRitaLiveRouteImport } from './routes/api/rita/live'
+import { Route as ApiRitaSessionRouteImport } from './routes/api/rita/session'
+import { Route as ApiRitaSpeechRouteImport } from './routes/api/rita/speech'
+import { Route as ApiRitaTurnRouteImport } from './routes/api/rita/turn'
 import { Route as CoursesCourseIdIndexRouteImport } from './routes/courses.$courseId.index'
 import { Route as CoursesCourseIdAddQuestionsRouteImport } from './routes/courses.$courseId.add-questions'
 import { Route as CoursesCourseIdRunRouteImport } from './routes/courses.$courseId.run'
@@ -566,9 +570,29 @@ const ApiRitaDemoRoute = ApiRitaDemoRouteImport.update({
   path: '/api/rita/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRitaLearningRoute = ApiRitaLearningRouteImport.update({
+  id: '/api/rita/learning',
+  path: '/api/rita/learning',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRitaLiveRoute = ApiRitaLiveRouteImport.update({
   id: '/api/rita/live',
   path: '/api/rita/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRitaSessionRoute = ApiRitaSessionRouteImport.update({
+  id: '/api/rita/session',
+  path: '/api/rita/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRitaSpeechRoute = ApiRitaSpeechRouteImport.update({
+  id: '/api/rita/speech',
+  path: '/api/rita/speech',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRitaTurnRoute = ApiRitaTurnRouteImport.update({
+  id: '/api/rita/turn',
+  path: '/api/rita/turn',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CoursesCourseIdIndexRoute = CoursesCourseIdIndexRouteImport.update({
@@ -783,7 +807,11 @@ export interface FileRoutesByFullPath {
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
   '/api/rita/demo': typeof ApiRitaDemoRoute
+  '/api/rita/learning': typeof ApiRitaLearningRoute
   '/api/rita/live': typeof ApiRitaLiveRoute
+  '/api/rita/session': typeof ApiRitaSessionRoute
+  '/api/rita/speech': typeof ApiRitaSpeechRoute
+  '/api/rita/turn': typeof ApiRitaTurnRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
   '/courses/$courseId/run': typeof CoursesCourseIdRunRoute
   '/german/$courseId/exam': typeof GermanCourseIdExamRoute
@@ -894,7 +922,11 @@ export interface FileRoutesByTo {
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
   '/api/rita/demo': typeof ApiRitaDemoRoute
+  '/api/rita/learning': typeof ApiRitaLearningRoute
   '/api/rita/live': typeof ApiRitaLiveRoute
+  '/api/rita/session': typeof ApiRitaSessionRoute
+  '/api/rita/speech': typeof ApiRitaSpeechRoute
+  '/api/rita/turn': typeof ApiRitaTurnRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
   '/courses/$courseId/run': typeof CoursesCourseIdRunRoute
   '/german/$courseId/exam': typeof GermanCourseIdExamRoute
@@ -1009,7 +1041,11 @@ export interface FileRoutesById {
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
   '/api/rita/demo': typeof ApiRitaDemoRoute
+  '/api/rita/learning': typeof ApiRitaLearningRoute
   '/api/rita/live': typeof ApiRitaLiveRoute
+  '/api/rita/session': typeof ApiRitaSessionRoute
+  '/api/rita/speech': typeof ApiRitaSpeechRoute
+  '/api/rita/turn': typeof ApiRitaTurnRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
   '/courses/$courseId/run': typeof CoursesCourseIdRunRoute
   '/german/$courseId/exam': typeof GermanCourseIdExamRoute
@@ -1126,7 +1162,11 @@ export interface FileRouteTypes {
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
     | '/api/rita/demo'
+    | '/api/rita/learning'
     | '/api/rita/live'
+    | '/api/rita/session'
+    | '/api/rita/speech'
+    | '/api/rita/turn'
     | '/courses/$courseId/add-questions'
     | '/courses/$courseId/run'
     | '/german/$courseId/exam'
@@ -1237,7 +1277,11 @@ export interface FileRouteTypes {
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
     | '/api/rita/demo'
+    | '/api/rita/learning'
     | '/api/rita/live'
+    | '/api/rita/session'
+    | '/api/rita/speech'
+    | '/api/rita/turn'
     | '/courses/$courseId/add-questions'
     | '/courses/$courseId/run'
     | '/german/$courseId/exam'
@@ -1351,7 +1395,11 @@ export interface FileRouteTypes {
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
     | '/api/rita/demo'
+    | '/api/rita/learning'
     | '/api/rita/live'
+    | '/api/rita/session'
+    | '/api/rita/speech'
+    | '/api/rita/turn'
     | '/courses/$courseId/add-questions'
     | '/courses/$courseId/run'
     | '/german/$courseId/exam'
@@ -1452,7 +1500,11 @@ export interface RootRouteChildren {
   ApiPublicPushDispatchRoute: typeof ApiPublicPushDispatchRoute
   ApiPublicRitaWorkerRoute: typeof ApiPublicRitaWorkerRoute
   ApiRitaDemoRoute: typeof ApiRitaDemoRoute
+  ApiRitaLearningRoute: typeof ApiRitaLearningRoute
   ApiRitaLiveRoute: typeof ApiRitaLiveRoute
+  ApiRitaSessionRoute: typeof ApiRitaSessionRoute
+  ApiRitaSpeechRoute: typeof ApiRitaSpeechRoute
+  ApiRitaTurnRoute: typeof ApiRitaTurnRoute
   ShareQuestionsSetIdRoute: typeof ShareQuestionsSetIdRoute
   ShareQuestionsNewRoute: typeof ShareQuestionsNewRoute
   AdminSpacesIndexRoute: typeof AdminSpacesIndexRoute
@@ -2080,11 +2132,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRitaDemoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rita/learning': {
+      id: '/api/rita/learning'
+      path: '/api/rita/learning'
+      fullPath: '/api/rita/learning'
+      preLoaderRoute: typeof ApiRitaLearningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rita/live': {
       id: '/api/rita/live'
       path: '/api/rita/live'
       fullPath: '/api/rita/live'
       preLoaderRoute: typeof ApiRitaLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rita/session': {
+      id: '/api/rita/session'
+      path: '/api/rita/session'
+      fullPath: '/api/rita/session'
+      preLoaderRoute: typeof ApiRitaSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rita/speech': {
+      id: '/api/rita/speech'
+      path: '/api/rita/speech'
+      fullPath: '/api/rita/speech'
+      preLoaderRoute: typeof ApiRitaSpeechRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rita/turn': {
+      id: '/api/rita/turn'
+      path: '/api/rita/turn'
+      fullPath: '/api/rita/turn'
+      preLoaderRoute: typeof ApiRitaTurnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/courses/$courseId/': {
@@ -2463,7 +2543,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPushDispatchRoute: ApiPublicPushDispatchRoute,
   ApiPublicRitaWorkerRoute: ApiPublicRitaWorkerRoute,
   ApiRitaDemoRoute: ApiRitaDemoRoute,
+  ApiRitaLearningRoute: ApiRitaLearningRoute,
   ApiRitaLiveRoute: ApiRitaLiveRoute,
+  ApiRitaSessionRoute: ApiRitaSessionRoute,
+  ApiRitaSpeechRoute: ApiRitaSpeechRoute,
+  ApiRitaTurnRoute: ApiRitaTurnRoute,
   ShareQuestionsSetIdRoute: ShareQuestionsSetIdRoute,
   ShareQuestionsNewRoute: ShareQuestionsNewRoute,
   AdminSpacesIndexRoute: AdminSpacesIndexRoute,

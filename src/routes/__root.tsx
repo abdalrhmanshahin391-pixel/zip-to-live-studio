@@ -25,7 +25,6 @@ import "@/i18n";
 import { DeferredOverlays } from "@/components/DeferredOverlays";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 
-
 // Language only — the seasonal theme comes from the server-rendered head script
 // so it can never flash a stale value from localStorage.
 const themeBootScript = `(function(){try{document.documentElement.classList.remove('dark');var l='en';try{l=localStorage.getItem('ysmu-lang')==='ar'?'ar':'en';}catch(_){}document.documentElement.setAttribute('lang',l);document.documentElement.setAttribute('dir',l==='ar'?'rtl':'ltr');}catch(e){}})();`;
@@ -103,7 +102,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "RitaJet — flashcards, PDF summaries and AI study questions" },
-      { name: "description", content: "Rita is a calm study workspace: build flashcard decks, turn lecture PDFs into one-page summaries, generate practice questions and plan your day." },
+      {
+        name: "description",
+        content:
+          "Rita is a calm study workspace: build flashcard decks, turn lecture PDFs into one-page summaries, generate practice questions and plan your day.",
+      },
       { name: "author", content: "RitaJet" },
       { name: "google-site-verification", content: "U9UIGln2ZVhjR6-rfab8T6y0XwmD0zLbLQqcwmBL1Lg" },
       { name: "google-site-verification", content: "5x31hbQQtmr14Jhd9AbkN5YlijfbfFTulNvcHMs1Y_8" },
@@ -114,16 +117,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-title", content: "RitaJet" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
 
-      { property: "og:title", content: "RitaJet — flashcards, PDF summaries and AI study questions" },
-      { property: "og:description", content: "A calm study workspace: flashcards, one-page PDF summaries, practice questions and a to-do board that keeps your streak alive." },
+      {
+        property: "og:title",
+        content: "RitaJet — flashcards, PDF summaries and AI study questions",
+      },
+      {
+        property: "og:description",
+        content:
+          "A calm study workspace: flashcards, one-page PDF summaries, practice questions and a to-do board that keeps your streak alive.",
+      },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "RitaJet" },
-      { name: "twitter:title", content: "RitaJet — flashcards, PDF summaries and AI study questions" },
-      { name: "twitter:description", content: "Flashcards, PDF summaries, practice questions and a study planner in one place." },
-
-
-
-
+      {
+        name: "twitter:title",
+        content: "RitaJet — flashcards, PDF summaries and AI study questions",
+      },
+      {
+        name: "twitter:description",
+        content: "Flashcards, PDF summaries, practice questions and a study planner in one place.",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -168,7 +180,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               name: "RitaJet",
               alternateName: ["RitaJet", "Rita Study", "RitaJet study tools"],
               url: "https://ritajet.com/",
-               logo: "https://ritajet.com/favicon-512.png",
+              logo: "https://ritajet.com/favicon-512.png",
               description:
                 "Rita is a study workspace with flashcards, PDF summaries, AI practice questions and a study planner.",
             },
@@ -179,8 +191,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               url: "https://ritajet.com/",
               publisher: { "@id": "https://ritajet.com/#organization" },
             },
-
-
           ],
         }),
       },
@@ -223,13 +233,13 @@ function RootComponent() {
   // Seed the caches synchronously (before the first paint) so no component
   // has to refetch global settings/copy after hydration.
   useState(() => {
-    if (boot?.settings) queryClient.setQueryData(["site-settings"], normalizeSettings(boot.settings));
+    if (boot?.settings)
+      queryClient.setQueryData(["site-settings"], normalizeSettings(boot.settings));
     // Replaced artwork is already resolved on the server, so pictures paint
     // correct on the first frame instead of flashing the built-in art.
     if (boot?.siteImages) queryClient.setQueryData(["site-images"], boot.siteImages);
     return null;
   });
-
 
   useEffect(() => {
     if (loading) return;
@@ -238,8 +248,11 @@ function RootComponent() {
     // Guests do not need cloud synchronization at all, so keep its network and
     // storage work off the public landing-page startup path.
     let cancelled = false;
-    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number })
-      .requestIdleCallback;
+    const idle = (
+      window as unknown as {
+        requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+      }
+    ).requestIdleCallback;
     const run = async () => {
       if (cancelled) return;
       try {
@@ -254,41 +267,48 @@ function RootComponent() {
         reportLovableError(error, { boundary: "background_startup" });
       }
     };
-    const id = idle ? idle(() => void run(), { timeout: 1500 }) : window.setTimeout(() => void run(), 600);
+    const id = idle
+      ? idle(() => void run(), { timeout: 1500 })
+      : window.setTimeout(() => void run(), 600);
     return () => {
       cancelled = true;
-      const cancelIdle = (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
+      const cancelIdle = (window as unknown as { cancelIdleCallback?: (id: number) => void })
+        .cancelIdleCallback;
       if (idle && cancelIdle) cancelIdle(id as number);
       else window.clearTimeout(id as number);
     };
   }, [loading, user?.id]);
 
-
   useEffect(() => {
     let unsub: (() => void) | undefined;
     (async () => {
       try {
-      const { supabase } = await import("@/integrations/supabase/client");
-      const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-        if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
-          router.invalidate();
-          // Only user-scoped caches change on auth transitions; blanket
-          // invalidation used to refetch the whole site on every sign-in.
-          if (event !== "SIGNED_OUT") {
-            for (const key of ["auth", "my-courses", "my-lecture-courses", "profile", "committee-role"]) {
-              queryClient.invalidateQueries({ queryKey: [key] });
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+          if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+            router.invalidate();
+            // Only user-scoped caches change on auth transitions; blanket
+            // invalidation used to refetch the whole site on every sign-in.
+            if (event !== "SIGNED_OUT") {
+              for (const key of [
+                "auth",
+                "my-courses",
+                "my-lecture-courses",
+                "profile",
+                "committee-role",
+              ]) {
+                queryClient.invalidateQueries({ queryKey: [key] });
+              }
             }
           }
-        }
-      });
-      unsub = () => sub.subscription.unsubscribe();
+        });
+        unsub = () => sub.subscription.unsubscribe();
       } catch (error) {
         reportLovableError(error, { boundary: "auth_listener_startup" });
       }
     })();
     return () => unsub?.();
   }, [queryClient, router]);
-
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -303,7 +323,6 @@ function RootComponent() {
           <Outlet />
           <GlobalFooter />
           <DeferredOverlays />
-
         </LanguageProvider>
       </ThemeProvider>
     </QueryClientProvider>
@@ -364,6 +383,7 @@ const NO_FOOTER = [
   "/register",
   "/forgot-password",
   "/reset-password",
+  "/rita-live",
 ];
 
 function GlobalFooter() {
@@ -420,18 +440,28 @@ function DeviceTracker() {
 
     (async () => {
       try {
-      const { supabase } = await import("@/integrations/supabase/client");
-      const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-        if (event === "SIGNED_IN") void ping(true);
-      });
-      unsub = () => sub.subscription.unsubscribe();
-      const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number })
-        .requestIdleCallback;
-      if (idle) {
-        idle(() => { if (!cancelled) void ping(true); }, { timeout: 2000 });
-      } else {
-        setTimeout(() => { if (!cancelled) void ping(true); }, 1000);
-      }
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+          if (event === "SIGNED_IN") void ping(true);
+        });
+        unsub = () => sub.subscription.unsubscribe();
+        const idle = (
+          window as unknown as {
+            requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+          }
+        ).requestIdleCallback;
+        if (idle) {
+          idle(
+            () => {
+              if (!cancelled) void ping(true);
+            },
+            { timeout: 2000 },
+          );
+        } else {
+          setTimeout(() => {
+            if (!cancelled) void ping(true);
+          }, 1000);
+        }
       } catch {
         /* Account tracking is optional and must never affect page rendering. */
       }
@@ -452,4 +482,3 @@ function DeviceTracker() {
   }, []);
   return null;
 }
-
