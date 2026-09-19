@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import {
+  ArrowDown,
   Bot,
   ChevronDown,
   Languages,
@@ -10,8 +11,6 @@ import {
   PhoneOff,
   Play,
   Send,
-  Sparkles,
-  Volume2,
   X,
 } from "lucide-react";
 import { RitaStage, type RitaMood } from "@/components/rita-live/RitaStage";
@@ -104,7 +103,7 @@ function RitaLivePage() {
     {
       id: "welcome",
       role: "rita",
-      text: "Hi, I’m Rita. Start your lesson once, then just speak naturally — I’ll listen and answer automatically.",
+      text: "Hi, I’m Rita. What would you like to practise?",
     },
   ]);
   const [draft, setDraft] = useState("");
@@ -117,6 +116,7 @@ function RitaLivePage() {
   const [premiumVoice, setPremiumVoice] = useState(true);
   const [inputLevel, setInputLevel] = useState(0);
   const [outputLevel, setOutputLevel] = useState(0);
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
 
   const vad = useRef<RitaVadController | null>(null);
   const sessionId = useRef<string | null>(null);
@@ -128,6 +128,8 @@ function RitaLivePage() {
   const outputSource = useRef<MediaElementAudioSourceNode | null>(null);
   const outputFrame = useRef<number | null>(null);
   const messageEnd = useRef<HTMLDivElement | null>(null);
+  const transcript = useRef<HTMLDivElement | null>(null);
+  const stickToLatest = useRef(true);
   const messagesRef = useRef(messages);
   const activeRef = useRef(active);
   const processingRef = useRef(processing);
@@ -170,8 +172,24 @@ function RitaLivePage() {
   }, []);
 
   useEffect(() => {
-    messageEnd.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (stickToLatest.current) {
+      messageEnd.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
   }, [messages, processing]);
+
+  const scrollToLatest = useCallback(() => {
+    stickToLatest.current = true;
+    setShowJumpToLatest(false);
+    messageEnd.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, []);
+
+  const handleTranscriptScroll = useCallback(() => {
+    const element = transcript.current;
+    if (!element) return;
+    const atLatest = element.scrollHeight - element.scrollTop - element.clientHeight < 48;
+    stickToLatest.current = atLatest;
+    setShowJumpToLatest(!atLatest);
+  }, []);
 
   const stopOutputMeter = useCallback(() => {
     if (outputFrame.current) cancelAnimationFrame(outputFrame.current);
@@ -540,11 +558,11 @@ function RitaLivePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f2efe6] p-2 text-[#292821] md:p-5">
+    <main className="h-[100dvh] overflow-hidden bg-[#f8f7f3] text-[#24221e]">
       <audio ref={audio} playsInline preload="none" />
-      <div className="mx-auto grid min-h-[calc(100vh-1rem)] max-w-[1680px] overflow-hidden rounded-[24px] border border-[#dfdbcf] bg-[#fffef9] shadow-[0_32px_90px_-54px_rgba(38,36,28,.62)] md:min-h-[calc(100vh-2.5rem)] md:grid-cols-[minmax(0,1.16fr)_minmax(430px,.84fr)] md:rounded-[34px]">
-        <section className="order-2 flex min-h-[58vh] flex-col bg-[#fffef9] md:order-1 md:min-h-0">
-          <header className="border-b border-[#ece8dc] px-4 py-4 md:px-7 md:py-5">
+      <div className="grid h-full overflow-hidden bg-[#fdfcf9] md:grid-cols-[minmax(0,1.22fr)_minmax(380px,.78fr)]">
+        <section className="order-1 flex min-h-0 flex-col bg-[#fdfcf9] md:order-1">
+          <header className="border-b border-[#e9e5df] px-5 pb-3 pt-4 md:px-9 md:pb-4 md:pt-6">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <button
@@ -554,48 +572,42 @@ function RitaLivePage() {
                     endSession();
                     navigate({ to: "/" });
                   }}
-                  className="grid h-9 w-9 place-items-center rounded-full text-[#9a978d] transition hover:bg-[#f1efe7] hover:text-[#292821]"
+                  className="grid h-10 w-10 place-items-center rounded-xl text-[#807d73] transition hover:bg-[#f1effa] hover:text-[#6238d9]"
                 >
                   <X size={18} />
                 </button>
-                <div>
-                  <p className="text-[10px] font-black tracking-[.17em] text-[#6b9f36]">
-                    YOUR PRIVATE TUTOR
-                  </p>
-                  <h1 className="font-display text-xl font-extrabold tracking-[-.02em] md:text-2xl">
-                    Talk with Rita
-                  </h1>
+                <div className="flex items-center gap-2.5 text-lg md:text-xl">
+                  <h1 className="font-display font-extrabold tracking-[-.04em]">RitaJet</h1>
+                  <span className="h-5 w-px bg-[#d9d4cc]" />
+                  <span className="font-medium text-[#514d48]">Live lesson</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setSettingsOpen((open) => !open)}
-                className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-[#e8e4d8] bg-[#fbfaf5] px-3 py-2 text-xs font-bold text-[#5f5c53] shadow-sm transition hover:bg-white"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#e3dde9] bg-white px-3.5 py-2 text-sm font-semibold text-[#514b5d] transition hover:border-[#b9a1f4] hover:bg-[#f6f1ff]"
               >
-                <Sparkles size={14} /> <span className="hidden sm:inline">Rita’s style</span>
+                <span className="hidden sm:inline">Settings</span>
                 <ChevronDown size={14} />
               </button>
             </div>
-            <div className="mt-4 flex items-center gap-3">
-              <span
-                className={`h-2.5 w-2.5 rounded-full ${active ? "bg-[#70b840] shadow-[0_0_12px_#70b840]" : configured ? "bg-[#d3a25a]" : "bg-[#c4c0b7]"}`}
+            <div className="mt-4 h-1 w-40 rounded-full bg-[#ebe6f8]">
+              <div
+                className="h-full rounded-full bg-[#7246e9]"
+                style={{ width: active ? "100%" : "34%" }}
               />
-              <p className="text-xs font-semibold text-[#777369]">{status}</p>
-              <span className="ml-auto rounded-full bg-[#f2f0e8] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#777369]">
-                {premiumVoice ? "Premium voice" : "Standard voice"}
-              </span>
             </div>
           </header>
 
           {settingsOpen && (
-            <div className="border-b border-[#ece8dc] bg-[#fbfaf5] p-4 md:p-5">
+            <div className="border-b border-[#e9e5df] bg-[#faf8ff] p-4 md:p-5">
               <div className="grid gap-2 sm:grid-cols-2">
                 {(Object.keys(personaCopy) as Persona[]).map((item) => (
                   <button
                     type="button"
                     key={item}
                     onClick={() => setPersona(item)}
-                    className={`rounded-2xl border p-3 text-left text-sm transition-colors ${persona === item ? "border-[#8bc65d] bg-[#f1f8e9] text-[#335b1b]" : "border-[#e8e4d8] bg-white hover:border-[#cdddbd]"}`}
+                    className={`rounded-2xl border p-3 text-left text-sm transition-colors ${persona === item ? "border-[#bba4fa] bg-[#eee7ff] text-[#4e2ab5]" : "border-[#e7e1ee] bg-white hover:border-[#c8b7f5]"}`}
                   >
                     <b>{personaCopy[item].label}</b>
                     <span className="mt-1 block text-xs text-[#858177]">
@@ -612,7 +624,7 @@ function RitaLivePage() {
                     setLanguage(event.target.value);
                     setDialect("unknown");
                   }}
-                  className="min-w-0 flex-1 rounded-xl border border-[#e8e4d8] bg-white p-2.5"
+                  className="min-w-0 flex-1 rounded-xl border border-[#e5deeb] bg-white p-2.5 focus:border-[#9c7deb]"
                 >
                   {languages.map((item) => (
                     <option key={item.value} value={item.value}>
@@ -632,7 +644,7 @@ function RitaLivePage() {
                   }}
                   list="rita-accent-examples"
                   placeholder="Automatic, or type any accent — e.g. Mexican Spanish"
-                  className="mt-2 w-full rounded-xl border border-[#e8e4d8] bg-white p-2.5 font-normal outline-none focus:border-[#8bc65d]"
+                  className="mt-2 w-full rounded-xl border border-[#e5deeb] bg-white p-2.5 font-normal outline-none focus:border-[#9c7deb]"
                 />
                 <datalist id="rita-accent-examples">
                   {accentExamples.map((accent) => (
@@ -640,71 +652,81 @@ function RitaLivePage() {
                   ))}
                 </datalist>
               </label>
-              <p className="mt-2 text-xs leading-relaxed text-[#858177]">
-                Automatic mode follows your language, regional vocabulary, slang, formality, and
-                code-switching. Type a region when you want an exact accent instead of automatic
-                matching.
-              </p>
             </div>
           )}
 
-          <div className="flex-1 space-y-5 overflow-y-auto p-5 md:p-8">
-            {messages.map((message) => (
-              <article
-                key={message.id}
-                className={`flex gap-3 ${message.role === "you" ? "justify-end" : ""}`}
-              >
-                {message.role === "rita" && (
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#e8f4dc] text-[#4e8628]">
-                    <Sparkles size={15} />
-                  </span>
-                )}
-                <div className="max-w-[84%]">
-                  <div
-                    className={`rounded-[18px] px-4 py-3 text-[15px] leading-relaxed ${message.role === "rita" ? "bg-[#f5f3eb] text-[#36342e]" : "bg-[#6eaf3d] text-white shadow-[0_4px_0_#57952d]"}`}
-                  >
-                    {message.text}
-                  </div>
-                  {message.correction && (
-                    <div className="mt-2 rounded-xl border border-[#edd9bd] bg-[#fff8eb] px-3 py-2 text-xs leading-relaxed text-[#805b2f]">
-                      <b>Quick correction:</b> {message.correction}
-                    </div>
+          <div className="relative min-h-0 flex-1">
+            <div
+              ref={transcript}
+              onScroll={handleTranscriptScroll}
+              className="rita-live-transcript h-full space-y-7 overflow-y-auto px-5 py-7 md:px-11 md:py-10"
+            >
+              {messages.map((message) => (
+                <article
+                  key={message.id}
+                  className={`flex gap-3 ${message.role === "you" ? "justify-end" : ""}`}
+                >
+                  {message.role === "rita" && (
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#eee7ff] text-sm font-bold text-[#6238d9]">
+                      R
+                    </span>
                   )}
+                  <div className="max-w-[84%]">
+                    <div
+                      className={`rounded-[20px] px-5 py-4 text-base leading-7 md:text-[17px] ${message.role === "rita" ? "bg-[#f3f0fb] text-[#302b37]" : "bg-[#7044df] text-white shadow-[0_3px_0_#5532b1]"}`}
+                    >
+                      {message.text}
+                    </div>
+                    {message.correction && (
+                      <div className="mt-2 rounded-xl border border-[#ded1ff] bg-[#faf7ff] px-3 py-2 text-xs leading-relaxed text-[#634a94]">
+                        <b>Quick correction:</b> {message.correction}
+                      </div>
+                    )}
+                  </div>
+                </article>
+              ))}
+              {processing && (
+                <div className="flex items-center gap-2 text-sm font-medium text-[#6e6878]">
+                  <Loader2 size={16} className="animate-spin" /> Rita is thinking…
                 </div>
-              </article>
-            ))}
-            {processing && (
-              <div className="flex items-center gap-2 text-sm text-[#858177]">
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-[#edf6e4] text-[#5d9f30]">
-                  <Volume2 size={15} />
-                </span>
-                <Loader2 size={15} className="animate-spin" /> Rita is preparing your answer…
-              </div>
-            )}
-            {error && (
-              <p
-                role="alert"
-                className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700"
+              )}
+              {error && (
+                <p
+                  role="alert"
+                  className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700"
+                >
+                  {error}
+                </p>
+              )}
+              <div ref={messageEnd} />
+            </div>
+            {showJumpToLatest && (
+              <button
+                type="button"
+                onClick={scrollToLatest}
+                className="absolute bottom-5 left-1/2 inline-flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#2f253d] px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-[#4a3373]"
               >
-                {error}
-              </p>
+                <ArrowDown size={16} /> Latest
+              </button>
             )}
-            <div ref={messageEnd} />
           </div>
 
-          <form onSubmit={sendText} className="border-t border-[#ece8dc] bg-[#fffef9] p-4 md:p-5">
-            <div className="rounded-[18px] border border-[#e7e3d8] bg-white p-2 shadow-[0_10px_26px_-22px_rgba(53,50,37,.75)]">
+          <form
+            onSubmit={sendText}
+            className="border-t border-[#e9e5df] bg-[#fdfcf9] px-5 py-4 md:px-9 md:py-5"
+          >
+            <div className="rounded-[22px] border border-[#e4dfd5] bg-white p-2 shadow-[0_12px_28px_-24px_rgba(53,50,37,.48)]">
               <div className="flex gap-2">
                 <input
                   value={draft}
                   disabled={processing}
                   onChange={(event) => setDraft(event.target.value)}
                   placeholder="Ask Rita anything…"
-                  className="min-w-0 flex-1 bg-transparent px-3 py-2 outline-none placeholder:text-[#aaa69b] disabled:bg-transparent"
+                  className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-base outline-none placeholder:text-[#aaa69b] disabled:bg-transparent"
                 />
                 <button
                   disabled={!draft.trim() || processing}
-                  className="grid h-11 w-11 place-items-center rounded-xl bg-[#70b840] text-white shadow-[0_3px_0_#57952d] transition hover:bg-[#63a735] disabled:opacity-40"
+                  className="grid h-11 w-11 place-items-center rounded-full bg-[#cdbcf8] text-white transition hover:bg-[#7246e9] disabled:opacity-40"
                   aria-label="Send message"
                 >
                   <Send size={18} />
@@ -717,17 +739,17 @@ function RitaLivePage() {
                 type="button"
                 disabled={starting || configured === false}
                 onClick={beginSession}
-                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#70b840] px-5 py-3.5 text-sm font-extrabold text-white shadow-[0_4px_0_#57952d] transition hover:bg-[#63a735] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#7246e9] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#6036cf] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
                 {starting ? <Loader2 size={18} className="animate-spin" /> : <Play size={18} />}
-                {starting ? "Connecting Rita…" : "Start hands-free lesson"}
+                {starting ? "Connecting…" : "Start lesson"}
               </button>
             ) : (
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={toggleMute}
-                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-extrabold transition ${muted ? "bg-amber-100 text-amber-800" : "bg-[#edf5e6] text-[#4e842b]"}`}
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition ${muted ? "bg-amber-100 text-amber-800" : "bg-[#eee7ff] text-[#5935bd]"}`}
                 >
                   {muted ? <MicOff size={17} /> : <Mic size={17} />}
                   {muted ? "Unmute" : "Mute"}
@@ -735,20 +757,16 @@ function RitaLivePage() {
                 <button
                   type="button"
                   onClick={endSession}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-3 text-sm font-extrabold text-white shadow-[0_3px_0_#a91d3d]"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white"
                 >
                   <PhoneOff size={17} /> End lesson
                 </button>
               </div>
             )}
-            <p className="mt-2 text-[11px] leading-relaxed text-[#959187]">
-              One start per lesson. After that, Rita detects when you finish speaking and answers
-              automatically. Silence does not use paid voice time.
-            </p>
           </form>
         </section>
 
-        <section className="order-1 min-h-[48vh] md:order-2 md:min-h-0">
+        <section className="order-2 min-h-[180px] md:order-2 md:min-h-0">
           <RitaStage
             mood={mood}
             active={active}
