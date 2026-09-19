@@ -14,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { RitaStage, type RitaMood } from "@/components/rita-live/RitaStage";
-import { startRitaVad, type RitaVadController } from "@/lib/rita-vad.client";
+import { startRitaVad, type RitaVadController } from "@/lib/rita-vad";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
