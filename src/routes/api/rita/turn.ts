@@ -227,6 +227,7 @@ Language rules:
 
 Tutor rules:
 - Give a natural answer first. Correct only useful mistakes, briefly, without interrupting the conversation.
+- This lesson has voice output managed by the website. Never claim that you are text-only or unable to speak; answer the learner's question normally. The website, not your reply, reports any audio playback problem.
 - Ask at most one helpful follow-up question.
 - Keep the spoken reply under ${args.words} words unless the learner explicitly asks for detail.
 - Never mock, humiliate, harass, flirt with, or shame the learner.
@@ -390,9 +391,12 @@ export const Route = createFileRoute("/api/rita/turn")({
           outputTokens,
         });
         const replySha256 = await sha256(result.reply);
+        let usageSaved = false;
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          await (supabaseAdmin.from as any)("rita_voice_usage").insert({
+          const { error: usageError } = await (supabaseAdmin.from as any)(
+            "rita_voice_usage",
+          ).insert({
             user_id: auth.userId,
             session_id: /^[0-9a-f-]{36}$/i.test(sessionId) ? sessionId : null,
             turn_id: turnId,
@@ -406,6 +410,8 @@ export const Route = createFileRoute("/api/rita/turn")({
             reply_sha256: replySha256,
             premium_voice: premiumVoice,
           });
+          if (usageError) throw usageError;
+          usageSaved = true;
           if (/^[0-9a-f-]{36}$/i.test(sessionId)) {
             await (supabaseAdmin.from as any)("rita_voice_sessions")
               .update({
@@ -417,7 +423,7 @@ export const Route = createFileRoute("/api/rita/turn")({
               .eq("user_id", auth.userId);
           }
         } catch (error) {
-          console.warn("Rita usage logging is not ready", error);
+          console.warn("Rita usage logging failed", error);
         }
 
         return Response.json(
@@ -425,7 +431,11 @@ export const Route = createFileRoute("/api/rita/turn")({
             turnId,
             transcript,
             ...result,
-            premiumVoice,
+            premiumVoice: premiumVoice && usageSaved,
+            voiceError:
+              premiumVoice && !usageSaved
+                ? "Rita’s voice could not be prepared. Please try a new message."
+                : null,
             allowance,
           },
           { headers: { "Cache-Control": "no-store" } },

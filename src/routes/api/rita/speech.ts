@@ -29,6 +29,10 @@ async function sha256(value: string) {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function speechError(code: string, message: string, status: number) {
+  return Response.json({ code, error: message }, { status });
+}
+
 function voiceInstructions(language: string, dialect: string, emotion: string) {
   const cleanLanguage = language.trim() || "the language of the supplied text";
   const cleanAccent = dialect.trim();
@@ -52,7 +56,7 @@ export const Route = createFileRoute("/api/rita/speech")({
     handlers: {
       POST: async ({ request }) => {
         const auth = await requireRitaUser(request);
-        if (!auth) return new Response("Unauthorized", { status: 401 });
+        if (!auth) return speechError("unauthorized", "Please sign in again.", 401);
         const body = (await request.json().catch(() => null)) as {
           text?: string;
           turnId?: string;
@@ -65,22 +69,36 @@ export const Route = createFileRoute("/api/rita/speech")({
           .slice(0, 3_000);
         const turnId = String(body?.turnId ?? "");
         if (!text || !/^[0-9a-f-]{36}$/i.test(turnId))
-          return new Response("Invalid speech request", { status: 400 });
+          return speechError("invalid_request", "Rita received an invalid voice request.", 400);
 
         const [settings, key] = await Promise.all([getRitaSettings(), resolveRitaOpenAiKey()]);
-        if (!key) return new Response("Rita’s voice is not configured.", { status: 503 });
+        if (!key) return speechError("not_configured", "Rita’s voice is not configured.", 503);
 
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { data: turn } = await (supabaseAdmin.from as any)("rita_voice_usage")
+          const { data: turn, error: turnError } = await (supabaseAdmin.from as any)(
+            "rita_voice_usage",
+          )
             .select("reply_sha256,premium_voice,speech_generated_at")
             .eq("turn_id", turnId)
             .eq("user_id", auth.userId)
             .maybeSingle();
+          if (turnError) {
+            console.error("Rita speech usage lookup failed", turnError);
+            return speechError("usage_unavailable", "Rita’s voice record is unavailable.", 503);
+          }
           if (!turn?.premium_voice || turn.reply_sha256 !== (await sha256(text)))
-            return new Response("Speech turn was not authorized", { status: 403 });
+            return speechError(
+              "turn_unavailable",
+              "Rita could not prepare voice for this reply.",
+              403,
+            );
           if (turn.speech_generated_at)
-            return new Response("Speech for this turn was already generated", { status: 409 });
+            return speechError(
+              "already_generated",
+              "This voice was already generated. Please use Replay instead.",
+              409,
+            );
 
           const voice = ALLOWED_VOICES.has(settings.voice) ? settings.voice : "marin";
           const upstream = await fetch("https://api.openai.com/v1/audio/speech", {
@@ -103,13 +121,21 @@ export const Route = createFileRoute("/api/rita/speech")({
           if (!upstream.ok || !upstream.body) {
             const detail = await upstream.text().catch(() => "");
             console.error("Rita speech failed", upstream.status, detail.slice(0, 240));
-            return new Response("Rita’s premium voice is unavailable.", { status: 502 });
+            return speechError(
+              "provider_unavailable",
+              "Rita’s voice service could not generate audio.",
+              502,
+            );
           }
-          await (supabaseAdmin.from as any)("rita_voice_usage")
+          const bytes = await upstream.arrayBuffer();
+          if (!bytes.byteLength)
+            return speechError("empty_audio", "Rita’s voice service returned no audio.", 502);
+          const { error: updateError } = await (supabaseAdmin.from as any)("rita_voice_usage")
             .update({ speech_generated_at: new Date().toISOString() })
             .eq("turn_id", turnId)
             .eq("user_id", auth.userId);
-          return new Response(upstream.body, {
+          if (updateError) console.error("Rita speech usage update failed", updateError);
+          return new Response(bytes, {
             headers: {
               "Content-Type": "audio/mpeg",
               "Cache-Control": "private, no-store",
@@ -119,7 +145,7 @@ export const Route = createFileRoute("/api/rita/speech")({
         } catch (error) {
           if (request.signal.aborted) return new Response(null, { status: 499 });
           console.error("Rita speech request failed", error);
-          return new Response("Rita’s premium voice is unavailable.", { status: 502 });
+          return speechError("speech_failed", "Rita’s voice could not be prepared.", 502);
         }
       },
     },
