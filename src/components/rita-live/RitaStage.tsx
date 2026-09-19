@@ -1,94 +1,137 @@
-import { useEffect, useState } from "react";
-import { Headphones, Sparkles } from "lucide-react";
-import workshopBackground from "@/assets/rita-live/workshop-background.webp";
-import ritaReady from "@/assets/rita-live/rita-ready.webp";
-import ritaTalking from "@/assets/rita-live/rita-talking.webp";
-import ritaThinking from "@/assets/rita-live/rita-thinking.webp";
-import ritaLaughing from "@/assets/rita-live/rita-laughing.webp";
+import { Headphones, Radio, Sparkles } from "lucide-react";
+import ritaPortrait from "@/assets/rita-live/rita-voice-portrait.png";
 
 export type RitaMood = "ready" | "listening" | "thinking" | "talking" | "laughing";
 
 const moodCopy: Record<RitaMood, string> = {
-  ready: "Ready when you are",
-  listening: "Listening closely",
-  thinking: "Thinking about your answer",
+  ready: "Ready for your lesson",
+  listening: "I’m listening…",
+  thinking: "Let me think…",
   talking: "Rita is speaking",
-  laughing: "That made Rita smile",
+  laughing: "That was excellent",
 };
 
-export function RitaStage({ mood, active }: { mood: RitaMood; active: boolean }) {
-  const [talkFrame, setTalkFrame] = useState(false);
+type Props = {
+  mood: RitaMood;
+  active: boolean;
+  inputLevel?: number;
+  outputLevel?: number;
+  caption?: string;
+  dialect?: string;
+};
 
-  useEffect(() => {
-    if (mood !== "talking") {
-      setTalkFrame(false);
-      return;
-    }
-    const timer = window.setInterval(() => setTalkFrame((frame) => !frame), 180);
-    return () => window.clearInterval(timer);
-  }, [mood]);
-
-  const visible = mood === "talking" && !talkFrame ? "ready" : mood;
-  const frames: { mood: RitaMood; src: string }[] = [
-    { mood: "ready", src: ritaReady },
-    { mood: "listening", src: ritaReady },
-    { mood: "thinking", src: ritaThinking },
-    { mood: "talking", src: ritaTalking },
-    { mood: "laughing", src: ritaLaughing },
-  ];
+export function RitaStage({
+  mood,
+  active,
+  inputLevel = 0,
+  outputLevel = 0,
+  caption,
+  dialect,
+}: Props) {
+  const level = mood === "talking" ? outputLevel : inputLevel;
+  const energy = Math.min(1, Math.max(0, level));
+  const speaking = mood === "talking" || mood === "laughing";
+  const listening = mood === "listening";
+  const thinking = mood === "thinking";
+  const glow = active
+    ? speaking
+      ? "rgba(246, 146, 63, .62)"
+      : "rgba(127, 187, 76, .58)"
+    : "rgba(154, 148, 133, .2)";
 
   return (
-    <div className="relative isolate h-full min-h-[430px] overflow-hidden bg-[#f4f0e5] md:min-h-0">
-      <img
-        src={workshopBackground}
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover object-center"
+    <div className="relative isolate flex h-full min-h-[430px] flex-col overflow-hidden bg-[#171b16] text-white md:min-h-0">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_36%,rgba(123,164,76,.2),transparent_34%),radial-gradient(circle_at_85%_75%,rgba(224,120,54,.13),transparent_32%),linear-gradient(145deg,#1b211a_0%,#121611_52%,#20231c_100%)]" />
+      <div
+        className="absolute inset-0 opacity-35"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(255,255,255,.45) 1px, transparent 1.5px)",
+          backgroundSize: "34px 34px",
+          maskImage: "linear-gradient(to bottom, black, transparent 82%)",
+        }}
       />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,253,247,.08),rgba(71,54,31,.06)_55%,rgba(50,39,23,.32))]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_30%,rgba(255,249,224,.42),transparent_42%)]" />
+      <div className="absolute -left-24 top-1/3 h-56 w-56 rounded-full bg-[#6fa947]/10 blur-3xl" />
+      <div className="absolute -right-24 bottom-10 h-64 w-64 rounded-full bg-[#e27b3c]/10 blur-3xl" />
 
-      <div className="absolute left-5 top-5 z-20 inline-flex items-center gap-2 rounded-full border border-white/60 bg-[#fffdf8]/80 px-3 py-2 text-[11px] font-black tracking-[.14em] text-[#5b594f] shadow-sm backdrop-blur-md md:left-7 md:top-7">
-        <Sparkles size={14} className="text-[#69ac39]" /> RITA LIVE
-      </div>
-
-      <div className="absolute inset-x-0 bottom-[4.6rem] top-14 z-10 flex items-end justify-center px-3 md:bottom-[5.3rem] md:top-16">
-        <div
-          className={`relative h-full w-full max-w-[720px] transition-transform duration-700 motion-reduce:transition-none ${
-            mood === "listening" ? "rita-breathe" : ""
-          }`}
-          aria-label={`Rita is ${mood}`}
-        >
-          {frames.map((frame) => (
-            <img
-              key={frame.mood}
-              src={frame.src}
-              alt={frame.mood === "ready" ? "Rita seated at her workshop desk" : ""}
-              className={`absolute inset-0 h-full w-full object-contain object-bottom transition-opacity duration-200 motion-reduce:transition-none ${
-                visible === frame.mood ? "opacity-100" : "opacity-0"
-              } ${frame.mood === "talking" ? "rita-talk" : ""}`}
-            />
-          ))}
+      <header className="relative z-20 flex items-center justify-between px-5 py-5 md:px-8 md:py-7">
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[.06] px-3 py-2 text-[11px] font-black tracking-[.16em] text-white/85 backdrop-blur-xl">
+          <Sparkles size={14} className="text-[#e7944d]" /> RITA LIVE
         </div>
-      </div>
-
-      <div className="absolute inset-x-5 bottom-5 z-20 flex justify-center md:bottom-7">
-        <div className="flex max-w-sm items-center gap-3 rounded-2xl border border-white/60 bg-[#fffdf8]/85 px-4 py-3 text-[#34322c] shadow-[0_18px_40px_-24px_rgba(46,37,22,.52)] backdrop-blur-xl">
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-2 text-[11px] font-bold text-white/65 backdrop-blur-xl">
           <span
-            className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${active ? "bg-[#e5f2d7] text-[#57952d]" : "bg-[#f0eee6] text-[#7c796f]"}`}
-          >
-            <Headphones
-              size={18}
-              className={active && mood === "listening" ? "animate-pulse" : ""}
+            className={`h-2 w-2 rounded-full ${active ? "bg-[#8bc95b] shadow-[0_0_14px_#8bc95b]" : "bg-white/30"}`}
+          />
+          {active ? "Lesson active" : "Not connected"}
+        </span>
+      </header>
+
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-6">
+        <div className="relative grid place-items-center">
+          <div
+            className={`absolute rounded-full border transition-all duration-150 ${active ? "border-white/10" : "border-white/[.05]"}`}
+            style={{
+              inset: `${-30 - energy * 24}px`,
+              boxShadow: `0 0 ${36 + energy * 70}px ${10 + energy * 20}px ${glow}`,
+              transform: `scale(${1 + energy * 0.055})`,
+            }}
+          />
+          <div
+            className={`absolute -inset-10 rounded-full border-2 border-dashed ${thinking ? "animate-spin border-[#e7944d]/45 [animation-duration:7s]" : "border-white/[.07]"}`}
+          />
+          <div
+            className={`absolute -inset-5 rounded-full border ${listening ? "animate-pulse border-[#8bc95b]/70" : speaking ? "border-[#e7944d]/70" : "border-white/10"}`}
+          />
+          <div className="relative h-52 w-52 overflow-hidden rounded-full border-4 border-[#f4ead8]/90 bg-[radial-gradient(circle_at_50%_25%,#f5d49b,#b96b3e_68%,#5b3326)] shadow-[0_28px_80px_-28px_rgba(0,0,0,.9)] sm:h-64 sm:w-64 lg:h-72 lg:w-72">
+            <img
+              src={ritaPortrait}
+              alt="Rita, your language tutor"
+              className={`h-full w-full object-cover object-center transition-transform duration-500 ${active ? "scale-[1.03]" : "scale-100 grayscale-[.12]"}`}
             />
-          </span>
-          <div>
-            <p className="text-sm font-extrabold">{moodCopy[mood]}</p>
-            <p className="mt-0.5 text-xs text-[#7d796f]">
-              Natural pauses, expressions and voice feedback
-            </p>
+            <div className="pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(145deg,rgba(255,255,255,.2),transparent_32%,rgba(0,0,0,.12))]" />
           </div>
+          {active && (
+            <div className="absolute -bottom-5 flex h-11 items-end gap-1 rounded-full border border-white/10 bg-[#10130f]/85 px-4 py-2 shadow-xl backdrop-blur-xl">
+              {Array.from({ length: 13 }, (_, index) => {
+                const wave = Math.abs(Math.sin(index * 0.78 + energy * 4.5));
+                const height = 5 + 8 + energy * 20 * wave;
+                return (
+                  <span
+                    key={index}
+                    className={`w-1 rounded-full transition-[height,background-color] duration-100 ${speaking ? "bg-[#ed914a]" : "bg-[#8bc95b]"}`}
+                    style={{ height }}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-12 text-center" aria-live="polite">
+          <div className="flex items-center justify-center gap-2 text-xs font-black uppercase tracking-[.19em] text-[#9cbb83]">
+            {speaking ? <Radio size={14} /> : <Headphones size={14} />}
+            {moodCopy[mood]}
+          </div>
+          <p className="mx-auto mt-3 max-w-sm text-lg font-semibold leading-snug text-white/90 md:text-xl">
+            {caption ||
+              "Start once, then speak naturally. Rita will listen and answer automatically."}
+          </p>
+          {dialect && dialect !== "standard" && dialect !== "unknown" && (
+            <span className="mt-4 inline-flex rounded-full border border-[#8bc95b]/25 bg-[#8bc95b]/10 px-3 py-1.5 text-xs font-bold text-[#b9dc9d]">
+              {dialect === "ar-JO"
+                ? "Jordanian Arabic"
+                : dialect === "ar-IQ"
+                  ? "Iraqi Arabic"
+                  : dialect === "ar-LEV"
+                    ? "Levantine Arabic"
+                    : dialect}
+            </span>
+          )}
         </div>
       </div>
+
+      <footer className="relative z-10 px-6 pb-6 text-center text-[11px] font-medium text-white/38 md:px-8 md:pb-8">
+        Silence is free · Rita sends audio only when you speak
+      </footer>
     </div>
   );
 }
