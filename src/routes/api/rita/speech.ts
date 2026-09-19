@@ -67,8 +67,7 @@ export const Route = createFileRoute("/api/rita/speech")({
         if (!text || !/^[0-9a-f-]{36}$/i.test(turnId))
           return new Response("Invalid speech request", { status: 400 });
 
-        const settings = await getRitaSettings();
-        const key = await resolveRitaOpenAiKey();
+        const [settings, key] = await Promise.all([getRitaSettings(), resolveRitaOpenAiKey()]);
         if (!key) return new Response("Rita’s voice is not configured.", { status: 503 });
 
         try {
@@ -96,7 +95,7 @@ export const Route = createFileRoute("/api/rita/speech")({
                 String(body?.dialect ?? ""),
                 String(body?.emotion ?? "warm"),
               ),
-              response_format: "opus",
+              response_format: "mp3",
               speed: 1.02,
             }),
             signal: request.signal,
@@ -112,7 +111,7 @@ export const Route = createFileRoute("/api/rita/speech")({
             .eq("user_id", auth.userId);
           return new Response(upstream.body, {
             headers: {
-              "Content-Type": "audio/ogg; codecs=opus",
+              "Content-Type": "audio/mpeg",
               "Cache-Control": "private, no-store",
               "X-Rita-Voice": "premium",
             },

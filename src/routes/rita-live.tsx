@@ -14,6 +14,7 @@ import {
   MicOff,
   PhoneOff,
   Plus,
+  RotateCcw,
   Send,
   X,
 } from "lucide-react";
@@ -65,6 +66,7 @@ const EMPTY_DESTINATIONS: Destinations = {
   germanSubtopics: [],
 };
 const loadVad = createClientOnlyFn(() => import("@/lib/rita-vad.client"));
+const loadAudioStream = createClientOnlyFn(() => import("@/lib/rita-audio-stream.client"));
 
 function matchingDestination(spoken: string, target: SaveTarget, data: Destinations) {
   const clean = spoken
@@ -146,6 +148,7 @@ function RitaLivePage() {
   const [processing, setProcessing] = useState(false);
   const [muted, setMuted] = useState(false);
   const [premiumVoice, setPremiumVoice] = useState(true);
+  const [hasReplay, setHasReplay] = useState(false);
   const [inputLevel, setInputLevel] = useState(0);
   const [outputLevel, setOutputLevel] = useState(0);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
@@ -154,10 +157,9 @@ function RitaLivePage() {
   const sessionId = useRef<string | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const audioUrl = useRef<string | null>(null);
+  const lastSpeechBlob = useRef<Blob | null>(null);
+  const speechAbort = useRef<AbortController | null>(null);
   const turnAbort = useRef<AbortController | null>(null);
-  const outputContext = useRef<AudioContext | null>(null);
-  const outputAnalyser = useRef<AnalyserNode | null>(null);
-  const outputSource = useRef<MediaElementAudioSourceNode | null>(null);
   const outputFrame = useRef<number | null>(null);
   const messageEnd = useRef<HTMLDivElement | null>(null);
   const transcript = useRef<HTMLDivElement | null>(null);
@@ -450,17 +452,12 @@ function RitaLivePage() {
   }, []);
 
   const startOutputMeter = useCallback(() => {
-    const analyser = outputAnalyser.current;
-    if (!analyser) return;
-    const samples = new Uint8Array(analyser.fftSize);
+    const started = performance.now();
     const tick = () => {
-      analyser.getByteTimeDomainData(samples);
-      let power = 0;
-      for (const sample of samples) {
-        const centered = (sample - 128) / 128;
-        power += centered * centered;
-      }
-      setOutputLevel(Math.min(1, Math.sqrt(power / samples.length) * 5.5));
+      const phase = (performance.now() - started) / 1000;
+      setOutputLevel(
+        0.28 + 0.18 * Math.abs(Math.sin(phase * 9)) + 0.1 * Math.abs(Math.sin(phase * 17)),
+      );
       outputFrame.current = requestAnimationFrame(tick);
     };
     stopOutputMeter();
@@ -468,9 +465,15 @@ function RitaLivePage() {
   }, [stopOutputMeter]);
 
   const stopSpeaking = useCallback(() => {
+    speechAbort.current?.abort();
+    speechAbort.current = null;
     stopOutputMeter();
     window.speechSynthesis?.cancel();
     if (audio.current) {
+      audio.current.onplaying = null;
+      audio.current.onwaiting = null;
+      audio.current.onended = null;
+      audio.current.onerror = null;
       audio.current.pause();
       audio.current.removeAttribute("src");
       audio.current.load();
@@ -480,11 +483,39 @@ function RitaLivePage() {
     vad.current?.setOutputSpeaking(false);
   }, [stopOutputMeter]);
 
+  const bindAudioEvents = useCallback(
+    (element: HTMLAudioElement) => {
+      element.onplaying = () => {
+        setError(null);
+        vad.current?.setOutputSpeaking(true);
+        setMood("talking");
+        setStatus("Rita is speaking — you can interrupt anytime");
+        startOutputMeter();
+      };
+      element.onwaiting = () => setStatus("Rita’s voice is loading…");
+      element.onended = () => {
+        stopOutputMeter();
+        vad.current?.setOutputSpeaking(false);
+        setMood(activeRef.current ? "listening" : "ready");
+        setStatus(activeRef.current ? "Rita is listening" : "Lesson paused");
+      };
+      element.onerror = () => {
+        stopOutputMeter();
+        vad.current?.setOutputSpeaking(false);
+        setMood(activeRef.current ? "listening" : "ready");
+        setStatus("Voice playback failed");
+        setError("Rita’s audio could not play. Use Replay to try the saved voice again.");
+      };
+    },
+    [startOutputMeter, stopOutputMeter],
+  );
+
   const speakWithDevice = useCallback(
     (result: TurnResult) => {
       if (!("speechSynthesis" in window)) {
         setMood(activeRef.current ? "listening" : "ready");
-        setStatus("Reply ready in the chat");
+        setStatus("Voice playback is unavailable");
+        setError("This browser could not play Rita’s voice. Her reply is in the chat.");
         return;
       }
       window.speechSynthesis.cancel();
@@ -501,14 +532,11 @@ function RitaLivePage() {
       utterance.rate = 1.02;
       utterance.pitch = 1.03;
       utterance.onstart = () => {
+        setError(null);
         vad.current?.setOutputSpeaking(true);
         setMood("talking");
         setStatus("Rita is speaking — you can interrupt anytime");
-        const pulse = () => {
-          setOutputLevel(0.2 + Math.random() * 0.48);
-          outputFrame.current = requestAnimationFrame(pulse);
-        };
-        pulse();
+        startOutputMeter();
       };
       utterance.onend = () => {
         stopOutputMeter();
@@ -516,10 +544,16 @@ function RitaLivePage() {
         setMood(activeRef.current ? "listening" : "ready");
         setStatus(activeRef.current ? "Rita is listening" : "Reply ready");
       };
-      utterance.onerror = utterance.onend;
+      utterance.onerror = () => {
+        stopOutputMeter();
+        vad.current?.setOutputSpeaking(false);
+        setMood(activeRef.current ? "listening" : "ready");
+        setStatus("Voice playback failed");
+        setError("This device could not play Rita’s voice. Her reply is in the chat.");
+      };
       window.speechSynthesis.speak(utterance);
     },
-    [stopOutputMeter],
+    [startOutputMeter, stopOutputMeter],
   );
 
   const speakPremium = useCallback(
@@ -529,6 +563,10 @@ function RitaLivePage() {
         speakWithDevice(result);
         return;
       }
+      stopSpeaking();
+      const controller = new AbortController();
+      speechAbort.current = controller;
+      setStatus("Preparing Rita’s voice…");
       try {
         const response = await fetch("/api/rita/speech", {
           method: "POST",
@@ -540,49 +578,58 @@ function RitaLivePage() {
             dialect: result.detectedDialect,
             emotion: result.emotion,
           }),
+          signal: controller.signal,
         });
         if (!response.ok) throw new Error("Premium voice unavailable");
-        const blob = await response.blob();
-        if (!activeRef.current || !audio.current) return;
-        stopSpeaking();
-        const url = URL.createObjectURL(blob);
-        audioUrl.current = url;
-        audio.current.src = url;
-        if (!outputContext.current) {
-          const Context =
-            window.AudioContext ||
-            (window as typeof window & { webkitAudioContext?: typeof AudioContext })
-              .webkitAudioContext;
-          if (Context) outputContext.current = new Context();
-        }
-        if (outputContext.current && !outputSource.current) {
-          outputSource.current = outputContext.current.createMediaElementSource(audio.current);
-          outputAnalyser.current = outputContext.current.createAnalyser();
-          outputAnalyser.current.fftSize = 256;
-          outputSource.current.connect(outputAnalyser.current);
-          outputAnalyser.current.connect(outputContext.current.destination);
-        }
-        await outputContext.current?.resume();
-        audio.current.onplay = () => {
-          vad.current?.setOutputSpeaking(true);
-          setMood("talking");
-          setStatus("Rita is speaking — you can interrupt anytime");
-          startOutputMeter();
-        };
-        audio.current.onended = () => {
-          stopOutputMeter();
-          vad.current?.setOutputSpeaking(false);
-          setMood(activeRef.current ? "listening" : "ready");
-          setStatus(activeRef.current ? "Rita is listening" : "Lesson paused");
-        };
-        await audio.current.play();
+        if (!activeRef.current || !audio.current || controller.signal.aborted) return;
+        bindAudioEvents(audio.current);
+        const { playRitaSpeech } = await loadAudioStream();
+        const blob = await playRitaSpeech(
+          response,
+          audio.current,
+          controller.signal,
+          (url) => {
+            audioUrl.current = url;
+          },
+          () => vad.current?.setOutputSpeaking(true),
+          (readyBlob) => {
+            if (controller.signal.aborted) return;
+            lastSpeechBlob.current = readyBlob;
+            setHasReplay(true);
+          },
+        );
+        if (controller.signal.aborted) return;
+        lastSpeechBlob.current = blob;
         setPremiumVoice(true);
       } catch {
+        if (controller.signal.aborted) return;
+        setStatus("Using this device’s voice");
         speakWithDevice(result);
+      } finally {
+        if (speechAbort.current === controller) speechAbort.current = null;
       }
     },
-    [speakWithDevice, startOutputMeter, stopOutputMeter, stopSpeaking],
+    [bindAudioEvents, speakWithDevice, stopSpeaking],
   );
+
+  const replaySpeech = useCallback(async () => {
+    const blob = lastSpeechBlob.current;
+    const element = audio.current;
+    if (!blob || !element) return;
+    stopSpeaking();
+    setError(null);
+    const url = URL.createObjectURL(blob);
+    audioUrl.current = url;
+    element.src = url;
+    bindAudioEvents(element);
+    vad.current?.setOutputSpeaking(true);
+    try {
+      await element.play();
+    } catch {
+      vad.current?.setOutputSpeaking(false);
+      setError("Rita’s audio could not play on this device. Check its sound settings.");
+    }
+  }, [bindAudioEvents, stopSpeaking]);
 
   const handleSaveIntent = useCallback(
     async (result: TurnResult) => {
@@ -640,6 +687,7 @@ function RitaLivePage() {
       if (!blob && !text?.trim()) return;
       if (blob && mutedRef.current) return;
       const epoch = lessonEpoch.current;
+      stopSpeaking();
       turnAbort.current?.abort();
       const controller = new AbortController();
       turnAbort.current = controller;
@@ -701,6 +749,10 @@ function RitaLivePage() {
         }
         setPremiumVoice(result.premiumVoice);
         void handleSaveIntent(result);
+        if (turnAbort.current === controller) {
+          setProcessing(false);
+          processingRef.current = false;
+        }
         if (activeRef.current) await speakPremium(result, token);
         else {
           setMood("ready");
@@ -722,7 +774,7 @@ function RitaLivePage() {
         }
       }
     },
-    [add, addLearning, getToken, handleSaveIntent, speakPremium],
+    [add, addLearning, getToken, handleSaveIntent, speakPremium, stopSpeaking],
   );
   processTurnRef.current = processTurn;
 
@@ -777,6 +829,8 @@ function RitaLivePage() {
     setCreating(null);
     setRememberChoice(false);
     setSaving(false);
+    lastSpeechBlob.current = null;
+    setHasReplay(false);
   }, [getToken, stopSpeaking]);
 
   useEffect(() => () => endSession(), [endSession]);
@@ -815,6 +869,7 @@ function RitaLivePage() {
     setMood("thinking");
     try {
       const { startRitaVad } = await loadVad();
+      void loadAudioStream().catch(() => undefined);
       if (epoch !== lessonEpoch.current) return;
       const controller = await startRitaVad({
         onVolume: setInputLevel,
@@ -1091,6 +1146,16 @@ function RitaLivePage() {
                     <BookOpen size={14} /> Words{" "}
                     {learningItems.length ? `(${learningItems.length})` : ""}
                   </button>
+                  {hasReplay && (
+                    <button
+                      type="button"
+                      onClick={() => void replaySpeech()}
+                      aria-label="Replay Rita’s last voice reply"
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#e2ddd4] px-3 py-1.5 text-xs font-bold text-[#413b39] transition hover:bg-[#f6f3ee]"
+                    >
+                      <RotateCcw size={14} /> Replay
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => void openSave("flashcards")}

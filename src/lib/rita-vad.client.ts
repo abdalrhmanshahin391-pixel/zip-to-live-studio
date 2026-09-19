@@ -128,9 +128,9 @@ export async function startRitaVad(callbacks: RitaVadCallbacks): Promise<RitaVad
       noiseFloor = Math.min(0.035, noiseFloor * 0.96 + rms * 0.04);
       preRoll.push(frame);
       while (preRoll.length > 7) preRoll.shift();
-      const startThreshold = Math.max(0.017, noiseFloor * (outputSpeaking ? 4.8 : 3.1));
+      const startThreshold = Math.max(0.017, noiseFloor * (outputSpeaking ? 5.5 : 3.1));
       hotFrames = rms > startThreshold ? hotFrames + 1 : 0;
-      if (hotFrames >= 2) {
+      if (hotFrames >= (outputSpeaking ? 4 : 2)) {
         speaking = true;
         utterance = [...preRoll];
         preRoll.length = 0;
