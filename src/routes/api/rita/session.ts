@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   cleanLanguage,
   getRitaAllowance,
+  getRitaPilotMode,
   getRitaSettings,
   normalizePersonality,
   requireRitaUser,
@@ -17,11 +18,13 @@ export const Route = createFileRoute("/api/rita/session")({
         if (!auth) return new Response("Unauthorized", { status: 401 });
         const settings = await getRitaSettings();
         const allowance = await getRitaAllowance(auth.userId, settings);
+        const pilotMode = await getRitaPilotMode(auth.userId);
         return Response.json(
           {
             configured: Boolean(await resolveRitaOpenAiKey()),
             enabled: settings.enabled,
             voice: settings.voice,
+            pilotMode,
             allowance,
           },
           { headers: { "Cache-Control": "no-store" } },
@@ -65,7 +68,9 @@ export const Route = createFileRoute("/api/rita/session")({
         const personality = normalizePersonality(body.personality);
         const languagePreference = cleanLanguage(body.language);
         const clientLabel = String(body.clientLabel ?? "browser").slice(0, 120);
+        const pilotMode = await getRitaPilotMode(auth.userId);
         let sessionId: string = crypto.randomUUID();
+        let persisted = false;
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { data, error } = await (supabaseAdmin.from as any)("rita_voice_sessions")
@@ -77,15 +82,24 @@ export const Route = createFileRoute("/api/rita/session")({
             })
             .select("id")
             .single();
-          if (!error && data?.id) sessionId = String(data.id);
+          if (!error && data?.id) {
+            sessionId = String(data.id);
+            persisted = true;
+          }
         } catch (error) {
           console.warn("Rita session logging is not ready", error);
         }
+        if (pilotMode === "realtime" && !persisted)
+          return Response.json(
+            { ok: false, message: "Realtime pilot storage is not ready." },
+            { status: 503 },
+          );
         return Response.json(
           {
             ok: true,
             sessionId,
             configured: Boolean(await resolveRitaOpenAiKey()),
+            pilotMode,
             allowance,
           },
           { headers: { "Cache-Control": "no-store" } },

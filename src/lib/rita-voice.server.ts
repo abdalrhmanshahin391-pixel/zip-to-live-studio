@@ -7,6 +7,28 @@ export const RITA_MODELS = {
   speech: "gpt-4o-mini-tts",
 } as const;
 
+export const RITA_REALTIME_MODEL = "gpt-realtime-2.1-mini";
+export type RitaPilotMode = "current" | "realtime";
+
+// Never accept the browser's requested model/mode as authorization. If the
+// admin/metadata lookup fails, everyone stays on the existing pipeline.
+export async function getRitaPilotMode(userId: string): Promise<RitaPilotMode> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (roleError || !isAdmin) return "current";
+    const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+    return !error && data.user?.app_metadata?.rita_realtime_pilot === "realtime"
+      ? "realtime"
+      : "current";
+  } catch {
+    return "current";
+  }
+}
+
 export const RITA_PERSONALITIES = ["kind", "direct", "playful", "strict"] as const;
 export type RitaPersonality = (typeof RITA_PERSONALITIES)[number];
 

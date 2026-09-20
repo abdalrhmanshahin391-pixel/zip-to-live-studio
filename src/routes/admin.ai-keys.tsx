@@ -22,6 +22,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AiEnginePanel } from "@/components/admin/AiEnginePanel";
 import {
   getRitaVoiceAdmin,
+  saveRitaPilotMode,
   saveRitaVoiceSettings,
   testRitaLiveKey,
 } from "@/lib/rita-live.functions";
@@ -91,6 +92,7 @@ function AiKeysPage() {
   const testOpenAi = useServerFn(testRitaLiveKey);
   const getRitaAdmin = useServerFn(getRitaVoiceAdmin);
   const updateRitaAdmin = useServerFn(saveRitaVoiceSettings);
+  const updatePilotMode = useServerFn(saveRitaPilotMode);
 
   // gemini[slot] = updated_at | null
   const [geminiSlots, setGeminiSlots] = useState<(string | null)[]>([null, null, null, null, null]);
@@ -111,6 +113,8 @@ function AiKeysPage() {
   });
   const [busy, setBusy] = useState<string | null>(null);
   const [showRitaKey, setShowRitaKey] = useState(false);
+  const [pilotMode, setPilotMode] = useState<"current" | "realtime">("current");
+  const [pilotReady, setPilotReady] = useState(false);
   const [ritaSettings, setRitaSettings] = useState({
     enabled: true,
     voice: "marin",
@@ -126,6 +130,8 @@ function AiKeysPage() {
     activeMinutes: 0,
     estimatedCost: 0,
     turns: 0,
+    pilotTurns: 0,
+    pilotEstimatedCost: 0,
   });
 
   useEffect(() => {
@@ -169,6 +175,8 @@ function AiKeysPage() {
       .then((result) => {
         if (result?.settings) setRitaSettings(result.settings);
         if (result?.metrics) setRitaMetrics(result.metrics);
+        setPilotMode(result?.pilotMode === "realtime" ? "realtime" : "current");
+        setPilotReady(result?.pilotReady === true);
       })
       .catch(() => undefined);
   }, [getRitaAdmin, isAdmin]);
@@ -281,6 +289,24 @@ function AiKeysPage() {
     }
   }
 
+  async function changePilotMode(mode: "current" | "realtime") {
+    if (mode === pilotMode || busy) return;
+    setBusy("rita-pilot");
+    try {
+      const result = await updatePilotMode({ data: { mode } });
+      setPilotMode(result.mode);
+      toast.success(
+        mode === "realtime"
+          ? "Realtime pilot enabled for your admin account"
+          : "Current Rita voice restored for your admin account",
+      );
+    } catch (cause: unknown) {
+      toast.error(cause instanceof Error ? cause.message : "Could not switch Rita's voice mode");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   if (loading || !user || !isAdmin) return <div className="min-h-screen bg-black" />;
 
   const connectedCount = geminiSlots.filter(Boolean).length;
@@ -312,6 +338,67 @@ function AiKeysPage() {
           videos. Add multiple Gemini keys to multiply your free daily quota — the app rotates
           between them automatically when one is rate-limited.
         </p>
+
+        <section
+          className="mb-6 rounded-3xl border-[3px] border-red-500 bg-red-950/70 p-5 shadow-[0_0_48px_-15px_rgba(239,68,68,.8)] md:p-7"
+          aria-label="Rita voice mode switch"
+        >
+          <p className="text-xs font-black uppercase tracking-[.2em] text-red-200">
+            🔴 RITA VOICE MODE — ADMIN TEST ONLY
+          </p>
+          <h2 className="mt-2 text-2xl font-black text-white">
+            اختيار صوت ريتا / Choose Rita’s mode
+          </h2>
+          <p className="mt-2 text-sm text-red-100/85">
+            يُطبّق على حساب الأدمن الخاص بك فقط، عند بدء مكالمة جديدة. بقية المستخدمين يبقون على
+            الوضع الحالي. أنهِ المكالمة الحالية قبل التبديل.
+          </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              aria-pressed={pilotMode === "current"}
+              onClick={() => void changePilotMode("current")}
+              disabled={!pilotReady || !!busy}
+              className={`rounded-2xl border-2 p-4 text-left transition disabled:opacity-50 ${pilotMode === "current" ? "border-white bg-white text-red-950" : "border-red-300/50 bg-red-950 text-white hover:bg-red-900"}`}
+            >
+              <span className="block text-lg font-black">
+                {pilotMode === "current" ? "✓ " : ""}الحالي · Current voice
+              </span>
+              <span className="mt-1 block text-xs opacity-80">
+                Mini transcription → GPT-4o Mini → Mini TTS
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={pilotMode === "realtime"}
+              onClick={() => void changePilotMode("realtime")}
+              disabled={!pilotReady || !!busy}
+              className={`rounded-2xl border-2 p-4 text-left transition disabled:opacity-50 ${pilotMode === "realtime" ? "border-white bg-white text-red-950" : "border-red-300/50 bg-red-950 text-white hover:bg-red-900"}`}
+            >
+              <span className="block text-lg font-black">
+                {pilotMode === "realtime" ? "✓ " : ""}الجديد · Realtime pilot
+              </span>
+              <span className="mt-1 block text-xs opacity-80">
+                gpt-realtime-2.1-mini · live speech-to-speech
+              </span>
+            </button>
+          </div>
+          <p className="mt-4 text-xs text-red-100/80">
+            الوضع المحدد الآن:{" "}
+            <b>{pilotMode === "realtime" ? "الجديد — تجربة مباشرة" : "الحالي — الصوت القديم"}</b>.
+            التجربة الجديدة محدودة بأربع مكالمات × خمس دقائق يوميًا؛ العودة للحالي ضغطة واحدة.{" "}
+            {pilotReady ? "" : "تعذّر قراءة حساب الأدمن الآن؛ حاول تحديث الصفحة."}
+          </p>
+          <p className="mt-2 text-xs text-red-100/80">
+            هذا الشهر، تكلفة التجربة المقدّرة من بيانات الردود:{" "}
+            <b>${ritaMetrics.pilotEstimatedCost.toFixed(2)}</b> لـ {ritaMetrics.pilotTurns} ردود.
+            الرقم تقديري؛ فواتير OpenAI هي المرجع النهائي، وقد لا تصل بيانات الرد إذا انقطع الاتصال.
+          </p>
+          <p className="mt-2 text-xs text-red-100/80">
+            اختبار المفتاح الأخضر أدناه يتحقق من GPT-4o Mini الحالي فقط؛ اتصال ريتا الاقتصادي
+            المباشر هو الاختبار الفعلي لصلاحية النموذج الجديد.
+          </p>
+        </section>
 
         <section className="mb-5 overflow-hidden rounded-3xl border-2 border-emerald-400/70 bg-gradient-to-br from-emerald-400/[0.16] via-teal-400/[0.08] to-black p-6 shadow-[0_0_55px_-25px_rgba(52,211,153,.8)] md:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">

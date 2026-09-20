@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { RitaStage, type RitaMood } from "@/components/rita-live/RitaStage";
 import type { RitaVadController } from "@/lib/rita-vad.client";
+import type { RitaRealtimeController } from "@/lib/rita-realtime.client";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { isGermanItem, learningKey, type LearningItem, type SaveTarget } from "@/lib/rita-learning";
@@ -69,6 +70,7 @@ const EMPTY_DESTINATIONS: Destinations = {
 };
 const loadVad = createClientOnlyFn(() => import("@/lib/rita-vad.client"));
 const loadSpeechStream = createClientOnlyFn(() => import("@/lib/rita-speech-stream.client"));
+const loadRealtime = createClientOnlyFn(() => import("@/lib/rita-realtime.client"));
 
 function matchingDestination(spoken: string, target: SaveTarget, data: Destinations) {
   const clean = spoken
@@ -145,6 +147,9 @@ function RitaLivePage() {
   const [learningNotice, setLearningNotice] = useState("");
   const [draft, setDraft] = useState("");
   const [configured, setConfigured] = useState<boolean | null>(null);
+  const [pilotMode, setPilotMode] = useState<"current" | "realtime">("current");
+  const [connectedMode, setConnectedMode] = useState<"current" | "realtime" | null>(null);
+  const [realtimePlaybackBlocked, setRealtimePlaybackBlocked] = useState(false);
   const [active, setActive] = useState(false);
   const [starting, setStarting] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -157,6 +162,8 @@ function RitaLivePage() {
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
 
   const vad = useRef<RitaVadController | null>(null);
+  const realtime = useRef<RitaRealtimeController | null>(null);
+  const lastSpoken = useRef("");
   const sessionId = useRef<string | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const audioUrl = useRef<string | null>(null);
@@ -620,7 +627,7 @@ function RitaLivePage() {
   }, [bindAudioEvents, stopSpeaking]);
 
   const handleSaveIntent = useCallback(
-    async (result: TurnResult) => {
+    async (result: Pick<TurnResult, "saveRequest" | "destinationName" | "rememberDestination">) => {
       const epoch = lessonEpoch.current;
       const pending =
         panelRef.current === "flashcards" || panelRef.current === "german_lab"
@@ -668,6 +675,46 @@ function RitaLivePage() {
       }
     },
     [loadDestinations, openSave, saveLearning],
+  );
+
+  const recordRealtimeReply = useCallback(
+    (reply: string) => {
+      const replyId = crypto.randomUUID();
+      const spoken = lastSpoken.current;
+      setMessages((all) => [...all.slice(-179), { id: replyId, role: "rita", text: reply }]);
+      setCaption(reply);
+      if (!spoken) return;
+      const epoch = lessonEpoch.current;
+      void getToken()
+        .then((token) =>
+          fetch("/api/rita/extract", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ spoken, reply }),
+          }),
+        )
+        .then((response) => (response.ok ? response.json() : null))
+        .then((result) => {
+          if (!result || epoch !== lessonEpoch.current) return;
+          const ids = addLearning(Array.isArray(result.learningItems) ? result.learningItems : []);
+          if (ids.length)
+            setMessages((all) =>
+              all.map((message) =>
+                message.id === replyId ? { ...message, learningIds: ids } : message,
+              ),
+            );
+          void handleSaveIntent({
+            saveRequest:
+              result.saveRequest === "flashcards" || result.saveRequest === "german_lab"
+                ? result.saveRequest
+                : "none",
+            destinationName: String(result.destinationName || ""),
+            rememberDestination: result.rememberDestination === true,
+          });
+        })
+        .catch(() => undefined); // Learning extraction never delays spoken audio.
+    },
+    [addLearning, getToken, handleSaveIntent],
   );
 
   const processTurn = useCallback(
@@ -770,6 +817,9 @@ function RitaLivePage() {
     turnAbort.current = null;
     vad.current?.stop();
     vad.current = null;
+    realtime.current?.stop();
+    realtime.current = null;
+    lastSpoken.current = "";
     stopSpeaking();
     const closingId = sessionId.current;
     sessionId.current = null;
@@ -786,6 +836,8 @@ function RitaLivePage() {
         .catch(() => undefined);
     }
     setActive(false);
+    setConnectedMode(null);
+    setRealtimePlaybackBlocked(false);
     activeRef.current = false;
     setStarting(false);
     setProcessing(false);
@@ -833,6 +885,7 @@ function RitaLivePage() {
       .then((result) => {
         if (cancelled) return;
         setConfigured(Boolean(result?.configured));
+        setPilotMode(result?.pilotMode === "realtime" ? "realtime" : "current");
         setPremiumVoice(result?.allowance?.premiumVoice !== false);
         setStatus(result?.configured ? "Ready to start" : "Rita needs an OpenAI key");
       })
@@ -889,35 +942,14 @@ function RitaLivePage() {
 
   const beginSession = async () => {
     if (activeRef.current || starting) return;
+    // Keep Safari's audio unlock inside the actual button click, before awaits.
     primeAudio();
-    void loadSpeechStream();
     const epoch = lessonEpoch.current;
     setStarting(true);
     setError(null);
     setStatus("Requesting microphone access…");
     setMood("thinking");
     try {
-      const { startRitaVad } = await loadVad();
-      if (epoch !== lessonEpoch.current) return;
-      const controller = await startRitaVad({
-        onVolume: setInputLevel,
-        onSpeechStart: () => {
-          if (mutedRef.current) return;
-          stopSpeaking();
-          turnAbort.current?.abort();
-          setMood("listening");
-          setStatus("Listening…");
-        },
-        onSpeechEnd: (blob) => {
-          if (!mutedRef.current) void processTurnRef.current({ blob });
-        },
-        onError: (cause) => setError(cause.message),
-      });
-      if (epoch !== lessonEpoch.current) {
-        controller.stop();
-        return;
-      }
-      vad.current = controller;
       const token = await getToken();
       if (epoch !== lessonEpoch.current) return;
       const response = await fetch("/api/rita/session", {
@@ -948,6 +980,100 @@ function RitaLivePage() {
       if (!result.configured) throw new Error("Add a new OpenAI key in Admin → AI keys first.");
       sessionId.current = String(result.sessionId);
       setPremiumVoice(result.allowance?.premiumVoice !== false);
+      const chosen = result.pilotMode === "realtime" ? "realtime" : "current";
+      setPilotMode(chosen);
+      if (chosen === "realtime") {
+        setStatus("Connecting realtime voice…");
+        const { startRitaRealtime } = await loadRealtime();
+        const controller = await startRitaRealtime(token, sessionId.current, {
+          onSpeechStart: () => {
+            setMood("listening");
+            setStatus("Listening…");
+          },
+          onSpeechEnd: () => {
+            setMood("thinking");
+            setStatus("Rita is answering…");
+          },
+          onTranscript: (value) => {
+            if (epoch !== lessonEpoch.current) return;
+            lastSpoken.current = value.trim();
+            add("you", value);
+          },
+          onReply: (value) => {
+            if (epoch !== lessonEpoch.current) return;
+            recordRealtimeReply(value);
+          },
+          onSpeaking: () => {
+            setMood("talking");
+            setStatus("Rita is speaking");
+            startOutputMeter();
+          },
+          onListening: () => {
+            setMood("listening");
+            setStatus("Rita is listening");
+            stopOutputMeter();
+          },
+          onPlaybackBlocked: () => setRealtimePlaybackBlocked(true),
+          onUsage: (providerResponse) => {
+            const usage = providerResponse.usage as Record<string, unknown> | undefined;
+            const input = usage?.input_token_details as Record<string, unknown> | undefined;
+            const output = usage?.output_token_details as Record<string, unknown> | undefined;
+            const cached = input?.cached_tokens_details as Record<string, unknown> | undefined;
+            void fetch("/api/rita/usage", {
+              method: "POST",
+              keepalive: true,
+              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sessionId: result.sessionId,
+                responseId: providerResponse.id,
+                inputTokens: usage?.input_tokens,
+                outputTokens: usage?.output_tokens,
+                inputAudioTokens: input?.audio_tokens,
+                outputAudioTokens: output?.audio_tokens,
+                cachedInputTokens: input?.cached_tokens,
+                cachedAudioTokens: cached?.audio_tokens,
+              }),
+            }).catch(() => undefined);
+          },
+          onError: (value) => setError(value),
+          onEnded: (value) => {
+            if (epoch === lessonEpoch.current) {
+              endSession();
+              setError(value);
+            }
+          },
+        });
+        if (epoch !== lessonEpoch.current) {
+          controller.stop();
+          return;
+        }
+        realtime.current = controller;
+        setConnectedMode("realtime");
+      } else {
+        void loadSpeechStream();
+        const { startRitaVad } = await loadVad();
+        if (epoch !== lessonEpoch.current) return;
+        const controller = await startRitaVad({
+          onVolume: setInputLevel,
+          onSpeechStart: () => {
+            if (mutedRef.current) return;
+            stopSpeaking();
+            turnAbort.current?.abort();
+            setMood("listening");
+            setStatus("Listening…");
+          },
+          onSpeechEnd: (blob) => {
+            if (!mutedRef.current) void processTurnRef.current({ blob });
+          },
+          onError: (cause) => setError(cause.message),
+        });
+        if (epoch !== lessonEpoch.current) {
+          controller.stop();
+          return;
+        }
+        vad.current = controller;
+        setConnectedMode("current");
+      }
       setActive(true);
       activeRef.current = true;
       setMood("listening");
@@ -956,6 +1082,21 @@ function RitaLivePage() {
       if (epoch !== lessonEpoch.current) return;
       vad.current?.stop();
       vad.current = null;
+      realtime.current?.stop();
+      realtime.current = null;
+      setConnectedMode(null);
+      const failedId = sessionId.current;
+      sessionId.current = null;
+      if (failedId)
+        void getToken()
+          .then((authToken) =>
+            fetch("/api/rita/session", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${authToken}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "end", sessionId: failedId }),
+            }),
+          )
+          .catch(() => undefined);
       setMood("ready");
       setStatus("Ready to try again");
       setError(cause instanceof Error ? cause.message : "Microphone access was not available.");
@@ -971,6 +1112,7 @@ function RitaLivePage() {
     vad.current?.stream.getAudioTracks().forEach((track) => {
       track.enabled = !next;
     });
+    realtime.current?.mute(next);
     setMood(next ? "ready" : "listening");
     setStatus(next ? "Microphone muted" : "Rita is listening");
   };
@@ -979,9 +1121,20 @@ function RitaLivePage() {
     event.preventDefault();
     const text = draft.trim();
     if (!text || processing) return;
+    if (pilotMode === "realtime" && !realtime.current) {
+      setError("Start the realtime lesson before sending a message.");
+      return;
+    }
     add("you", text);
     setDraft("");
-    void processTurn({ text });
+    if (realtime.current) {
+      lastSpoken.current = text;
+      try {
+        realtime.current.sendText(text);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Realtime voice disconnected.");
+      }
+    } else void processTurn({ text });
   };
 
   const selectedItems = learningItems.filter((item) => selectedIds.includes(item.id));
@@ -1056,6 +1209,15 @@ function RitaLivePage() {
                 style={{ width: active ? "100%" : "34%" }}
               />
             </div>
+            <p className="mt-2 text-xs font-bold text-[#6553a1]" role="status">
+              {connectedMode === "realtime"
+                ? "متصل: ريتا الاقتصادي المباشر · gpt-realtime-2.1-mini"
+                : connectedMode === "current"
+                  ? "متصل: ريتا الحالية · GPT-4o Mini + Mini TTS"
+                  : pilotMode === "realtime"
+                    ? "مختار للتجربة: ريتا الاقتصادي المباشر · غير متصل بعد"
+                    : "ريتا الحالية · ابدأ الدرس للاتصال"}
+            </p>
           </header>
 
           <div className="relative min-h-0 flex-1">
@@ -1134,6 +1296,20 @@ function RitaLivePage() {
             onSubmit={sendText}
             className="border-t border-[#e9e5df] bg-[#fdfcf9] px-4 py-3 md:px-9 md:py-4"
           >
+            {realtimePlaybackBlocked && connectedMode === "realtime" && (
+              <button
+                type="button"
+                onClick={() =>
+                  void realtime.current
+                    ?.play()
+                    .then(() => setRealtimePlaybackBlocked(false))
+                    .catch(() => setError("Allow audio playback for this site in your browser."))
+                }
+                className="mx-auto mb-3 flex w-full max-w-2xl items-center justify-center rounded-2xl bg-[#7246e9] px-5 py-3 font-bold text-white"
+              >
+                <Play size={17} /> Tap to hear Rita
+              </button>
+            )}
             {needsTapToPlay && hasReplay && (
               <button
                 type="button"
