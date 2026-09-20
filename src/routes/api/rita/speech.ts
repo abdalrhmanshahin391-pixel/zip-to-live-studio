@@ -6,6 +6,7 @@ import {
   requireRitaUser,
   resolveRitaOpenAiKey,
 } from "@/lib/rita-voice.server";
+import { ritaVoiceInstructions } from "@/lib/rita-voice-style";
 
 const ALLOWED_VOICES = new Set([
   "alloy",
@@ -33,24 +34,6 @@ function speechError(code: string, message: string, status: number) {
   return Response.json({ code, error: message }, { status });
 }
 
-function voiceInstructions(language: string, dialect: string, emotion: string) {
-  const cleanLanguage = language.trim() || "the language of the supplied text";
-  const cleanAccent = dialect.trim();
-  const accent =
-    cleanAccent && !/^(unknown|standard|automatic)$/i.test(cleanAccent)
-      ? `Speak in authentic, contemporary ${cleanAccent}, using its natural pronunciation, rhythm, vocabulary, and conversational cadence. Keep it easy to understand and never exaggerate or stereotype the accent.`
-      : `Speak naturally in ${cleanLanguage}, with a warm contemporary conversational accent. Preserve colloquial words and code switching exactly.`;
-  const emotionLine =
-    emotion === "excited"
-      ? "Sound genuinely excited but controlled."
-      : emotion === "playful"
-        ? "Sound lightly playful and clever."
-        : emotion === "thoughtful"
-          ? "Sound thoughtful, calm, and attentive."
-          : "Sound warm, patient, and encouraging.";
-  return `${accent} ${emotionLine} This is a live tutoring conversation: use short natural pauses, never sound like an announcer, and do not add words that are not in the input.`;
-}
-
 export const Route = createFileRoute("/api/rita/speech")({
   server: {
     handlers: {
@@ -63,6 +46,7 @@ export const Route = createFileRoute("/api/rita/speech")({
           language?: string;
           dialect?: string;
           emotion?: string;
+          streamAudio?: boolean;
         } | null;
         const text = String(body?.text ?? "")
           .trim()
@@ -101,6 +85,7 @@ export const Route = createFileRoute("/api/rita/speech")({
             );
 
           const voice = ALLOWED_VOICES.has(settings.voice) ? settings.voice : "marin";
+          const speechStartedAt = performance.now();
           const upstream = await fetch("https://api.openai.com/v1/audio/speech", {
             method: "POST",
             headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -108,13 +93,14 @@ export const Route = createFileRoute("/api/rita/speech")({
               model: RITA_MODELS.speech,
               voice,
               input: text,
-              instructions: voiceInstructions(
+              instructions: ritaVoiceInstructions(
                 String(body?.language ?? ""),
                 String(body?.dialect ?? ""),
                 String(body?.emotion ?? "warm"),
               ),
               response_format: "mp3",
-              speed: 1.02,
+              stream_format: "audio",
+              speed: 1,
             }),
             signal: request.signal,
           });
@@ -126,6 +112,67 @@ export const Route = createFileRoute("/api/rita/speech")({
               "Rita’s voice service could not generate audio.",
               502,
             );
+          }
+          if (body?.streamAudio) {
+            const firstReader = upstream.body.getReader();
+            let firstChunk = await firstReader.read();
+            while (!firstChunk.done && !firstChunk.value?.byteLength)
+              firstChunk = await firstReader.read();
+            if (firstChunk.done || !firstChunk.value) {
+              await firstReader.cancel().catch(() => undefined);
+              return speechError("empty_audio", "Rita’s voice service returned no audio.", 502);
+            }
+            const { data: claimed, error: claimError } = await (supabaseAdmin.from as any)(
+              "rita_voice_usage",
+            )
+              .update({ speech_generated_at: new Date().toISOString() })
+              .eq("turn_id", turnId)
+              .eq("user_id", auth.userId)
+              .is("speech_generated_at", null)
+              .select("turn_id")
+              .maybeSingle();
+            if (claimError || !claimed) {
+              await firstReader.cancel().catch(() => undefined);
+              if (claimError)
+                return speechError("usage_unavailable", "Rita’s voice record is unavailable.", 503);
+              return speechError(
+                "already_generated",
+                "This voice was already generated. Please use Replay instead.",
+                409,
+              );
+            }
+            let cancelled = false;
+            const stream = new ReadableStream<Uint8Array>({
+              start(controller) {
+                controller.enqueue(firstChunk.value);
+                void (async () => {
+                  try {
+                    while (true) {
+                      const next = await firstReader.read();
+                      if (next.done) break;
+                      if (next.value?.byteLength) controller.enqueue(next.value);
+                    }
+                    if (!cancelled) controller.close();
+                  } catch (error) {
+                    if (!cancelled) controller.error(error);
+                  } finally {
+                    firstReader.releaseLock();
+                  }
+                })();
+              },
+              cancel() {
+                cancelled = true;
+                void firstReader.cancel().catch(() => undefined);
+              },
+            });
+            return new Response(stream, {
+              headers: {
+                "Content-Type": "audio/mpeg",
+                "Cache-Control": "private, no-store",
+                "X-Rita-Voice": "premium",
+                "Server-Timing": `speech-first-byte;dur=${(performance.now() - speechStartedAt).toFixed(1)}`,
+              },
+            });
           }
           const bytes = await upstream.arrayBuffer();
           if (!bytes.byteLength)

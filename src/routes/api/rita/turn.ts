@@ -13,6 +13,7 @@ import {
   resolveRitaOpenAiKey,
 } from "@/lib/rita-voice.server";
 import type { LearningItem } from "@/lib/rita-learning";
+import { stableRitaDialect } from "@/lib/rita-voice-style";
 
 const MAX_AUDIO_BYTES = 3 * 1024 * 1024;
 const MAX_TEXT = 2_000;
@@ -220,13 +221,14 @@ Pending save destination question: ${args.pendingSaveTarget}. When this is flash
 Language rules:
 - Reply in the learner's selected language. In automatic mode, mirror the dominant language of the latest utterance.
 - Support every language and regional variety equally. Infer regional vocabulary, dialect, register, slang, and code-switching from the learner's words and conversation context.
-- Mirror the learner's familiar way of speaking: sound like a supportive local tutor they know, while remaining clear, respectful, and never caricaturing or stereotyping an accent.
+- Write the reply as something a supportive local tutor would actually say aloud, not a formal translation or a scripted lesson. Match the learner's everyday register without caricature.
 - Preserve colloquial speech instead of automatically converting it to a formal standard variety. This includes all Arabic dialects, regional English, Spanish, French, Portuguese, German, Turkish, and any other language.
-- Do not guess acoustic pronunciation from text. If the region is uncertain and no explicit preference exists, use a natural neutral variety and ask one short, friendly question about the learner's preferred country or accent.
+- Infer a regional variety only from actual wording or established conversation context; text transcription cannot reveal a purely acoustic accent. If uncertain, use the previous stable variety when its language still fits, otherwise use a natural neutral variety. Do not repeatedly ask about accent.
 - Do not replace a stable accent on weak evidence. Keep the previous stable accent when confidence is below 0.72.
 
 Tutor rules:
 - Give a natural answer first. Correct only useful mistakes, briefly, without interrupting the conversation.
+- Avoid formulaic openings, excessive praise, and an obligatory question at the end of every turn. Use natural punctuation and short spoken sentences so the voice can pause well.
 - This lesson has voice output managed by the website. Never claim that you are text-only or unable to speak; answer the learner's question normally. The website, not your reply, reports any audio playback problem.
 - Ask at most one helpful follow-up question.
 - Keep the spoken reply under ${args.words} words unless the learner explicitly asks for detail.
@@ -247,6 +249,7 @@ export const Route = createFileRoute("/api/rita/turn")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const turnStartedAt = performance.now();
         const auth = await requireRitaUser(request);
         if (!auth) return new Response("Unauthorized", { status: 401 });
         const settings = await getRitaSettings();
@@ -295,6 +298,7 @@ export const Route = createFileRoute("/api/rita/turn")({
         }
         const premiumVoice = allowance.allowed && allowance.premiumVoice;
         let inputAudioMs = 0;
+        let transcriptionDurationMs = 0;
 
         if (hasAudio) {
           if (audio.size > MAX_AUDIO_BYTES)
@@ -309,6 +313,7 @@ export const Route = createFileRoute("/api/rita/turn")({
             "prompt",
             `This is a language-learning conversation. Preserve colloquial wording, regional vocabulary, code switching, slang, and proper names exactly. Preferred accent or region: ${accentPreference || "automatic"}. Previous stable accent: ${accentHint || "unknown"}.`,
           );
+          const transcriptionStartedAt = performance.now();
           const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
             method: "POST",
             headers: { Authorization: `Bearer ${apiKey}` },
@@ -330,6 +335,7 @@ export const Route = createFileRoute("/api/rita/turn")({
             });
           }
           transcript = result.text.trim().slice(0, MAX_TEXT);
+          transcriptionDurationMs = performance.now() - transcriptionStartedAt;
         }
         if (!transcript) return new Response("Say or type something for Rita.", { status: 400 });
 
@@ -342,6 +348,7 @@ export const Route = createFileRoute("/api/rita/turn")({
           pendingSaveTarget,
           words: settings.responseWords,
         });
+        const responseStartedAt = performance.now();
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -361,6 +368,7 @@ export const Route = createFileRoute("/api/rita/turn")({
           signal: request.signal,
         });
         const raw = (await response.json().catch(() => null)) as any;
+        const responseDurationMs = performance.now() - responseStartedAt;
         const content = String(raw?.choices?.[0]?.message?.content ?? "");
         if (!response.ok || !content) {
           console.error("Rita response failed", response.status, raw?.error?.message ?? "");
@@ -379,6 +387,14 @@ export const Route = createFileRoute("/api/rita/turn")({
           });
         }
         if (!result.reply) return new Response("Rita’s answer was empty.", { status: 502 });
+
+        result.detectedDialect = stableRitaDialect({
+          detected: result.detectedDialect,
+          confidence: result.confidence,
+          previous: accentHint,
+          preference: accentPreference,
+          language: result.detectedLanguage,
+        });
 
         const turnId = crypto.randomUUID();
         const outputAudioMs = estimateSpeechDurationMs(result.reply);
@@ -438,7 +454,12 @@ export const Route = createFileRoute("/api/rita/turn")({
                 : null,
             allowance,
           },
-          { headers: { "Cache-Control": "no-store" } },
+          {
+            headers: {
+              "Cache-Control": "no-store",
+              "Server-Timing": `transcription;dur=${transcriptionDurationMs.toFixed(1)},answer;dur=${responseDurationMs.toFixed(1)},total;dur=${(performance.now() - turnStartedAt).toFixed(1)}`,
+            },
+          },
         );
       },
     },

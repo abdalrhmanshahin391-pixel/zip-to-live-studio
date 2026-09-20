@@ -147,7 +147,8 @@ export async function startRitaVad(callbacks: RitaVadCallbacks): Promise<RitaVad
     speechMs += frameMs;
     const endThreshold = Math.max(0.012, noiseFloor * 2.1);
     silenceMs = rms < endThreshold ? silenceMs + frameMs : 0;
-    if ((silenceMs >= 620 && speechMs >= 500) || speechMs >= 35_000) finish();
+    // A shorter pause removes some dead time without cutting off brief hesitations.
+    if ((silenceMs >= 440 && speechMs >= 500) || speechMs >= 35_000) finish();
   };
 
   return {

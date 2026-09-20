@@ -68,6 +68,7 @@ const EMPTY_DESTINATIONS: Destinations = {
   germanSubtopics: [],
 };
 const loadVad = createClientOnlyFn(() => import("@/lib/rita-vad.client"));
+const loadSpeechStream = createClientOnlyFn(() => import("@/lib/rita-speech-stream.client"));
 
 function matchingDestination(spoken: string, target: SaveTarget, data: Destinations) {
   const clean = spoken
@@ -530,10 +531,16 @@ function RitaLivePage() {
       }
       stopSpeaking();
       setNeedsTapToPlay(false);
+      lastSpeechBlob.current = null;
+      setHasReplay(false);
       const controller = new AbortController();
       speechAbort.current = controller;
       setStatus("Preparing Rita’s voice…");
       try {
+        const { canStreamRitaSpeech, playRitaSpeechResponse } = await loadSpeechStream();
+        // Roll out the new playback path to admins first; everyone else keeps the
+        // proven buffered player until its browser behavior is verified live.
+        const streamAudio = Boolean(isAdmin) && canStreamRitaSpeech();
         const response = await fetch("/api/rita/speech", {
           method: "POST",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -543,6 +550,7 @@ function RitaLivePage() {
             language: result.detectedLanguage,
             dialect: result.detectedDialect,
             emotion: result.emotion,
+            streamAudio,
           }),
           signal: controller.signal,
         });
@@ -552,28 +560,30 @@ function RitaLivePage() {
           throw new Error(`${String(detail?.error || "Rita’s voice request failed.")} (${code})`);
         }
         if (!activeRef.current || !audio.current || controller.signal.aborted) return;
-        const blob = await response.blob();
+        bindAudioEvents(audio.current);
+        const blob = await playRitaSpeechResponse({
+          response,
+          element: audio.current,
+          signal: controller.signal,
+          stream: streamAudio,
+          setSource: (url) => {
+            if (audioUrl.current) URL.revokeObjectURL(audioUrl.current);
+            audioUrl.current = url;
+            if (audio.current) audio.current.src = url;
+          },
+          onPlaybackBlocked: (playError) => {
+            if (controller.signal.aborted) return;
+            vad.current?.setOutputSpeaking(false);
+            setMood(activeRef.current ? "listening" : "ready");
+            setNeedsTapToPlay(true);
+            setStatus("Tap Play voice to hear Rita");
+            if ((playError as Error)?.name !== "NotAllowedError")
+              setError("This device could not start Rita’s audio. Tap Play voice to try again.");
+          },
+        });
         if (controller.signal.aborted) return;
-        if (!blob.size || !blob.type.startsWith("audio/"))
-          throw new Error("Rita’s voice service returned an invalid audio file.");
         lastSpeechBlob.current = blob;
         setHasReplay(true);
-        const url = URL.createObjectURL(blob);
-        audioUrl.current = url;
-        audio.current.src = url;
-        bindAudioEvents(audio.current);
-        setStatus("Starting Rita’s voice…");
-        try {
-          await audio.current.play();
-        } catch (playError) {
-          if (controller.signal.aborted) return;
-          vad.current?.setOutputSpeaking(false);
-          setMood(activeRef.current ? "listening" : "ready");
-          setNeedsTapToPlay(true);
-          setStatus("Tap Play voice to hear Rita");
-          if ((playError as Error)?.name !== "NotAllowedError")
-            setError("Safari could not start Rita’s audio. Tap Play voice to try again.");
-        }
         setPremiumVoice(true);
       } catch (cause) {
         if (controller.signal.aborted) return;
@@ -584,7 +594,7 @@ function RitaLivePage() {
         if (speechAbort.current === controller) speechAbort.current = null;
       }
     },
-    [bindAudioEvents, stopSpeaking],
+    [bindAudioEvents, isAdmin, stopSpeaking],
   );
 
   const replaySpeech = useCallback(async () => {
@@ -721,11 +731,8 @@ function RitaLivePage() {
         );
         add("rita", result.reply, result.correction, learningIds);
         setCaption(result.reply);
-        if (current.accentPreference.trim()) {
-          setDialect(current.accentPreference.trim());
-        } else if (result.confidence >= 0.72) {
-          setDialect(result.detectedDialect || "standard");
-        }
+        // The server has already resolved weak guesses against the stable session accent.
+        setDialect(result.detectedDialect || "standard");
         setPremiumVoice(result.premiumVoice);
         void handleSaveIntent(result);
         if (turnAbort.current === controller) {
@@ -883,6 +890,7 @@ function RitaLivePage() {
   const beginSession = async () => {
     if (activeRef.current || starting) return;
     primeAudio();
+    void loadSpeechStream();
     const epoch = lessonEpoch.current;
     setStarting(true);
     setError(null);
