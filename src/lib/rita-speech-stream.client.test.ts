@@ -2,6 +2,26 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { canStreamRitaSpeech, playRitaSpeechResponse } from "./rita-speech-stream.client.ts";
 
+test("unsupported browsers use buffered playback", () => {
+  const originalMediaSource = Object.getOwnPropertyDescriptor(globalThis, "MediaSource");
+  try {
+    Reflect.deleteProperty(globalThis, "MediaSource");
+    assert.equal(canStreamRitaSpeech(), false);
+    Object.defineProperty(globalThis, "MediaSource", {
+      configurable: true,
+      value: class {
+        static isTypeSupported() {
+          return false;
+        }
+      },
+    });
+    assert.equal(canStreamRitaSpeech(), false);
+  } finally {
+    if (originalMediaSource) Object.defineProperty(globalThis, "MediaSource", originalMediaSource);
+    else Reflect.deleteProperty(globalThis, "MediaSource");
+  }
+});
+
 test("buffered fallback plays the received file without another request", async () => {
   let plays = 0;
   let source = "";

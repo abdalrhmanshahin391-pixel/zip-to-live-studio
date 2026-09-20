@@ -538,9 +538,9 @@ function RitaLivePage() {
       setStatus("Preparing Rita’s voice…");
       try {
         const { canStreamRitaSpeech, playRitaSpeechResponse } = await loadSpeechStream();
-        // Roll out the new playback path to admins first; everyone else keeps the
-        // proven buffered player until its browser behavior is verified live.
-        const streamAudio = Boolean(isAdmin) && canStreamRitaSpeech();
+        // Every learner gets early playback when their browser supports MP3 streaming.
+        // Other browsers keep the buffered player automatically.
+        const streamAudio = canStreamRitaSpeech();
         const response = await fetch("/api/rita/speech", {
           method: "POST",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -594,7 +594,7 @@ function RitaLivePage() {
         if (speechAbort.current === controller) speechAbort.current = null;
       }
     },
-    [bindAudioEvents, isAdmin, stopSpeaking],
+    [bindAudioEvents, stopSpeaking],
   );
 
   const replaySpeech = useCallback(async () => {
