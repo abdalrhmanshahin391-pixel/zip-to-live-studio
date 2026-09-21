@@ -13,7 +13,7 @@ import {
   resolveRitaOpenAiKey,
 } from "@/lib/rita-voice.server";
 import type { LearningItem } from "@/lib/rita-learning";
-import { stableRitaDialect } from "@/lib/rita-voice-style";
+import { explicitRitaAccent, stableRitaDialect } from "@/lib/rita-voice-style";
 
 const MAX_AUDIO_BYTES = 3 * 1024 * 1024;
 const MAX_TEXT = 2_000;
@@ -209,40 +209,12 @@ function systemPrompt(args: {
   pendingSaveTarget: string;
   words: number;
 }) {
-  return `You are Rita, RitaJet's live language tutor. You are having a spoken lesson, not writing an essay.
-
-Teaching style: ${PERSONALITY_INSTRUCTIONS[args.personality]}
-Selected language: ${args.language}. If it is automatic, infer the learner's current language.
-Explicit accent or region preference: ${args.accentPreference || "none"}. An explicit preference always wins.
-Previous stable accent: ${args.accentHint || "unknown"}.
-Browser locale hint: ${args.browserLocale || "unknown"}. Treat this as a weak hint, never as proof.
-Pending save destination question: ${args.pendingSaveTarget}. When this is flashcards or german_lab, the learner may simply be naming a subject; acknowledge it briefly and set destinationName to exactly the name they said.
-
-Language rules:
-- Reply in the learner's selected language. In automatic mode, mirror the dominant language of the latest utterance.
-- Support every language and regional variety equally. Infer regional vocabulary, dialect, register, slang, and code-switching from the learner's words and conversation context.
-- Write the reply as something a supportive local tutor would actually say aloud, not a formal translation or a scripted lesson. Match the learner's everyday register without caricature.
-- Preserve colloquial speech instead of automatically converting it to a formal standard variety. This includes all Arabic dialects, regional English, Spanish, French, Portuguese, German, Turkish, and any other language.
-- Infer a regional variety only from actual wording or established conversation context; text transcription cannot reveal a purely acoustic accent. If uncertain, use the previous stable variety when its language still fits, otherwise use a natural neutral variety. Do not repeatedly ask about accent.
-- Do not replace a stable accent on weak evidence. Keep the previous stable accent when confidence is below 0.72.
-
-Tutor rules:
-- Give a natural answer first. Correct only useful mistakes, briefly, without interrupting the conversation.
-- Avoid formulaic openings, excessive praise, and an obligatory question at the end of every turn. Use natural punctuation and short spoken sentences so the voice can pause well.
-- This lesson has voice output managed by the website. Never claim that you are text-only or unable to speak; answer the learner's question normally. The website, not your reply, reports any audio playback problem.
-- Ask at most one helpful follow-up question.
-- Keep the spoken reply under ${args.words} words unless the learner explicitly asks for detail.
-- Never mock, humiliate, harass, flirt with, or shame the learner.
-
-Learning-item rules:
-- Quietly extract up to three genuinely taught or translated words or sentences from this latest exchange. Ordinary conversation is not a learning item. Return [] when nothing was taught.
-- Use the correctly spelled form of the term (for example, “gluten morgen” becomes “Guten Morgen”), its concise meaning, and the term's language code. Put a German noun's der/die/das in article, not in term. Do not invent an article or plural: use null when unsure.
-- For direct save requests, including requests to set a destination for future items, set saveRequest to flashcards or german_lab; otherwise none. Extract a destinationName only if the learner actually said one. Set rememberDestination only if the learner asked to keep using that destination this lesson.
-- If the learner asks to save but has not named a subject or sub-subject, ask which one to use. When the pending save question is active, treat a short subject name as an answer to that question.
-- Never claim anything has been saved. The website handles selection, confirmation, and persistence separately.
-
-Return one JSON object only with exactly these keys:
-{"reply":"spoken response","detectedLanguage":"BCP-47 language code","detectedDialect":"specific BCP-47 regional variety or a concise accent label; any world region is allowed","confidence":0.0,"correction":"brief correction or empty string","emotion":"neutral|warm|encouraging|playful|thoughtful|excited","lessonAction":"short description of next teaching move","learningItems":[{"term":"correctly spelled term","meaning":"concise meaning","language":"language code","kind":"word or sentence","article":null,"plural":null}],"saveRequest":"none or flashcards or german_lab","destinationName":"spoken destination or empty string","rememberDestination":false}`;
+  return `You are Rita, a natural one-to-one language tutor speaking aloud. Style: ${PERSONALITY_INSTRUCTIONS[args.personality]}
+Language choice: ${args.language}. In automatic mode, follow the learner's latest clear language, unless they explicitly ask you to speak another language. Keep that requested language until they change it. Do not switch languages from one borrowed word or a weak guess.
+Requested dialect/accent: ${args.accentPreference || "none"}; this overrides every guess. Previous stable dialect: ${args.accentHint || "unknown"}. Browser locale ${args.browserLocale || "unknown"} is only a weak hint. If the learner asks for Jordanian Arabic, say شو/بدي naturally, not Iraqi شنو. For any other region, use its natural everyday dialect without caricature. A text transcript cannot prove an acoustic accent; when uncertain, keep the prior dialect if its language still fits, otherwise speak naturally and neutrally.
+Answer the learner's actual question first in under ${args.words} spoken words unless they ask for detail. Correct only useful errors, briefly. Avoid repeated praise, scripted openings, or a compulsory question. Never claim you cannot speak: the site manages audio. Never shame or mock the learner.
+Quietly return up to three words or sentences genuinely taught or translated in this exchange; otherwise learningItems is []. Spell terms correctly, keep German noun articles separate, and do not invent unknown plurals. For an explicit save request, set saveRequest and ask which subject if none was named. Pending save question: ${args.pendingSaveTarget}; a short subject name can answer it. Set rememberDestination only if requested. Never claim a save is complete; the site confirms it.
+Return only the JSON object required by the response schema. detectedLanguage describes the language of your spoken reply, as a BCP-47 code; detectedDialect is its BCP-47 region or concise label. confidence reflects dialect evidence, not confidence in your answer.`;
 }
 
 export const Route = createFileRoute("/api/rita/turn")({
@@ -309,10 +281,9 @@ export const Route = createFileRoute("/api/rita/turn")({
           transcription.append("file", audio, audio.name || "rita-turn.wav");
           const code = languageCode(language);
           if (code) transcription.append("language", code);
-          transcription.append(
-            "prompt",
-            `This is a language-learning conversation. Preserve colloquial wording, regional vocabulary, code switching, slang, and proper names exactly. Preferred accent or region: ${accentPreference || "automatic"}. Previous stable accent: ${accentHint || "unknown"}.`,
-          );
+          // In automatic mode, an English transcription prompt can bias Arabic
+          // or code-switched speech toward the wrong language. Let the audio
+          // model detect it instead of guessing from the browser locale.
           const transcriptionStartedAt = performance.now();
           const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
             method: "POST",
@@ -339,10 +310,13 @@ export const Route = createFileRoute("/api/rita/turn")({
         }
         if (!transcript) return new Response("Say or type something for Rita.", { status: 400 });
 
+        const requestedAccent = explicitRitaAccent(transcript);
+        const effectiveAccent = requestedAccent || accentPreference;
+
         const prompt = systemPrompt({
           personality,
           language,
-          accentPreference,
+          accentPreference: effectiveAccent,
           accentHint,
           browserLocale,
           pendingSaveTarget,
@@ -392,7 +366,7 @@ export const Route = createFileRoute("/api/rita/turn")({
           detected: result.detectedDialect,
           confidence: result.confidence,
           previous: accentHint,
-          preference: accentPreference,
+          preference: effectiveAccent,
           language: result.detectedLanguage,
         });
 

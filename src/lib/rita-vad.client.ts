@@ -125,10 +125,12 @@ export async function startRitaVad(callbacks: RitaVadCallbacks): Promise<RitaVad
     const frameMs = (frame.length / context.sampleRate) * 1000;
 
     if (!speaking) {
-      noiseFloor = Math.min(0.035, noiseFloor * 0.96 + rms * 0.04);
+      // Cap the learned room noise so one loud sound cannot make quieter
+      // speech disappear for the rest of the lesson.
+      noiseFloor = Math.min(0.018, noiseFloor * 0.96 + rms * 0.04);
       preRoll.push(frame);
       while (preRoll.length > 7) preRoll.shift();
-      const startThreshold = Math.max(0.017, noiseFloor * (outputSpeaking ? 5.5 : 3.1));
+      const startThreshold = Math.max(0.01, noiseFloor * (outputSpeaking ? 3.2 : 1.9));
       hotFrames = rms > startThreshold ? hotFrames + 1 : 0;
       if (hotFrames >= (outputSpeaking ? 4 : 2)) {
         speaking = true;
@@ -145,10 +147,10 @@ export async function startRitaVad(callbacks: RitaVadCallbacks): Promise<RitaVad
 
     utterance.push(frame);
     speechMs += frameMs;
-    const endThreshold = Math.max(0.012, noiseFloor * 2.1);
+    const endThreshold = Math.max(0.008, noiseFloor * 1.25);
     silenceMs = rms < endThreshold ? silenceMs + frameMs : 0;
-    // A shorter pause removes some dead time without cutting off brief hesitations.
-    if ((silenceMs >= 440 && speechMs >= 500) || speechMs >= 35_000) finish();
+    // Leave room for a brief hesitation or a low-volume final syllable.
+    if ((silenceMs >= 550 && speechMs >= 500) || speechMs >= 35_000) finish();
   };
 
   return {

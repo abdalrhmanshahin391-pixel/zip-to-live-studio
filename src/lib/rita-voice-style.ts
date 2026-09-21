@@ -10,11 +10,45 @@ function cleanLabel(value: string) {
 }
 
 function baseLanguage(value: string) {
+  if (/\barabic\b/i.test(value)) return "ar";
+  if (/\benglish\b/i.test(value)) return "en";
   return (
     cleanLabel(value)
       .match(/^([a-z]{2,3})(?:-|$)/i)?.[1]
       ?.toLowerCase() ?? ""
   );
+}
+
+// An explicit spoken request is stronger evidence than a dialect guess made
+// from a text transcript. Keep the mapping small and allow other dialect names
+// through as labels so the model can still honor them.
+export function explicitRitaAccent(utterance: string) {
+  const normalized = cleanLabel(utterance).toLowerCase().replace(/[أإآ]/g, "ا").replace(/ى/g, "ي");
+  const arabic = normalized.match(
+    /(?:باللهجه|باللهجة|بلهجه|بلهجة|اللهجه|اللهجة|لهجه|لهجة)\s+([\p{L}-]+)/u,
+  );
+  const english = normalized.match(
+    /(jordanian|iraqi|egyptian|palestinian|lebanese|syrian|saudi|moroccan|tunisian|algerian|emirati|yemeni|sudanese|gulf)\s+(?:arabic\s+)?(?:accent|dialect)|(?:speak|talk)\s+(?:in|with)\s+(?:a\s+)?(jordanian|iraqi|egyptian|palestinian|lebanese|syrian|saudi|moroccan|tunisian|algerian|emirati|yemeni|sudanese|gulf)/i,
+  );
+  const requested = arabic?.[1] || english?.[1] || english?.[2] || "";
+  if (!requested) return "";
+  const accents: Array<[RegExp, string]> = [
+    [/اردن|jordan/, "ar-JO"],
+    [/عراق|iraq/, "ar-IQ"],
+    [/مصر|egypt/, "ar-EG"],
+    [/فلسطين|palestin/, "ar-PS"],
+    [/لبنان|leban/, "ar-LB"],
+    [/سور|syria/, "ar-SY"],
+    [/سعود|saudi/, "ar-SA"],
+    [/مغرب|morocc/, "ar-MA"],
+    [/تونس|tunis/, "ar-TN"],
+    [/جزائر|algeri/, "ar-DZ"],
+    [/امارات|emirati/, "ar-AE"],
+    [/يمن|yemen/, "ar-YE"],
+    [/سودان|sudan/, "ar-SD"],
+    [/خليج|gulf/, "Gulf Arabic"],
+  ];
+  return accents.find(([pattern]) => pattern.test(requested))?.[1] || requested.slice(0, 40);
 }
 
 export function stableRitaDialect(args: {

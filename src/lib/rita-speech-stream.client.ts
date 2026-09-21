@@ -18,9 +18,23 @@ export async function playRitaSpeechResponse(args: {
   if (!response.headers.get("Content-Type")?.startsWith("audio/"))
     throw new Error("Rita’s voice service returned an invalid audio file.");
 
-  const reader = args.stream ? response.body?.getReader() : null;
-  if (!reader) {
-    const blob = await response.blob();
+  // Consume the response body exactly once. Safari may throw "Body is disturbed
+  // or locked" from Body.blob() even though a readable stream is available.
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("Rita’s voice service returned no audio stream.");
+  if (!args.stream) {
+    const chunks: ArrayBuffer[] = [];
+    try {
+      while (true) {
+        if (signal.aborted) throw new DOMException("Voice stopped", "AbortError");
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value?.byteLength) chunks.push(Uint8Array.from(value).buffer as ArrayBuffer);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+    const blob = new Blob(chunks, { type: "audio/mpeg" });
     if (!blob.size) throw new Error("Rita’s voice service returned an empty audio file.");
     if (signal.aborted) throw new DOMException("Voice stopped", "AbortError");
     setSource(URL.createObjectURL(blob));

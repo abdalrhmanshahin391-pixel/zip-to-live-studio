@@ -114,14 +114,6 @@ export const Route = createFileRoute("/api/rita/speech")({
             );
           }
           if (body?.streamAudio) {
-            const firstReader = upstream.body.getReader();
-            let firstChunk = await firstReader.read();
-            while (!firstChunk.done && !firstChunk.value?.byteLength)
-              firstChunk = await firstReader.read();
-            if (firstChunk.done || !firstChunk.value) {
-              await firstReader.cancel().catch(() => undefined);
-              return speechError("empty_audio", "Rita’s voice service returned no audio.", 502);
-            }
             const { data: claimed, error: claimError } = await (supabaseAdmin.from as any)(
               "rita_voice_usage",
             )
@@ -132,7 +124,7 @@ export const Route = createFileRoute("/api/rita/speech")({
               .select("turn_id")
               .maybeSingle();
             if (claimError || !claimed) {
-              await firstReader.cancel().catch(() => undefined);
+              await upstream.body.cancel().catch(() => undefined);
               if (claimError)
                 return speechError("usage_unavailable", "Rita’s voice record is unavailable.", 503);
               return speechError(
@@ -141,31 +133,10 @@ export const Route = createFileRoute("/api/rita/speech")({
                 409,
               );
             }
-            let cancelled = false;
-            const stream = new ReadableStream<Uint8Array>({
-              start(controller) {
-                controller.enqueue(firstChunk.value);
-                void (async () => {
-                  try {
-                    while (true) {
-                      const next = await firstReader.read();
-                      if (next.done) break;
-                      if (next.value?.byteLength) controller.enqueue(next.value);
-                    }
-                    if (!cancelled) controller.close();
-                  } catch (error) {
-                    if (!cancelled) controller.error(error);
-                  } finally {
-                    firstReader.releaseLock();
-                  }
-                })();
-              },
-              cancel() {
-                cancelled = true;
-                void firstReader.cancel().catch(() => undefined);
-              },
-            });
-            return new Response(stream, {
+            // Pass the upstream stream through without locking or re-reading it.
+            // The previous getReader()/wrapper could leave the runtime with a
+            // disturbed body on Safari/WebKit's response path.
+            return new Response(upstream.body, {
               headers: {
                 "Content-Type": "audio/mpeg",
                 "Cache-Control": "private, no-store",

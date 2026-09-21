@@ -105,8 +105,8 @@ export const Route = createFileRoute("/api/rita/live")({
               type: "realtime",
               model: RITA_REALTIME_MODEL,
               output_modalities: ["audio"],
-              max_response_output_tokens: 420,
-              instructions: `You are Rita, a warm, quick, natural language tutor in a live spoken conversation. Reply naturally and briefly (usually under 55 words). Speak in the learner's chosen language, or automatically mirror their most recent language. When their spoken dialect or region is clear, match their everyday vocabulary and pronunciation without caricature; preserve the established dialect unless clear evidence changes it. For Jordanian Arabic use natural Jordanian speech, not formal Arabic. For other Arabic dialects and all other languages apply the same care. Correct useful mistakes gently; ask at most one relevant follow-up. Never say you cannot speak or are text-only. If asked to save words, say you will help choose a subject; never claim anything was saved.`,
+              max_output_tokens: 420,
+              instructions: `You are Rita, a warm, quick language tutor in a live spoken conversation. Reply naturally and briefly (usually under 55 words). Follow the learner's explicit language or dialect request and keep it until they change it. Otherwise mirror the latest clear language without switching for a borrowed word or weak cue. Match a clear spoken dialect naturally without caricature. Jordanian Arabic uses شو and بدي, never Iraqi شنو. Correct useful mistakes gently; ask at most one relevant follow-up. Never say you cannot speak or are text-only. If asked to save words, help choose a subject; never claim anything was saved.`,
               audio: {
                 input: {
                   transcription: { model: "gpt-4o-mini-transcribe" },
@@ -141,14 +141,32 @@ export const Route = createFileRoute("/api/rita/live")({
             );
           }
           if (!provider.ok) {
+            const rejected = (await provider.json().catch(() => null)) as {
+              error?: { code?: unknown; param?: unknown; type?: unknown };
+            } | null;
+            const safeField = (value: unknown) =>
+              typeof value === "string" && /^[a-zA-Z0-9_.-]{1,80}$/.test(value) ? value : null;
+            const code = safeField(rejected?.error?.code);
+            const param = safeField(rejected?.error?.param);
+            const type = safeField(rejected?.error?.type);
             await table("rita_voice_sessions")
               .update({ client_label: "rita-realtime:failed" })
               .eq("id", reservation.id);
-            console.warn("Rita Realtime connection rejected", provider.status);
+            console.warn("Rita Realtime connection rejected", {
+              status: provider.status,
+              code,
+              param,
+              type,
+              requestId: provider.headers.get("x-request-id"),
+            });
+            const reason =
+              param && provider.status === 400
+                ? `OpenAI rejected the Realtime setting “${param}”.`
+                : code === "model_not_found" || provider.status === 403
+                  ? "The OpenAI project cannot use this Realtime model."
+                  : `OpenAI rejected the Realtime connection (${provider.status}${code ? ` · ${code}` : ""}).`;
             return Response.json(
-              {
-                error: `Realtime connection failed (${provider.status}). Check the model's project access in OpenAI.`,
-              },
+              { error: reason, providerStatus: provider.status, code, param },
               { status: 502 },
             );
           }
