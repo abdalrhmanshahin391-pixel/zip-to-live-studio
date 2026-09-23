@@ -3,7 +3,7 @@ import {
   FolderTree, Users, Smartphone, Ticket, Archive, BookOpen, Video, Package,
   ListPlus, BarChart3, GraduationCap, Palette, ShieldAlert, LifeBuoy, Info,
   UsersRound, Server, History, Star, Heart, Flag, Link2, Wrench, Rocket,
-  ListChecks, CalendarDays, Timer, Library, Bell, Gift, Megaphone, Tag,
+  ListChecks, CalendarDays, Timer, Library, Bell, Gift, Megaphone, Tag, KeyRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -12,7 +12,7 @@ export const ICONS: Record<string, LucideIcon> = {
   FolderTree, Users, Smartphone, Ticket, Archive, BookOpen, Video, Package,
   ListPlus, BarChart3, GraduationCap, Palette, ShieldAlert, LifeBuoy, Info,
   UsersRound, Server, History, Star, Heart, Flag, Link2, Wrench, Rocket,
-  ListChecks, CalendarDays, Timer, Library, Bell, Gift, Megaphone, Tag,
+  ListChecks, CalendarDays, Timer, Library, Bell, Gift, Megaphone, Tag, KeyRound,
 };
 
 
@@ -82,7 +82,16 @@ export const DEFAULT_LAYOUT: HubLayout = {
       id: "ai",
       label: "AI engine",
       labelAr: "ذكاء ريتا",
-      tiles: [t("/admin/ai", "AI engine", "Sparkles")],
+      tiles: [
+        t("/admin/ai", "AI engine", "Sparkles"),
+        {
+          id: "/admin/ai-keys",
+          to: "/admin/ai-keys",
+          label: "Rita API Keys",
+          labelAr: "مفاتيح ريتا API",
+          icon: "KeyRound",
+        },
+      ],
     },
     {
       id: "people",

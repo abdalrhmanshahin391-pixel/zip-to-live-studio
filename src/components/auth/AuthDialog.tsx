@@ -233,7 +233,9 @@ function SignInPanel({ next }: { next?: string }) {
       if (signInError) {
         const msg = (signInError.message ?? "").toLowerCase();
         setError(
-          msg.includes("confirm") || msg.includes("verif")
+          msg.includes("fetch") || msg.includes("network")
+            ? "RitaJet cannot reach its account service right now. Your password was not rejected; please try again after the database connection is restored."
+            : msg.includes("confirm") || msg.includes("verif")
             ? "Your email isn't verified yet. Open the verification link we sent you, then sign in again — check your spam folder too."
             : "That email and password don't match.",
         );
@@ -767,7 +769,12 @@ function ForgotPanel() {
     });
     setLoading(false);
     if (err) {
-      setError(err.message);
+      const message = (err.message ?? "").toLowerCase();
+      setError(
+        message.includes("fetch") || message.includes("network")
+          ? "RitaJet cannot reach its account service right now. No reset email was sent; please try again after the database connection is restored."
+          : err.message,
+      );
       return;
     }
     setSent(true);

@@ -1137,9 +1137,10 @@ function RitaLivePage() {
                 <Link
                   to="/admin/ai-keys"
                   aria-label="Open Rita API key settings"
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#e3dde9] bg-white text-[#6a47cf] transition hover:border-[#b9a1f4] hover:bg-[#f6f1ff]"
+                  className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-[#e3dde9] bg-white px-3 text-sm font-extrabold text-[#6a47cf] transition hover:border-[#b9a1f4] hover:bg-[#f6f1ff]"
                 >
                   <KeyRound size={16} />
+                  <span>API keys</span>
                 </Link>
               )}
             </div>
