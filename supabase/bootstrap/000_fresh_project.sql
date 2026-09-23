@@ -2,6 +2,14 @@
 -- Duplicate snapshots, Lovable-only grants, obsolete users, and expired remote imports are excluded.
 begin;
 
+-- Local migration bookkeeping retained without the expired Lovable imports.
+create table if not exists public._mig_log (
+  id serial primary key,
+  chunk text,
+  err text,
+  at timestamptz default now()
+);
+
 -- >>> 20260807145528_73d7d61a-9ef0-48bf-bfdf-e4a94e29b57f.sql
 CREATE TABLE public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
