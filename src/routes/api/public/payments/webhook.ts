@@ -6,10 +6,10 @@ let _supabase: ReturnType<typeof createClient> | null = null;
 function getSupabase() {
   if (!_supabase) {
     const url = process.env["SUPABASE_URL"] || process.env["VITE_SUPABASE_URL"]!;
-    const key =
-      process.env["SUPABASE_SERVICE_ROLE_KEY"] ||
-      process.env["SUPABASE_PUBLISHABLE_KEY"] ||
-      process.env["VITE_SUPABASE_PUBLISHABLE_KEY"]!;
+    const key = process.env["SUPABASE_SERVICE_ROLE_KEY"];
+    if (!url || !key) {
+      throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY for payment webhook");
+    }
     _supabase = createClient(url, key, { auth: { persistSession: false } });
   }
   return _supabase;

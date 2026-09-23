@@ -86,10 +86,7 @@ export async function doesPromoApplyToPlan(
   if (planSlug) {
     try {
       const url = process.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
-      const key =
-        process.env["SUPABASE_SERVICE_ROLE_KEY"] ||
-        process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
-        process.env["SUPABASE_PUBLISHABLE_KEY"];
+      const key = process.env["SUPABASE_SERVICE_ROLE_KEY"];
       if (url && key) {
         const { createClient } = await import("@supabase/supabase-js");
         const client = createClient(url, key, { auth: { persistSession: false } });
