@@ -7,6 +7,7 @@ import {
   getRitaSettings,
   normalizePersonality,
   requireRitaUser,
+  resolveRitaDeepgramKey,
   resolveRitaOpenAiKey,
 } from "@/lib/rita-voice.server";
 
@@ -16,12 +17,18 @@ export const Route = createFileRoute("/api/rita/session")({
       GET: async ({ request }) => {
         const auth = await requireRitaUser(request);
         if (!auth) return new Response("Unauthorized", { status: 401 });
-        const settings = await getRitaSettings();
-        const allowance = await getRitaAllowance(auth.userId, settings);
-        const pilotMode = await getRitaPilotMode(auth.userId);
+        const settingsPromise = getRitaSettings();
+        const [settings, allowance, pilotMode, openAiKey, deepgramKey] = await Promise.all([
+          settingsPromise,
+          settingsPromise.then((value) => getRitaAllowance(auth.userId, value)),
+          getRitaPilotMode(auth.userId),
+          resolveRitaOpenAiKey(),
+          resolveRitaDeepgramKey(),
+        ]);
         return Response.json(
           {
-            configured: Boolean(await resolveRitaOpenAiKey()),
+            configured: Boolean(openAiKey && deepgramKey),
+            providers: { openai: Boolean(openAiKey), deepgram: Boolean(deepgramKey) },
             enabled: settings.enabled,
             voice: settings.voice,
             pilotMode,
@@ -35,8 +42,6 @@ export const Route = createFileRoute("/api/rita/session")({
         if (!auth) return new Response("Unauthorized", { status: 401 });
         const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
         const action = String(body.action ?? "start");
-        const settings = await getRitaSettings();
-        const allowance = await getRitaAllowance(auth.userId, settings);
 
         if (action === "end") {
           const sessionId = String(body.sessionId ?? "");
@@ -57,6 +62,15 @@ export const Route = createFileRoute("/api/rita/session")({
           return Response.json({ ok: true });
         }
 
+        const settingsPromise = getRitaSettings();
+        const [settings, allowance, pilotMode, openAiKey, deepgramKey] = await Promise.all([
+          settingsPromise,
+          settingsPromise.then((value) => getRitaAllowance(auth.userId, value)),
+          getRitaPilotMode(auth.userId),
+          resolveRitaOpenAiKey(),
+          resolveRitaDeepgramKey(),
+        ]);
+
         if (!allowance.allowed) {
           const message =
             allowance.reason === "daily_guard"
@@ -68,7 +82,6 @@ export const Route = createFileRoute("/api/rita/session")({
         const personality = normalizePersonality(body.personality);
         const languagePreference = cleanLanguage(body.language);
         const clientLabel = String(body.clientLabel ?? "browser").slice(0, 120);
-        const pilotMode = await getRitaPilotMode(auth.userId);
         let sessionId: string = crypto.randomUUID();
         let persisted = false;
         try {
@@ -89,16 +102,29 @@ export const Route = createFileRoute("/api/rita/session")({
         } catch (error) {
           console.warn("Rita session logging is not ready", error);
         }
-        if (pilotMode === "realtime" && !persisted)
+        if (!openAiKey || !deepgramKey)
           return Response.json(
-            { ok: false, message: "Realtime pilot storage is not ready." },
+            {
+              ok: false,
+              code: "economic_v2_not_configured",
+              stage: !deepgramKey ? "deepgram_auth" : "openai_auth",
+              message: !deepgramKey
+                ? "Add a Deepgram key in Admin → AI keys. Economic v2 will not fall back to the old system."
+                : "Add an OpenAI key in Admin → AI keys.",
+            },
+            { status: 503 },
+          );
+        if (!persisted)
+          return Response.json(
+            { ok: false, code: "session_storage_failed", message: "Rita session storage is not ready." },
             { status: 503 },
           );
         return Response.json(
           {
             ok: true,
             sessionId,
-            configured: Boolean(await resolveRitaOpenAiKey()),
+            configured: true,
+            providers: { openai: true, deepgram: true },
             pilotMode,
             allowance,
           },

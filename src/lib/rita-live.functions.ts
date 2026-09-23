@@ -99,12 +99,10 @@ const SettingsSchema = z.object({
 export const getRitaVoiceAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = await requireAdmin(context);
+    const { supabase } = await requireAdmin(context);
     const month = new Date();
     const start = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), 1)).toISOString();
-    const [{ supabaseAdmin }, { data: settings }, { data: usage }, { data: sessions }] =
-      await Promise.all([
-        import("@/integrations/supabase/client.server"),
+    const [{ data: settings }, { data: usage }, { data: sessions }] = await Promise.all([
         (supabase.from as any)("rita_voice_settings")
           .select(
             "enabled,voice,response_words,daily_guard_minutes,default_monthly_minutes,monthly_budget_cents",
@@ -120,22 +118,13 @@ export const getRitaVoiceAdmin = createServerFn({ method: "GET" })
           .select("id,user_id,ended_at")
           .gte("started_at", start),
       ]);
-    const { data: pilot, error: pilotError } = await supabaseAdmin.auth.admin.getUserById(userId);
     const rows = (usage ?? []) as any[];
     const activeMs = rows.reduce(
       (sum, row) => sum + Number(row.input_audio_ms || 0) + Number(row.output_audio_ms || 0),
       0,
     );
     const costMicros = rows.reduce((sum, row) => sum + Number(row.estimated_cost_micros || 0), 0);
-    const realtimeUsage = rows.filter(
-      (row) => row.user_id === userId && row.response_model === "gpt-realtime-2.1-mini",
-    );
     return {
-      pilotMode:
-        !pilotError && pilot?.user?.app_metadata?.rita_realtime_pilot === "realtime"
-          ? "realtime"
-          : "current",
-      pilotReady: !pilotError,
       settings: {
         enabled: settings?.enabled !== false,
         voice: settings?.voice || "marin",
@@ -151,35 +140,8 @@ export const getRitaVoiceAdmin = createServerFn({ method: "GET" })
         activeMinutes: Math.round(activeMs / 60_000),
         estimatedCost: Number((costMicros / 1_000_000).toFixed(2)),
         turns: rows.length,
-        pilotTurns: (realtimeUsage ?? []).length,
-        pilotEstimatedCost: Number(
-          (
-            (realtimeUsage ?? []).reduce(
-              (sum: number, row: any) => sum + Number(row.estimated_cost_micros || 0),
-              0,
-            ) / 1_000_000
-          ).toFixed(2),
-        ),
       },
     };
-  });
-
-export const saveRitaPilotMode = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((value: unknown) =>
-    z.object({ mode: z.enum(["current", "realtime"]) }).parse(value),
-  )
-  .handler(async ({ data, context }) => {
-    const { userId } = await requireAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: existing, error: lookupError } =
-      await supabaseAdmin.auth.admin.getUserById(userId);
-    if (lookupError || !existing.user) throw new Error("Could not read this admin account.");
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-      app_metadata: { ...existing.user.app_metadata, rita_realtime_pilot: data.mode },
-    });
-    if (error) throw error;
-    return { mode: data.mode };
   });
 
 export const saveRitaVoiceSettings = createServerFn({ method: "POST" })

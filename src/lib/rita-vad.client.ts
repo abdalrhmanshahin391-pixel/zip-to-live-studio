@@ -149,8 +149,10 @@ export async function startRitaVad(callbacks: RitaVadCallbacks): Promise<RitaVad
     speechMs += frameMs;
     const endThreshold = Math.max(0.008, noiseFloor * 1.25);
     silenceMs = rms < endThreshold ? silenceMs + frameMs : 0;
-    // Leave room for a brief hesitation or a low-volume final syllable.
-    if ((silenceMs >= 550 && speechMs >= 500) || speechMs >= 35_000) finish();
+    // Short, complete turns can end promptly; very short utterances get more
+    // room so a hesitation is not mistaken for the end of the turn.
+    const silenceTargetMs = speechMs >= 1_100 ? 430 : 540;
+    if ((silenceMs >= silenceTargetMs && speechMs >= 500) || speechMs >= 35_000) finish();
   };
 
   return {

@@ -1,10 +1,31 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  detectRitaDialectEvidence,
   ritaVoiceInstructions,
   spokenDialectLabel,
   stableRitaDialect,
 } from "./rita-voice-style.ts";
+
+test("detects strong Jordanian lexical evidence without an extra model call", () => {
+  assert.deepEqual(detectRitaDialectEvidence("هسا بدي احكي معك، بتقدر تساعدني؟"), {
+    dialect: "ar-JO",
+    confidence: 0.94,
+    source: "lexical",
+  });
+});
+
+test("does not invent a country from ambiguous Levantine words", () => {
+  assert.deepEqual(detectRitaDialectEvidence("شو بدي اعمل"), {
+    dialect: "",
+    confidence: 0,
+    source: "none",
+  });
+});
+
+test("Iraqi evidence does not get confused with Jordanian Arabic", () => {
+  assert.equal(detectRitaDialectEvidence("شنو اكو هسه؟").dialect, "ar-IQ");
+});
 
 test("keeps a stable dialect when the new inference is weak", () => {
   assert.equal(

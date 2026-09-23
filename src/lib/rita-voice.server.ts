@@ -2,31 +2,17 @@
 import { createClient } from "@supabase/supabase-js";
 
 export const RITA_MODELS = {
-  transcription: "gpt-4o-mini-transcribe",
+  transcription: "deepgram-nova-3",
   response: "gpt-4o-mini",
   speech: "gpt-4o-mini-tts",
 } as const;
 
-export const RITA_REALTIME_MODEL = "gpt-realtime-2.1-mini";
-export type RitaPilotMode = "current" | "realtime";
+export type RitaPilotMode = "economic_v2";
 
-// Never accept the browser's requested model/mode as authorization. If the
-// admin/metadata lookup fails, everyone stays on the existing pipeline.
-export async function getRitaPilotMode(userId: string): Promise<RitaPilotMode> {
-  try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc("has_role", {
-      _user_id: userId,
-      _role: "admin",
-    });
-    if (roleError || !isAdmin) return "current";
-    const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
-    return !error && data.user?.app_metadata?.rita_realtime_pilot === "realtime"
-      ? "realtime"
-      : "current";
-  } catch {
-    return "current";
-  }
+// The server owns the mode decision. Economic v2 is the only executable Rita
+// pipeline, so neither browser input nor stale admin metadata can revive one.
+export async function getRitaPilotMode(_userId: string): Promise<RitaPilotMode> {
+  return "economic_v2";
 }
 
 export const RITA_PERSONALITIES = ["kind", "direct", "playful", "strict"] as const;
@@ -94,6 +80,26 @@ export async function resolveRitaOpenAiKey(): Promise<string | null> {
     }
   } catch (error) {
     console.warn("Rita could not read its OpenAI key", error);
+  }
+  return environmentKey.length > 20 ? environmentKey : null;
+}
+
+export async function resolveRitaDeepgramKey(): Promise<string | null> {
+  const environmentKey = (process.env["DEEPGRAM_API_KEY"] ?? "").trim();
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    for (const purpose of ["rita", "shared"]) {
+      const { data } = await (supabaseAdmin.from as any)("admin_ai_keys")
+        .select("api_key")
+        .eq("provider", "deepgram")
+        .eq("purpose", purpose)
+        .eq("slot", 1)
+        .maybeSingle();
+      const saved = String(data?.api_key ?? "").trim();
+      if (saved.length > 20) return saved;
+    }
+  } catch (error) {
+    console.warn("Rita could not read its Deepgram key", error);
   }
   return environmentKey.length > 20 ? environmentKey : null;
 }
@@ -175,30 +181,44 @@ export async function getRitaAllowance(
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const table = (name: string) => (supabaseAdmin.from as any)(name);
-    const [{ data: monthRows }, { data: dayRows }, { data: globalRows }] = await Promise.all([
-      table("rita_voice_usage")
-        .select("input_audio_ms,output_audio_ms")
-        .eq("user_id", userId)
-        .gte("created_at", startOfUtcMonth()),
-      table("rita_voice_usage")
-        .select("input_audio_ms,output_audio_ms")
-        .eq("user_id", userId)
-        .gte("created_at", startOfUtcDay()),
-      table("rita_voice_usage")
-        .select("estimated_cost_micros")
-        .gte("created_at", startOfUtcMonth()),
-    ]);
-    const active = (rows: any[] | null) =>
-      (rows ?? []).reduce(
-        (sum, row) => sum + Number(row.input_audio_ms || 0) + Number(row.output_audio_ms || 0),
+    const { data: totals, error: totalsError } = await (supabaseAdmin as any).rpc(
+      "rita_voice_usage_totals",
+      { _user_id: userId },
+    );
+    let usedMonthMs: number;
+    let usedTodayMs: number;
+    let globalMicros: number;
+    if (!totalsError && Array.isArray(totals) && totals[0]) {
+      usedMonthMs = Number(totals[0].used_month_ms || 0);
+      usedTodayMs = Number(totals[0].used_today_ms || 0);
+      globalMicros = Number(totals[0].global_month_micros || 0);
+    } else {
+      // Keep deployments usable while the optimization migration is rolling out.
+      const [{ data: monthRows }, { data: dayRows }, { data: globalRows }] = await Promise.all([
+        table("rita_voice_usage")
+          .select("input_audio_ms,output_audio_ms")
+          .eq("user_id", userId)
+          .gte("created_at", startOfUtcMonth()),
+        table("rita_voice_usage")
+          .select("input_audio_ms,output_audio_ms")
+          .eq("user_id", userId)
+          .gte("created_at", startOfUtcDay()),
+        table("rita_voice_usage")
+          .select("estimated_cost_micros")
+          .gte("created_at", startOfUtcMonth()),
+      ]);
+      const active = (rows: any[] | null) =>
+        (rows ?? []).reduce(
+          (sum, row) => sum + Number(row.input_audio_ms || 0) + Number(row.output_audio_ms || 0),
+          0,
+        );
+      usedMonthMs = active(monthRows);
+      usedTodayMs = active(dayRows);
+      globalMicros = (globalRows ?? []).reduce(
+        (sum: number, row: any) => sum + Number(row.estimated_cost_micros || 0),
         0,
       );
-    const usedMonthMs = active(monthRows);
-    const usedTodayMs = active(dayRows);
-    const globalMicros = (globalRows ?? []).reduce(
-      (sum: number, row: any) => sum + Number(row.estimated_cost_micros || 0),
-      0,
-    );
+    }
     const budgetReached = globalMicros >= settings.monthlyBudgetCents * 10_000;
     const premiumVoice = usedMonthMs < monthlyLimitMs && !budgetReached;
     const dailyReached = usedTodayMs >= settings.dailyGuardMinutes * 60_000;
@@ -250,11 +270,12 @@ export function estimateTurnCostMicros(args: {
   inputTokens: number;
   outputTokens: number;
 }) {
-  // Conservative estimates: STT $0.003/min; TTS about $0.018/min; GPT-4o Mini token rates.
+  // Conservative guardrail estimates: Nova-3 streaming plus keyterm prompting
+  // about $0.0072/min, TTS about $0.018/min, and GPT-4o Mini token rates.
   return Math.max(
     1,
     Math.round(
-      args.inputAudioMs * 0.05 +
+      args.inputAudioMs * 0.12 +
         args.outputAudioMs * 0.3 +
         args.inputTokens * 0.15 +
         args.outputTokens * 0.6,

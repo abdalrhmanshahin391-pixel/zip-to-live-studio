@@ -22,7 +22,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { AiEnginePanel } from "@/components/admin/AiEnginePanel";
 import {
   getRitaVoiceAdmin,
-  saveRitaPilotMode,
   saveRitaVoiceSettings,
   testRitaLiveKey,
 } from "@/lib/rita-live.functions";
@@ -44,7 +43,7 @@ export const Route = createFileRoute("/admin/ai-keys")({
 const FALLBACK_MODELS = [{ id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite" }];
 
 const SINGLE_PROVIDERS: {
-  id: "openai" | "anthropic";
+  id: "openai" | "anthropic" | "deepgram";
   name: string;
   tier: string;
   model: string;
@@ -64,6 +63,19 @@ const SINGLE_PROVIDERS: {
       "Add a payment method to the OpenAI API project.",
       "Click ‘Create new secret key’, copy the sk-… value.",
       "Paste a newly generated key here. Rita uses it only on the server; never paste it into chat or source code.",
+    ],
+  },
+  {
+    id: "deepgram",
+    name: "Deepgram — Rita Economic v2 listening",
+    tier: "Pay as you go · streaming speech recognition",
+    model: "Nova-3 · Arabic dialects + English + German",
+    color: "from-cyan-400 to-blue-500",
+    url: "https://console.deepgram.com/",
+    steps: [
+      "Create a Deepgram project and add pay-as-you-go credit.",
+      "Create an API key with Member permission so Rita can mint short-lived browser tokens.",
+      "Paste it here. Students receive only 30-second temporary tokens, never this key.",
     ],
   },
   {
@@ -92,7 +104,6 @@ function AiKeysPage() {
   const testOpenAi = useServerFn(testRitaLiveKey);
   const getRitaAdmin = useServerFn(getRitaVoiceAdmin);
   const updateRitaAdmin = useServerFn(saveRitaVoiceSettings);
-  const updatePilotMode = useServerFn(saveRitaPilotMode);
 
   // gemini[slot] = updated_at | null
   const [geminiSlots, setGeminiSlots] = useState<(string | null)[]>([null, null, null, null, null]);
@@ -100,21 +111,25 @@ function AiKeysPage() {
   const [models, setModels] = useState(FALLBACK_MODELS);
 
   // single-provider status
-  const [singleStatus, setSingleStatus] = useState<Record<"openai" | "anthropic", string | null>>({
+  const [singleStatus, setSingleStatus] = useState<
+    Record<"openai" | "anthropic" | "deepgram", string | null>
+  >({
     openai: null,
     anthropic: null,
+    deepgram: null,
   });
 
   // drafts
   const [geminiDraft, setGeminiDraft] = useState<string[]>(["", "", "", "", ""]);
-  const [singleDraft, setSingleDraft] = useState<Record<"openai" | "anthropic", string>>({
+  const [singleDraft, setSingleDraft] = useState<
+    Record<"openai" | "anthropic" | "deepgram", string>
+  >({
     openai: "",
     anthropic: "",
+    deepgram: "",
   });
   const [busy, setBusy] = useState<string | null>(null);
   const [showRitaKey, setShowRitaKey] = useState(false);
-  const [pilotMode, setPilotMode] = useState<"current" | "realtime">("current");
-  const [pilotReady, setPilotReady] = useState(false);
   const [ritaSettings, setRitaSettings] = useState({
     enabled: true,
     voice: "marin",
@@ -130,8 +145,6 @@ function AiKeysPage() {
     activeMinutes: 0,
     estimatedCost: 0,
     turns: 0,
-    pilotTurns: 0,
-    pilotEstimatedCost: 0,
   });
 
   useEffect(() => {
@@ -143,9 +156,10 @@ function AiKeysPage() {
     try {
       const r: any = await list();
       const slots: (string | null)[] = [null, null, null, null, null];
-      const single: Record<"openai" | "anthropic", string | null> = {
+      const single: Record<"openai" | "anthropic" | "deepgram", string | null> = {
         openai: null,
         anthropic: null,
+        deepgram: null,
       };
       for (const k of r.keys ?? []) {
         if (k.provider === "gemini") {
@@ -155,6 +169,8 @@ function AiKeysPage() {
           single.openai = k.updated_at;
         } else if (k.provider === "anthropic") {
           single.anthropic = k.updated_at;
+        } else if (k.provider === "deepgram") {
+          single.deepgram = k.updated_at;
         }
       }
       setGeminiSlots(slots);
@@ -175,8 +191,6 @@ function AiKeysPage() {
       .then((result) => {
         if (result?.settings) setRitaSettings(result.settings);
         if (result?.metrics) setRitaMetrics(result.metrics);
-        setPilotMode(result?.pilotMode === "realtime" ? "realtime" : "current");
-        setPilotReady(result?.pilotReady === true);
       })
       .catch(() => undefined);
   }, [getRitaAdmin, isAdmin]);
@@ -226,7 +240,7 @@ function AiKeysPage() {
     }
   }
 
-  async function saveSingle(p: "openai" | "anthropic") {
+  async function saveSingle(p: "openai" | "anthropic" | "deepgram") {
     if (!singleDraft[p].trim()) return;
     setBusy(p);
     try {
@@ -241,7 +255,7 @@ function AiKeysPage() {
     }
   }
 
-  async function deleteSingle(p: "openai" | "anthropic") {
+  async function deleteSingle(p: "openai" | "anthropic" | "deepgram") {
     if (!confirm(`Remove the ${p} key?`)) return;
     setBusy(p);
     try {
@@ -289,24 +303,6 @@ function AiKeysPage() {
     }
   }
 
-  async function changePilotMode(mode: "current" | "realtime") {
-    if (mode === pilotMode || busy) return;
-    setBusy("rita-pilot");
-    try {
-      const result = await updatePilotMode({ data: { mode } });
-      setPilotMode(result.mode);
-      toast.success(
-        mode === "realtime"
-          ? "Realtime pilot enabled for your admin account"
-          : "Current Rita voice restored for your admin account",
-      );
-    } catch (cause: unknown) {
-      toast.error(cause instanceof Error ? cause.message : "Could not switch Rita's voice mode");
-    } finally {
-      setBusy(null);
-    }
-  }
-
   if (loading || !user || !isAdmin) return <div className="min-h-screen bg-black" />;
 
   const connectedCount = geminiSlots.filter(Boolean).length;
@@ -341,62 +337,28 @@ function AiKeysPage() {
 
         <section
           className="mb-6 rounded-3xl border-[3px] border-red-500 bg-red-950/70 p-5 shadow-[0_0_48px_-15px_rgba(239,68,68,.8)] md:p-7"
-          aria-label="Rita voice mode switch"
+          aria-label="Rita Economic v2 status"
         >
           <p className="text-xs font-black uppercase tracking-[.2em] text-red-200">
-            🔴 RITA VOICE MODE — ADMIN TEST ONLY
+            🔴 RITA ECONOMIC V2 — ONLY ACTIVE PIPELINE
           </p>
           <h2 className="mt-2 text-2xl font-black text-white">
-            اختيار صوت ريتا / Choose Rita’s mode
+            Deepgram Nova-3 → GPT-4o mini → OpenAI Mini TTS
           </h2>
           <p className="mt-2 text-sm text-red-100/85">
-            يُطبّق على حساب الأدمن الخاص بك فقط، عند بدء مكالمة جديدة. بقية المستخدمين يبقون على
-            الوضع الحالي. أنهِ المكالمة الحالية قبل التبديل.
+            هذا هو نظام ريتا الوحيد لجميع المستخدمين. إذا تعطلت أي مرحلة يظهر اسمها كخطأ واضح؛
+            لا يوجد رجوع تلقائي أو مخفي للصوت القديم.
           </p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              aria-pressed={pilotMode === "current"}
-              onClick={() => void changePilotMode("current")}
-              disabled={!pilotReady || !!busy}
-              className={`rounded-2xl border-2 p-4 text-left transition disabled:opacity-50 ${pilotMode === "current" ? "border-white bg-white text-red-950" : "border-red-300/50 bg-red-950 text-white hover:bg-red-900"}`}
-            >
-              <span className="block text-lg font-black">
-                {pilotMode === "current" ? "✓ " : ""}الحالي · Current voice
-              </span>
-              <span className="mt-1 block text-xs opacity-80">
-                Mini transcription → GPT-4o Mini → Mini TTS
-              </span>
-            </button>
-            <button
-              type="button"
-              aria-pressed={pilotMode === "realtime"}
-              onClick={() => void changePilotMode("realtime")}
-              disabled={!pilotReady || !!busy}
-              className={`rounded-2xl border-2 p-4 text-left transition disabled:opacity-50 ${pilotMode === "realtime" ? "border-white bg-white text-red-950" : "border-red-300/50 bg-red-950 text-white hover:bg-red-900"}`}
-            >
-              <span className="block text-lg font-black">
-                {pilotMode === "realtime" ? "✓ " : ""}الجديد · Realtime pilot
-              </span>
-              <span className="mt-1 block text-xs opacity-80">
-                gpt-realtime-2.1-mini · live speech-to-speech
-              </span>
-            </button>
+          <div className="mt-5 rounded-2xl border-2 border-white bg-white p-4 text-red-950">
+            <span className="block text-lg font-black">✓ Economic v2 مفعل للجميع</span>
+            <span className="mt-1 block text-xs font-bold opacity-80">
+              No Legacy fallback · No Realtime fallback · Stage errors stay visible
+            </span>
           </div>
-          <p className="mt-4 text-xs text-red-100/80">
-            الوضع المحدد الآن:{" "}
-            <b>{pilotMode === "realtime" ? "الجديد — تجربة مباشرة" : "الحالي — الصوت القديم"}</b>.
-            التجربة الجديدة محدودة بأربع مكالمات × خمس دقائق يوميًا؛ العودة للحالي ضغطة واحدة.{" "}
-            {pilotReady ? "" : "تعذّر قراءة حساب الأدمن الآن؛ حاول تحديث الصفحة."}
-          </p>
           <p className="mt-2 text-xs text-red-100/80">
-            هذا الشهر، تكلفة التجربة المقدّرة من بيانات الردود:{" "}
-            <b>${ritaMetrics.pilotEstimatedCost.toFixed(2)}</b> لـ {ritaMetrics.pilotTurns} ردود.
+            هذا الشهر، التكلفة المقدّرة من بيانات الردود:{" "}
+            <b>${ritaMetrics.estimatedCost.toFixed(2)}</b> لـ {ritaMetrics.turns} ردود.
             الرقم تقديري؛ فواتير OpenAI هي المرجع النهائي، وقد لا تصل بيانات الرد إذا انقطع الاتصال.
-          </p>
-          <p className="mt-2 text-xs text-red-100/80">
-            اختبار المفتاح الأخضر أدناه يتحقق من GPT-4o Mini الحالي فقط؛ اتصال ريتا الاقتصادي
-            المباشر هو الاختبار الفعلي لصلاحية النموذج الجديد.
           </p>
         </section>
 
@@ -412,8 +374,9 @@ function AiKeysPage() {
                 </p>
                 <h2 className="mt-1 text-2xl font-black">Add Rita’s OpenAI API key</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/65">
-                  Rita uses this protected server-side key for speech recognition, GPT-4o Mini
-                  tutoring, and streamed speech. Students never receive the key.
+                  Rita uses this protected server-side key for GPT-4o Mini tutoring and streamed
+                  OpenAI speech. Deepgram handles recognition with its separate protected key.
+                  Students never receive either permanent key.
                 </p>
               </div>
             </div>

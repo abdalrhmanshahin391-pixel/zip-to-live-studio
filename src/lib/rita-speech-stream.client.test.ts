@@ -43,6 +43,24 @@ test("buffered fallback plays the received file without another request", async 
   URL.revokeObjectURL(source);
 });
 
+test("buffered fallback preserves the server audio format", async () => {
+  let source = "";
+  const blob = await playRitaSpeechResponse({
+    response: new Response(new Uint8Array([82, 73, 70, 70]), {
+      headers: { "Content-Type": "audio/wav" },
+    }),
+    element: { play: async () => undefined } as unknown as HTMLAudioElement,
+    signal: new AbortController().signal,
+    stream: false,
+    setSource: (url) => {
+      source = url;
+    },
+    onPlaybackBlocked: () => assert.fail("Playback should not be blocked"),
+  });
+  assert.equal(blob.type, "audio/wav");
+  URL.revokeObjectURL(source);
+});
+
 test("streamed audio starts playback before the full reply arrives", async () => {
   const originalMediaSource = Object.getOwnPropertyDescriptor(globalThis, "MediaSource");
   const originalCreateObjectURL = URL.createObjectURL;

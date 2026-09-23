@@ -15,7 +15,8 @@ export async function playRitaSpeechResponse(args: {
   onPlaybackBlocked: (error: unknown) => void;
 }) {
   const { response, element, signal, setSource, onPlaybackBlocked } = args;
-  if (!response.headers.get("Content-Type")?.startsWith("audio/"))
+  const contentType = response.headers.get("Content-Type")?.split(";")[0]?.trim() || "";
+  if (!contentType.startsWith("audio/"))
     throw new Error("Rita’s voice service returned an invalid audio file.");
 
   // Consume the response body exactly once. Safari may throw "Body is disturbed
@@ -34,7 +35,7 @@ export async function playRitaSpeechResponse(args: {
     } finally {
       reader.releaseLock();
     }
-    const blob = new Blob(chunks, { type: "audio/mpeg" });
+    const blob = new Blob(chunks, { type: contentType });
     if (!blob.size) throw new Error("Rita’s voice service returned an empty audio file.");
     if (signal.aborted) throw new DOMException("Voice stopped", "AbortError");
     setSource(URL.createObjectURL(blob));
@@ -112,7 +113,7 @@ export async function playRitaSpeechResponse(args: {
   if (signal.aborted) throw new DOMException("Voice stopped", "AbortError");
   finished = true;
   appendNext();
-  const blob = new Blob(buffers, { type: "audio/mpeg" });
+  const blob = new Blob(buffers, { type: contentType });
   if (!blob.size) throw new Error("Rita’s voice service returned an empty audio file.");
 
   // Some browsers advertise MSE/MP3 but never open a source for an audio element.

@@ -96,10 +96,12 @@ import { Route as ApiPublicArchiveSolverRouteImport } from './routes/api/public/
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicPushDispatchRouteImport } from './routes/api/public/push-dispatch'
 import { Route as ApiPublicRitaWorkerRouteImport } from './routes/api/public/rita-worker'
+import { Route as ApiRitaDeepgramTokenRouteImport } from './routes/api/rita/deepgram-token'
 import { Route as ApiRitaDemoRouteImport } from './routes/api/rita/demo'
 import { Route as ApiRitaExtractRouteImport } from './routes/api/rita/extract'
 import { Route as ApiRitaLearningRouteImport } from './routes/api/rita/learning'
 import { Route as ApiRitaLiveRouteImport } from './routes/api/rita/live'
+import { Route as ApiRitaRespondRouteImport } from './routes/api/rita/respond'
 import { Route as ApiRitaSessionRouteImport } from './routes/api/rita/session'
 import { Route as ApiRitaSpeechRouteImport } from './routes/api/rita/speech'
 import { Route as ApiRitaTurnRouteImport } from './routes/api/rita/turn'
@@ -567,6 +569,11 @@ const ApiPublicRitaWorkerRoute = ApiPublicRitaWorkerRouteImport.update({
   path: '/api/public/rita-worker',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRitaDeepgramTokenRoute = ApiRitaDeepgramTokenRouteImport.update({
+  id: '/api/rita/deepgram-token',
+  path: '/api/rita/deepgram-token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRitaDemoRoute = ApiRitaDemoRouteImport.update({
   id: '/api/rita/demo',
   path: '/api/rita/demo',
@@ -585,6 +592,11 @@ const ApiRitaLearningRoute = ApiRitaLearningRouteImport.update({
 const ApiRitaLiveRoute = ApiRitaLiveRouteImport.update({
   id: '/api/rita/live',
   path: '/api/rita/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRitaRespondRoute = ApiRitaRespondRouteImport.update({
+  id: '/api/rita/respond',
+  path: '/api/rita/respond',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRitaSessionRoute = ApiRitaSessionRouteImport.update({
@@ -818,10 +830,12 @@ export interface FileRoutesByFullPath {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
+  '/api/rita/deepgram-token': typeof ApiRitaDeepgramTokenRoute
   '/api/rita/demo': typeof ApiRitaDemoRoute
   '/api/rita/extract': typeof ApiRitaExtractRoute
   '/api/rita/learning': typeof ApiRitaLearningRoute
   '/api/rita/live': typeof ApiRitaLiveRoute
+  '/api/rita/respond': typeof ApiRitaRespondRoute
   '/api/rita/session': typeof ApiRitaSessionRoute
   '/api/rita/speech': typeof ApiRitaSpeechRoute
   '/api/rita/turn': typeof ApiRitaTurnRoute
@@ -935,10 +949,12 @@ export interface FileRoutesByTo {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
+  '/api/rita/deepgram-token': typeof ApiRitaDeepgramTokenRoute
   '/api/rita/demo': typeof ApiRitaDemoRoute
   '/api/rita/extract': typeof ApiRitaExtractRoute
   '/api/rita/learning': typeof ApiRitaLearningRoute
   '/api/rita/live': typeof ApiRitaLiveRoute
+  '/api/rita/respond': typeof ApiRitaRespondRoute
   '/api/rita/session': typeof ApiRitaSessionRoute
   '/api/rita/speech': typeof ApiRitaSpeechRoute
   '/api/rita/turn': typeof ApiRitaTurnRoute
@@ -1056,10 +1072,12 @@ export interface FileRoutesById {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/api/public/rita-worker': typeof ApiPublicRitaWorkerRoute
+  '/api/rita/deepgram-token': typeof ApiRitaDeepgramTokenRoute
   '/api/rita/demo': typeof ApiRitaDemoRoute
   '/api/rita/extract': typeof ApiRitaExtractRoute
   '/api/rita/learning': typeof ApiRitaLearningRoute
   '/api/rita/live': typeof ApiRitaLiveRoute
+  '/api/rita/respond': typeof ApiRitaRespondRoute
   '/api/rita/session': typeof ApiRitaSessionRoute
   '/api/rita/speech': typeof ApiRitaSpeechRoute
   '/api/rita/turn': typeof ApiRitaTurnRoute
@@ -1179,10 +1197,12 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
+    | '/api/rita/deepgram-token'
     | '/api/rita/demo'
     | '/api/rita/extract'
     | '/api/rita/learning'
     | '/api/rita/live'
+    | '/api/rita/respond'
     | '/api/rita/session'
     | '/api/rita/speech'
     | '/api/rita/turn'
@@ -1296,10 +1316,12 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
+    | '/api/rita/deepgram-token'
     | '/api/rita/demo'
     | '/api/rita/extract'
     | '/api/rita/learning'
     | '/api/rita/live'
+    | '/api/rita/respond'
     | '/api/rita/session'
     | '/api/rita/speech'
     | '/api/rita/turn'
@@ -1416,10 +1438,12 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/push-dispatch'
     | '/api/public/rita-worker'
+    | '/api/rita/deepgram-token'
     | '/api/rita/demo'
     | '/api/rita/extract'
     | '/api/rita/learning'
     | '/api/rita/live'
+    | '/api/rita/respond'
     | '/api/rita/session'
     | '/api/rita/speech'
     | '/api/rita/turn'
@@ -1523,10 +1547,12 @@ export interface RootRouteChildren {
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicPushDispatchRoute: typeof ApiPublicPushDispatchRoute
   ApiPublicRitaWorkerRoute: typeof ApiPublicRitaWorkerRoute
+  ApiRitaDeepgramTokenRoute: typeof ApiRitaDeepgramTokenRoute
   ApiRitaDemoRoute: typeof ApiRitaDemoRoute
   ApiRitaExtractRoute: typeof ApiRitaExtractRoute
   ApiRitaLearningRoute: typeof ApiRitaLearningRoute
   ApiRitaLiveRoute: typeof ApiRitaLiveRoute
+  ApiRitaRespondRoute: typeof ApiRitaRespondRoute
   ApiRitaSessionRoute: typeof ApiRitaSessionRoute
   ApiRitaSpeechRoute: typeof ApiRitaSpeechRoute
   ApiRitaTurnRoute: typeof ApiRitaTurnRoute
@@ -2151,6 +2177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRitaWorkerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rita/deepgram-token': {
+      id: '/api/rita/deepgram-token'
+      path: '/api/rita/deepgram-token'
+      fullPath: '/api/rita/deepgram-token'
+      preLoaderRoute: typeof ApiRitaDeepgramTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rita/demo': {
       id: '/api/rita/demo'
       path: '/api/rita/demo'
@@ -2177,6 +2210,13 @@ declare module '@tanstack/react-router' {
       path: '/api/rita/live'
       fullPath: '/api/rita/live'
       preLoaderRoute: typeof ApiRitaLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rita/respond': {
+      id: '/api/rita/respond'
+      path: '/api/rita/respond'
+      fullPath: '/api/rita/respond'
+      preLoaderRoute: typeof ApiRitaRespondRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rita/session': {
@@ -2582,10 +2622,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicPushDispatchRoute: ApiPublicPushDispatchRoute,
   ApiPublicRitaWorkerRoute: ApiPublicRitaWorkerRoute,
+  ApiRitaDeepgramTokenRoute: ApiRitaDeepgramTokenRoute,
   ApiRitaDemoRoute: ApiRitaDemoRoute,
   ApiRitaExtractRoute: ApiRitaExtractRoute,
   ApiRitaLearningRoute: ApiRitaLearningRoute,
   ApiRitaLiveRoute: ApiRitaLiveRoute,
+  ApiRitaRespondRoute: ApiRitaRespondRoute,
   ApiRitaSessionRoute: ApiRitaSessionRoute,
   ApiRitaSpeechRoute: ApiRitaSpeechRoute,
   ApiRitaTurnRoute: ApiRitaTurnRoute,

@@ -17,9 +17,39 @@ type Props = {
   outputLevel?: number;
   caption?: string;
   dialect?: string;
+  accentPreference?: string;
+  onAccentChange?: (accent: string) => void;
+  latencyMs?: number | null;
+  timingDetails?: string;
 };
 
-export function RitaStage({ mood, active, inputLevel = 0, outputLevel = 0, dialect }: Props) {
+const ACCENTS = [
+  ["", "Automatic"],
+  ["ar-JO", "Jordanian Arabic"],
+  ["ar-IQ", "Iraqi Arabic"],
+  ["ar-PS", "Palestinian Arabic"],
+  ["ar-EG", "Egyptian Arabic"],
+  ["ar-LB", "Lebanese Arabic"],
+  ["ar-SY", "Syrian Arabic"],
+  ["ar-SA", "Saudi Arabic"],
+  ["Gulf Arabic", "Gulf Arabic"],
+  ["ar-MA", "Moroccan Arabic"],
+  ["en-US", "American English"],
+  ["en-GB", "British English"],
+  ["de-DE", "German"],
+] as const;
+
+export function RitaStage({
+  mood,
+  active,
+  inputLevel = 0,
+  outputLevel = 0,
+  dialect,
+  accentPreference = "",
+  onAccentChange,
+  latencyMs,
+  timingDetails,
+}: Props) {
   const level = mood === "talking" ? outputLevel : inputLevel;
   const energy = Math.min(1, Math.max(0, level));
   const speaking = mood === "talking" || mood === "laughing";
@@ -87,16 +117,32 @@ export function RitaStage({ mood, active, inputLevel = 0, outputLevel = 0, diale
           <p className="text-sm font-medium text-white/70">
             {active ? moodCopy[mood] : "Your language tutor"}
           </p>
-          {dialect && dialect !== "standard" && dialect !== "unknown" && (
-            <span className="mt-4 inline-flex rounded-full border border-[#c6afff]/25 bg-[#c6afff]/10 px-3 py-1.5 text-xs font-bold text-[#e4dbff]">
-              {dialect === "ar-JO"
-                ? "Jordanian Arabic"
-                : dialect === "ar-IQ"
-                  ? "Iraqi Arabic"
-                  : dialect === "ar-LEV"
-                    ? "Levantine Arabic"
-                    : dialect}
+          {onAccentChange ? (
+            <label className="mt-4 block text-[10px] font-bold uppercase tracking-[.14em] text-white/40">
+              Dialect
+              <select
+                value={accentPreference}
+                onChange={(event) => onAccentChange(event.target.value)}
+                className="mt-1 block max-w-48 rounded-full border border-[#c6afff]/25 bg-[#c6afff]/10 px-3 py-1.5 text-xs font-bold normal-case tracking-normal text-[#e4dbff] outline-none"
+                aria-label="Rita dialect"
+              >
+                {ACCENTS.map(([value, label]) => (
+                  <option key={value || "automatic"} value={value} className="bg-[#251b37]">
+                    {value || !dialect || dialect === "unknown" || dialect === "standard"
+                      ? label
+                      : `${label} · ${dialect}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          {typeof latencyMs === "number" && (
+            <span className="mt-3 block text-[10px] font-medium text-white/35">
+              Voice started in {(latencyMs / 1_000).toFixed(2)}s
             </span>
+          )}
+          {timingDetails && (
+            <span className="mt-1 block text-[9px] font-medium text-white/30">{timingDetails}</span>
           )}
         </div>
       </div>

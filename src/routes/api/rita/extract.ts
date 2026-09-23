@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getRitaPilotMode, requireRitaUser, resolveRitaOpenAiKey } from "@/lib/rita-voice.server";
+import { requireRitaUser, resolveRitaOpenAiKey } from "@/lib/rita-voice.server";
+import { hasRitaLanguageLearningIntent } from "@/lib/rita-learning-intent";
 
 export const Route = createFileRoute("/api/rita/extract")({
   server: {
@@ -7,8 +8,6 @@ export const Route = createFileRoute("/api/rita/extract")({
       POST: async ({ request }) => {
         const auth = await requireRitaUser(request);
         if (!auth) return new Response("Unauthorized", { status: 401 });
-        if ((await getRitaPilotMode(auth.userId)) !== "realtime")
-          return new Response("Pilot off", { status: 403 });
         const data = await request.json().catch(() => null);
         const spoken = String(data?.spoken ?? "")
           .trim()
@@ -17,6 +16,9 @@ export const Route = createFileRoute("/api/rita/extract")({
           .trim()
           .slice(0, 900);
         if (!spoken || !reply) return Response.json({ learningItems: [], saveRequest: "none" });
+        const saveContext = data?.saveContext === "flashcards" || data?.saveContext === "german_lab";
+        if (!saveContext && !hasRitaLanguageLearningIntent(spoken))
+          return Response.json({ learningItems: [], saveRequest: "none" });
         const key = await resolveRitaOpenAiKey();
         if (!key) return new Response("Rita key unavailable", { status: 503 });
         try {
@@ -26,12 +28,12 @@ export const Route = createFileRoute("/api/rita/extract")({
             body: JSON.stringify({
               model: "gpt-4o-mini",
               temperature: 0,
-              max_tokens: 320,
+              max_tokens: 260,
               response_format: { type: "json_object" },
               messages: [
                 {
                   role: "system",
-                  content: `Extract learning items from the actual spoken exchange without inventing facts. Return JSON with learningItems (up to 3 objects: term, meaning, language BCP-47, kind word|sentence, article der|die|das|null, plural string|null); saveRequest none|flashcards|german_lab; destinationName string only if user named it; rememberDestination boolean only when explicitly requested. If nothing was taught, learningItems is []. If user requests saving, select the request type and never imply persistence.`,
+                  content: `Extract only language-learning material from the actual exchange. Valid: an explicit translation, word/sentence meaning, requested target-language vocabulary list, or explicit save to Flashcards/German Lab. Never extract general-knowledge concepts, people, wars, science explanations, or ordinary conversation. Return JSON with learningItems (up to 3 objects: term, meaning, language BCP-47, kind word|sentence, article der|die|das|null, plural string|null); saveRequest none|flashcards|german_lab; destinationName string only if user named it; rememberDestination boolean only when explicitly requested. If no valid language item was taught, learningItems is []. Never imply persistence.`,
                 },
                 { role: "user", content: JSON.stringify({ spoken, reply }) },
               ],
