@@ -1,5 +1,5 @@
 -- Fresh Supabase bootstrap generated from the canonical migration sequence.
--- The duplicate 2026-09-04 snapshot branch and superseded site_secrets migration are intentionally excluded.
+-- Duplicate snapshot branches and Lovable-only sandbox_exec grants are intentionally excluded.
 begin;
 
 -- >>> 20260807145528_73d7d61a-9ef0-48bf-bfdf-e4a94e29b57f.sql
@@ -4445,11 +4445,6 @@ ALTER TABLE public.courses DROP CONSTRAINT IF EXISTS courses_category_check;
 -- >>> 20260812063247_d948013f-3d32-4a7e-8d7f-237f53a964f3.sql
 CREATE POLICY "Admins manage question images" ON storage.objects FOR ALL TO authenticated USING (bucket_id = 'question-images' AND public.has_role(auth.uid(), 'admin')) WITH CHECK (bucket_id = 'question-images' AND public.has_role(auth.uid(), 'admin'));
 -- <<< 20260812063247_d948013f-3d32-4a7e-8d7f-237f53a964f3.sql
-
-
--- >>> 20260813043045_a77184e5-4101-4d9e-9107-fab9ae24619a.sql
-CREATE OR REPLACE FUNCTION public.__restore_exec(sql text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $fn$ BEGIN EXECUTE sql; END; $fn$; REVOKE EXECUTE ON FUNCTION public.__restore_exec(text) FROM PUBLIC, anon, authenticated; GRANT EXECUTE ON FUNCTION public.__restore_exec(text) TO sandbox_exec;
--- <<< 20260813043045_a77184e5-4101-4d9e-9107-fab9ae24619a.sql
 
 
 -- >>> 20260813043155_dc9898f8-13a7-44c1-8cd5-dec3b599ed4e.sql
@@ -9944,82 +9939,10 @@ ALTER TABLE public.admin_ai_keys ADD CONSTRAINT admin_ai_keys_purpose_check
 -- <<< 20260908010840_d0885c3e-80ed-4e8a-badc-e71e0f07f380.sql
 
 
--- >>> 20260908143647_c65926ff-c831-440e-aa2b-2b493bea42a3.sql
-GRANT ALL ON SCHEMA public TO sandbox_exec;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO sandbox_exec;
-ALTER ROLE sandbox_exec SET search_path = public;
--- <<< 20260908143647_c65926ff-c831-440e-aa2b-2b493bea42a3.sql
-
-
--- >>> 20260908143716_8d009cec-2327-4c93-b974-ac3d9228f688.sql
-GRANT USAGE ON SCHEMA auth TO sandbox_exec;
-GRANT REFERENCES, SELECT ON auth.users TO sandbox_exec;
-GRANT USAGE ON SCHEMA extensions TO sandbox_exec;
-GRANT USAGE ON SCHEMA storage TO sandbox_exec;
-GRANT ALL ON storage.objects TO sandbox_exec;
-GRANT ALL ON storage.buckets TO sandbox_exec;
--- <<< 20260908143716_8d009cec-2327-4c93-b974-ac3d9228f688.sql
-
-
--- >>> 20260908143758_75aee9d5-34b3-4f4f-ad40-75d79484add3.sql
-CREATE OR REPLACE FUNCTION public.__setup_exec(sql text)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  EXECUTE sql;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.__setup_exec(text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.__setup_exec(text) TO sandbox_exec;
--- <<< 20260908143758_75aee9d5-34b3-4f4f-ad40-75d79484add3.sql
-
-
 -- >>> 20260908143841_dc89e4b4-72f3-4f35-ae21-e6c5e5b0082f.sql
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 ALTER FUNCTION public.__setup_exec(text) SET search_path = public, extensions;
 -- <<< 20260908143841_dc89e4b4-72f3-4f35-ae21-e6c5e5b0082f.sql
-
-
--- >>> 20260908144052_ae32f820-e4d6-4d0c-9b9e-9c6eaea3eb7b.sql
-CREATE OR REPLACE FUNCTION public.__setup_exec(sql text)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, extensions
-AS $fn$
-BEGIN
-  EXECUTE sql;
-  EXECUTE 'GRANT EXECUTE ON FUNCTION public.__setup_exec(text) TO sandbox_exec';
-END;
-$fn$;
-REVOKE ALL ON FUNCTION public.__setup_exec(text) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.__setup_exec(text) TO sandbox_exec;
--- <<< 20260908144052_ae32f820-e4d6-4d0c-9b9e-9c6eaea3eb7b.sql
-
-
--- >>> 20260908144415_4b9ecdf2-7cda-46fd-80a7-75bcbc5cbbb1.sql
-DO $$
-DECLARE r record;
-BEGIN
-  FOR r IN
-    SELECT p.oid::regprocedure AS sig
-    FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-    WHERE n.nspname = 'public' AND p.prosecdef
-  LOOP
-    EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC, anon', r.sig);
-  END LOOP;
-END $$;
-
-DROP FUNCTION IF EXISTS public.__setup_exec(text);
-REVOKE ALL ON SCHEMA public FROM sandbox_exec;
-REVOKE ALL ON ALL TABLES IN SCHEMA public FROM sandbox_exec;
-REVOKE ALL ON storage.objects FROM sandbox_exec;
-REVOKE ALL ON storage.buckets FROM sandbox_exec;
-GRANT USAGE ON SCHEMA public TO sandbox_exec;
--- <<< 20260908144415_4b9ecdf2-7cda-46fd-80a7-75bcbc5cbbb1.sql
 
 
 -- >>> 20260908165713_257938d3-c8fd-4425-bbd5-db5b4f8e383b.sql
