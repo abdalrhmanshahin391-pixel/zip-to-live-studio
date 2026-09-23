@@ -10,6 +10,8 @@ import {
   requireRitaUser,
   resolveRitaOpenAiKey,
 } from "@/lib/rita-voice.server";
+import { RitaClauseChunker, cleanRitaSpokenText } from "@/lib/rita-clause-chunker";
+import { createRitaSpeechTicket } from "@/lib/rita-speech-ticket.server";
 
 type HistoryItem = { role: "user" | "assistant"; content: string };
 
@@ -20,7 +22,9 @@ function safeHistory(value: unknown): HistoryItem[] {
     .filter((item) => item?.role === "user" || item?.role === "assistant")
     .map((item) => ({
       role: item.role as HistoryItem["role"],
-      content: String(item.content ?? "").trim().slice(0, 600),
+      content: String(item.content ?? "")
+        .trim()
+        .slice(0, 600),
     }))
     .filter((item) => item.content);
 }
@@ -84,22 +88,39 @@ export const Route = createFileRoute("/api/rita/respond")({
         const auth = await requireRitaUser(request);
         if (!auth) return apiError("unauthorized", "Please sign in again.", 401, traceId);
         const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-        const transcript = String(body?.transcript ?? "").trim().slice(0, 2_000);
+        const transcript = String(body?.transcript ?? "")
+          .trim()
+          .slice(0, 2_000);
         if (!transcript)
-          return apiError("empty_transcript", "Deepgram returned no stable transcript.", 422, traceId);
+          return apiError(
+            "empty_transcript",
+            "Deepgram returned no stable transcript.",
+            422,
+            traceId,
+          );
         const settings = await getRitaSettings();
         const allowance = await getRitaAllowance(auth.userId, settings);
         if (!allowance.allowed)
-          return apiError("allowance_reached", "Rita Economic v2 usage limit was reached.", 429, traceId);
+          return apiError(
+            "allowance_reached",
+            "Rita Economic v2 usage limit was reached.",
+            429,
+            traceId,
+          );
         const key = await resolveRitaOpenAiKey();
         if (!key)
           return apiError("openai_not_configured", "Rita needs an OpenAI key.", 503, traceId);
         const history = safeHistory(body?.history);
+        const sessionSummary = String(body?.sessionSummary ?? "")
+          .trim()
+          .slice(0, 800);
         const personality = normalizePersonality(body?.personality);
         const accent = String(body?.accent ?? "").slice(0, 40);
         const transcriptLanguage = String(body?.transcriptLanguage ?? "").slice(0, 20);
         const inputAudioMs = Math.min(45_000, Math.max(0, Number(body?.inputAudioMs ?? 0)));
         const sessionId = String(body?.sessionId ?? "");
+        const pipelineMode = body?.pipelineMode === "legacy" ? "legacy" : "economic_v2";
+        const transcriptionSource = body?.transcriptionSource === "openai" ? "openai" : "deepgram";
         const prompt = systemPrompt({
           personality,
           accent,
@@ -118,6 +139,9 @@ export const Route = createFileRoute("/api/rita/respond")({
             max_tokens: 240,
             messages: [
               { role: "system", content: prompt },
+              ...(sessionSummary
+                ? [{ role: "system" as const, content: `Earlier lesson memory: ${sessionSummary}` }]
+                : []),
               ...history,
               { role: "user", content: transcript },
             ],
@@ -144,8 +168,35 @@ export const Route = createFileRoute("/api/rita/respond")({
             let reply = "";
             let inputTokens = 0;
             let outputTokens = 0;
+            let segmentIndex = 0;
+            const chunker = new RitaClauseChunker();
             const reader = upstream.body!.getReader();
             controller.enqueue(encoder.encode(sse("turn.started", { turnId, traceId })));
+            const emitSpeechSegments = async (segments: string[]) => {
+              for (const text of segments) {
+                if (!text || segmentIndex >= 3) continue;
+                const index = segmentIndex++;
+                const ticket = await createRitaSpeechTicket({
+                  userId: auth.userId,
+                  turnId,
+                  index,
+                  text,
+                });
+                controller.enqueue(
+                  encoder.encode(
+                    sse("speech.segment", {
+                      turnId,
+                      index,
+                      text,
+                      ticket,
+                      language: transcriptLanguage || "unknown",
+                      dialect: accent || "standard",
+                      emotion: "warm",
+                    }),
+                  ),
+                );
+              }
+            };
             try {
               while (true) {
                 const { done, value } = await reader.read();
@@ -167,6 +218,7 @@ export const Route = createFileRoute("/api/rita/respond")({
                   if (delta) {
                     reply += delta;
                     controller.enqueue(encoder.encode(sse("reply.delta", { text: delta })));
+                    await emitSpeechSegments(chunker.push(delta));
                   }
                   if (chunk?.usage) {
                     inputTokens = Number(chunk.usage.prompt_tokens ?? 0);
@@ -176,6 +228,8 @@ export const Route = createFileRoute("/api/rita/respond")({
               }
               reply = reply.trim();
               if (!reply) throw new Error("GPT returned an empty reply");
+              await emitSpeechSegments(chunker.flush());
+              reply = cleanRitaSpokenText(reply);
               const outputAudioMs = estimateSpeechDurationMs(reply);
               const estimatedCostMicros = estimateTurnCostMicros({
                 inputAudioMs,
@@ -196,8 +250,12 @@ export const Route = createFileRoute("/api/rita/respond")({
                   input_tokens: inputTokens,
                   output_tokens: outputTokens,
                   estimated_cost_micros: estimatedCostMicros,
-                  provider: "deepgram+openai",
-                  transcription_model: "deepgram-nova-3",
+                  provider:
+                    pipelineMode === "legacy" || transcriptionSource === "openai"
+                      ? "openai"
+                      : "deepgram+openai",
+                  transcription_model:
+                    transcriptionSource === "openai" ? "gpt-4o-mini-transcribe" : "deepgram-nova-3",
                   response_model: RITA_MODELS.response,
                   speech_model: RITA_MODELS.speech,
                   language: transcriptLanguage || null,

@@ -80,7 +80,8 @@ registerProcessor("rita-pcm-player", RitaPcmPlayer);
 `;
 
 export type RitaPcmPlayerController = {
-  playResponse: (response: Response, signal: AbortSignal) => Promise<Blob>;
+  enqueueResponse: (response: Response, signal: AbortSignal) => Promise<Blob>;
+  finish: () => void;
   replay: (blob: Blob) => Promise<void>;
   interrupt: () => void;
   close: () => void;
@@ -124,7 +125,7 @@ export async function createRitaPcmPlayer(callbacks: {
   };
 
   return {
-    async playResponse(response, signal) {
+    async enqueueResponse(response, signal) {
       if (!response.ok || !response.body)
         throw new Error("tts_openai: OpenAI returned no PCM audio stream.");
       const contentType = response.headers.get("Content-Type") || "";
@@ -161,8 +162,10 @@ export async function createRitaPcmPlayer(callbacks: {
         reader.releaseLock();
       }
       if (signal.aborted) throw new DOMException("Voice stopped", "AbortError");
-      node.port.postMessage({ type: "end" });
       return new Blob(stored, { type: "audio/pcm;rate=24000" });
+    },
+    finish() {
+      node.port.postMessage({ type: "end" });
     },
     replay: sendBlob,
     interrupt() {

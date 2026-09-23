@@ -7,12 +7,29 @@ export const RITA_MODELS = {
   speech: "gpt-4o-mini-tts",
 } as const;
 
-export type RitaPilotMode = "economic_v2";
+export type RitaPilotMode = "legacy" | "economic_v2";
 
-// The server owns the mode decision. Economic v2 is the only executable Rita
-// pipeline, so neither browser input nor stale admin metadata can revive one.
-export async function getRitaPilotMode(_userId: string): Promise<RitaPilotMode> {
-  return "economic_v2";
+async function rolloutBucket(userId: string) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(userId));
+  return new DataView(digest).getUint32(0) % 100;
+}
+
+export async function getRitaPilotMode(userId: string): Promise<RitaPilotMode> {
+  const settings = await getRitaSettings();
+  if (settings.pipelineMode === "legacy") return "legacy";
+  if (settings.adminOnlyPreview) {
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data } = await (supabaseAdmin as any).rpc("has_role", {
+        _user_id: userId,
+        _role: "admin",
+      });
+      if (!data) return "legacy";
+    } catch {
+      return "legacy";
+    }
+  }
+  return (await rolloutBucket(userId)) < settings.rolloutPercent ? "economic_v2" : "legacy";
 }
 
 export const RITA_PERSONALITIES = ["kind", "direct", "playful", "strict"] as const;
@@ -25,6 +42,9 @@ export type RitaSettings = {
   dailyGuardMinutes: number;
   defaultMonthlyMinutes: number;
   monthlyBudgetCents: number;
+  pipelineMode: RitaPilotMode;
+  rolloutPercent: number;
+  adminOnlyPreview: boolean;
 };
 
 export type RitaAuth = { userId: string };
@@ -36,6 +56,9 @@ const DEFAULT_SETTINGS: RitaSettings = {
   dailyGuardMinutes: 120,
   defaultMonthlyMinutes: 1200,
   monthlyBudgetCents: 10_000,
+  pipelineMode: "economic_v2",
+  rolloutPercent: 100,
+  adminOnlyPreview: false,
 };
 
 function apiUrl() {
@@ -109,7 +132,7 @@ export async function getRitaSettings(): Promise<RitaSettings> {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await (supabaseAdmin.from as any)("rita_voice_settings")
       .select(
-        "enabled,voice,response_words,daily_guard_minutes,default_monthly_minutes,monthly_budget_cents",
+        "enabled,voice,response_words,daily_guard_minutes,default_monthly_minutes,monthly_budget_cents,pipeline_mode,rollout_percent,admin_only_preview",
       )
       .eq("id", true)
       .maybeSingle();
@@ -123,6 +146,9 @@ export async function getRitaSettings(): Promise<RitaSettings> {
         data.default_monthly_minutes || DEFAULT_SETTINGS.defaultMonthlyMinutes,
       ),
       monthlyBudgetCents: Number(data.monthly_budget_cents || DEFAULT_SETTINGS.monthlyBudgetCents),
+      pipelineMode: data.pipeline_mode === "legacy" ? "legacy" : "economic_v2",
+      rolloutPercent: Math.min(100, Math.max(0, Number(data.rollout_percent ?? 100))),
+      adminOnlyPreview: data.admin_only_preview === true,
     };
   } catch {
     // Allows the application to run before the migration reaches production.

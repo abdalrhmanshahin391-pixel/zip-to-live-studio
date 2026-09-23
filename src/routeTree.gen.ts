@@ -99,11 +99,16 @@ import { Route as ApiPublicRitaWorkerRouteImport } from './routes/api/public/rit
 import { Route as ApiRitaDeepgramTokenRouteImport } from './routes/api/rita/deepgram-token'
 import { Route as ApiRitaDemoRouteImport } from './routes/api/rita/demo'
 import { Route as ApiRitaExtractRouteImport } from './routes/api/rita/extract'
+import { Route as ApiRitaFillerRouteImport } from './routes/api/rita/filler'
 import { Route as ApiRitaLearningRouteImport } from './routes/api/rita/learning'
 import { Route as ApiRitaLiveRouteImport } from './routes/api/rita/live'
+import { Route as ApiRitaMetricsRouteImport } from './routes/api/rita/metrics'
+import { Route as ApiRitaPreferencesRouteImport } from './routes/api/rita/preferences'
 import { Route as ApiRitaRespondRouteImport } from './routes/api/rita/respond'
 import { Route as ApiRitaSessionRouteImport } from './routes/api/rita/session'
 import { Route as ApiRitaSpeechRouteImport } from './routes/api/rita/speech'
+import { Route as ApiRitaSummarizeRouteImport } from './routes/api/rita/summarize'
+import { Route as ApiRitaTranscribeRouteImport } from './routes/api/rita/transcribe'
 import { Route as ApiRitaTurnRouteImport } from './routes/api/rita/turn'
 import { Route as ApiRitaUsageRouteImport } from './routes/api/rita/usage'
 import { Route as CoursesCourseIdIndexRouteImport } from './routes/courses.$courseId.index'
@@ -584,6 +589,11 @@ const ApiRitaExtractRoute = ApiRitaExtractRouteImport.update({
   path: '/api/rita/extract',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRitaFillerRoute = ApiRitaFillerRouteImport.update({
+  id: '/api/rita/filler',
+  path: '/api/rita/filler',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRitaLearningRoute = ApiRitaLearningRouteImport.update({
   id: '/api/rita/learning',
   path: '/api/rita/learning',
@@ -592,6 +602,16 @@ const ApiRitaLearningRoute = ApiRitaLearningRouteImport.update({
 const ApiRitaLiveRoute = ApiRitaLiveRouteImport.update({
   id: '/api/rita/live',
   path: '/api/rita/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRitaMetricsRoute = ApiRitaMetricsRouteImport.update({
+  id: '/api/rita/metrics',
+  path: '/api/rita/metrics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRitaPreferencesRoute = ApiRitaPreferencesRouteImport.update({
+  id: '/api/rita/preferences',
+  path: '/api/rita/preferences',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRitaRespondRoute = ApiRitaRespondRouteImport.update({
@@ -607,6 +627,16 @@ const ApiRitaSessionRoute = ApiRitaSessionRouteImport.update({
 const ApiRitaSpeechRoute = ApiRitaSpeechRouteImport.update({
   id: '/api/rita/speech',
   path: '/api/rita/speech',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRitaSummarizeRoute = ApiRitaSummarizeRouteImport.update({
+  id: '/api/rita/summarize',
+  path: '/api/rita/summarize',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRitaTranscribeRoute = ApiRitaTranscribeRouteImport.update({
+  id: '/api/rita/transcribe',
+  path: '/api/rita/transcribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRitaTurnRoute = ApiRitaTurnRouteImport.update({
@@ -833,11 +863,16 @@ export interface FileRoutesByFullPath {
   '/api/rita/deepgram-token': typeof ApiRitaDeepgramTokenRoute
   '/api/rita/demo': typeof ApiRitaDemoRoute
   '/api/rita/extract': typeof ApiRitaExtractRoute
+  '/api/rita/filler': typeof ApiRitaFillerRoute
   '/api/rita/learning': typeof ApiRitaLearningRoute
   '/api/rita/live': typeof ApiRitaLiveRoute
+  '/api/rita/metrics': typeof ApiRitaMetricsRoute
+  '/api/rita/preferences': typeof ApiRitaPreferencesRoute
   '/api/rita/respond': typeof ApiRitaRespondRoute
   '/api/rita/session': typeof ApiRitaSessionRoute
   '/api/rita/speech': typeof ApiRitaSpeechRoute
+  '/api/rita/summarize': typeof ApiRitaSummarizeRoute
+  '/api/rita/transcribe': typeof ApiRitaTranscribeRoute
   '/api/rita/turn': typeof ApiRitaTurnRoute
   '/api/rita/usage': typeof ApiRitaUsageRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
@@ -952,11 +987,16 @@ export interface FileRoutesByTo {
   '/api/rita/deepgram-token': typeof ApiRitaDeepgramTokenRoute
   '/api/rita/demo': typeof ApiRitaDemoRoute
   '/api/rita/extract': typeof ApiRitaExtractRoute
+  '/api/rita/filler': typeof ApiRitaFillerRoute
   '/api/rita/learning': typeof ApiRitaLearningRoute
   '/api/rita/live': typeof ApiRitaLiveRoute
+  '/api/rita/metrics': typeof ApiRitaMetricsRoute
+  '/api/rita/preferences': typeof ApiRitaPreferencesRoute
   '/api/rita/respond': typeof ApiRitaRespondRoute
   '/api/rita/session': typeof ApiRitaSessionRoute
   '/api/rita/speech': typeof ApiRitaSpeechRoute
+  '/api/rita/summarize': typeof ApiRitaSummarizeRoute
+  '/api/rita/transcribe': typeof ApiRitaTranscribeRoute
   '/api/rita/turn': typeof ApiRitaTurnRoute
   '/api/rita/usage': typeof ApiRitaUsageRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
@@ -1075,11 +1115,16 @@ export interface FileRoutesById {
   '/api/rita/deepgram-token': typeof ApiRitaDeepgramTokenRoute
   '/api/rita/demo': typeof ApiRitaDemoRoute
   '/api/rita/extract': typeof ApiRitaExtractRoute
+  '/api/rita/filler': typeof ApiRitaFillerRoute
   '/api/rita/learning': typeof ApiRitaLearningRoute
   '/api/rita/live': typeof ApiRitaLiveRoute
+  '/api/rita/metrics': typeof ApiRitaMetricsRoute
+  '/api/rita/preferences': typeof ApiRitaPreferencesRoute
   '/api/rita/respond': typeof ApiRitaRespondRoute
   '/api/rita/session': typeof ApiRitaSessionRoute
   '/api/rita/speech': typeof ApiRitaSpeechRoute
+  '/api/rita/summarize': typeof ApiRitaSummarizeRoute
+  '/api/rita/transcribe': typeof ApiRitaTranscribeRoute
   '/api/rita/turn': typeof ApiRitaTurnRoute
   '/api/rita/usage': typeof ApiRitaUsageRoute
   '/courses/$courseId/add-questions': typeof CoursesCourseIdAddQuestionsRoute
@@ -1200,11 +1245,16 @@ export interface FileRouteTypes {
     | '/api/rita/deepgram-token'
     | '/api/rita/demo'
     | '/api/rita/extract'
+    | '/api/rita/filler'
     | '/api/rita/learning'
     | '/api/rita/live'
+    | '/api/rita/metrics'
+    | '/api/rita/preferences'
     | '/api/rita/respond'
     | '/api/rita/session'
     | '/api/rita/speech'
+    | '/api/rita/summarize'
+    | '/api/rita/transcribe'
     | '/api/rita/turn'
     | '/api/rita/usage'
     | '/courses/$courseId/add-questions'
@@ -1319,11 +1369,16 @@ export interface FileRouteTypes {
     | '/api/rita/deepgram-token'
     | '/api/rita/demo'
     | '/api/rita/extract'
+    | '/api/rita/filler'
     | '/api/rita/learning'
     | '/api/rita/live'
+    | '/api/rita/metrics'
+    | '/api/rita/preferences'
     | '/api/rita/respond'
     | '/api/rita/session'
     | '/api/rita/speech'
+    | '/api/rita/summarize'
+    | '/api/rita/transcribe'
     | '/api/rita/turn'
     | '/api/rita/usage'
     | '/courses/$courseId/add-questions'
@@ -1441,11 +1496,16 @@ export interface FileRouteTypes {
     | '/api/rita/deepgram-token'
     | '/api/rita/demo'
     | '/api/rita/extract'
+    | '/api/rita/filler'
     | '/api/rita/learning'
     | '/api/rita/live'
+    | '/api/rita/metrics'
+    | '/api/rita/preferences'
     | '/api/rita/respond'
     | '/api/rita/session'
     | '/api/rita/speech'
+    | '/api/rita/summarize'
+    | '/api/rita/transcribe'
     | '/api/rita/turn'
     | '/api/rita/usage'
     | '/courses/$courseId/add-questions'
@@ -1550,11 +1610,16 @@ export interface RootRouteChildren {
   ApiRitaDeepgramTokenRoute: typeof ApiRitaDeepgramTokenRoute
   ApiRitaDemoRoute: typeof ApiRitaDemoRoute
   ApiRitaExtractRoute: typeof ApiRitaExtractRoute
+  ApiRitaFillerRoute: typeof ApiRitaFillerRoute
   ApiRitaLearningRoute: typeof ApiRitaLearningRoute
   ApiRitaLiveRoute: typeof ApiRitaLiveRoute
+  ApiRitaMetricsRoute: typeof ApiRitaMetricsRoute
+  ApiRitaPreferencesRoute: typeof ApiRitaPreferencesRoute
   ApiRitaRespondRoute: typeof ApiRitaRespondRoute
   ApiRitaSessionRoute: typeof ApiRitaSessionRoute
   ApiRitaSpeechRoute: typeof ApiRitaSpeechRoute
+  ApiRitaSummarizeRoute: typeof ApiRitaSummarizeRoute
+  ApiRitaTranscribeRoute: typeof ApiRitaTranscribeRoute
   ApiRitaTurnRoute: typeof ApiRitaTurnRoute
   ApiRitaUsageRoute: typeof ApiRitaUsageRoute
   ShareQuestionsSetIdRoute: typeof ShareQuestionsSetIdRoute
@@ -2198,6 +2263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRitaExtractRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rita/filler': {
+      id: '/api/rita/filler'
+      path: '/api/rita/filler'
+      fullPath: '/api/rita/filler'
+      preLoaderRoute: typeof ApiRitaFillerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rita/learning': {
       id: '/api/rita/learning'
       path: '/api/rita/learning'
@@ -2210,6 +2282,20 @@ declare module '@tanstack/react-router' {
       path: '/api/rita/live'
       fullPath: '/api/rita/live'
       preLoaderRoute: typeof ApiRitaLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rita/metrics': {
+      id: '/api/rita/metrics'
+      path: '/api/rita/metrics'
+      fullPath: '/api/rita/metrics'
+      preLoaderRoute: typeof ApiRitaMetricsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rita/preferences': {
+      id: '/api/rita/preferences'
+      path: '/api/rita/preferences'
+      fullPath: '/api/rita/preferences'
+      preLoaderRoute: typeof ApiRitaPreferencesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rita/respond': {
@@ -2231,6 +2317,20 @@ declare module '@tanstack/react-router' {
       path: '/api/rita/speech'
       fullPath: '/api/rita/speech'
       preLoaderRoute: typeof ApiRitaSpeechRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rita/summarize': {
+      id: '/api/rita/summarize'
+      path: '/api/rita/summarize'
+      fullPath: '/api/rita/summarize'
+      preLoaderRoute: typeof ApiRitaSummarizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rita/transcribe': {
+      id: '/api/rita/transcribe'
+      path: '/api/rita/transcribe'
+      fullPath: '/api/rita/transcribe'
+      preLoaderRoute: typeof ApiRitaTranscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rita/turn': {
@@ -2625,11 +2725,16 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRitaDeepgramTokenRoute: ApiRitaDeepgramTokenRoute,
   ApiRitaDemoRoute: ApiRitaDemoRoute,
   ApiRitaExtractRoute: ApiRitaExtractRoute,
+  ApiRitaFillerRoute: ApiRitaFillerRoute,
   ApiRitaLearningRoute: ApiRitaLearningRoute,
   ApiRitaLiveRoute: ApiRitaLiveRoute,
+  ApiRitaMetricsRoute: ApiRitaMetricsRoute,
+  ApiRitaPreferencesRoute: ApiRitaPreferencesRoute,
   ApiRitaRespondRoute: ApiRitaRespondRoute,
   ApiRitaSessionRoute: ApiRitaSessionRoute,
   ApiRitaSpeechRoute: ApiRitaSpeechRoute,
+  ApiRitaSummarizeRoute: ApiRitaSummarizeRoute,
+  ApiRitaTranscribeRoute: ApiRitaTranscribeRoute,
   ApiRitaTurnRoute: ApiRitaTurnRoute,
   ApiRitaUsageRoute: ApiRitaUsageRoute,
   ShareQuestionsSetIdRoute: ShareQuestionsSetIdRoute,

@@ -8,12 +8,23 @@ export type RitaEconomicReply = {
   totalMs: number;
 };
 
+export type RitaSpeechSegment = {
+  turnId: string;
+  index: number;
+  text: string;
+  ticket: string;
+  language: string;
+  dialect: string;
+  emotion: string;
+};
+
 export async function streamRitaEconomicReply(args: {
   token: string;
   signal: AbortSignal;
   body: Record<string, unknown>;
   onDelta: (delta: string) => void;
   onStarted?: (turnId: string) => void;
+  onSpeechSegment?: (segment: RitaSpeechSegment) => void;
 }) {
   const response = await fetch("/api/rita/respond", {
     method: "POST",
@@ -54,6 +65,8 @@ export async function streamRitaEconomicReply(args: {
         const payload = JSON.parse(raw) as Record<string, unknown>;
         if (eventName === "turn.started") args.onStarted?.(String(payload.turnId ?? ""));
         else if (eventName === "reply.delta") args.onDelta(String(payload.text ?? ""));
+        else if (eventName === "speech.segment")
+          args.onSpeechSegment?.(payload as unknown as RitaSpeechSegment);
         else if (eventName === "reply.done") done = payload as unknown as RitaEconomicReply;
         else if (eventName === "turn.error")
           throw new Error(

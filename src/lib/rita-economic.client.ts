@@ -1,3 +1,5 @@
+import { ritaEndOfTurnDelay } from "@/lib/rita-turn-boundary";
+
 export type RitaEconomicTranscript = {
   text: string;
   confidence: number;
@@ -9,8 +11,10 @@ export type RitaEconomicCallbacks = {
   onReady: (language: string) => void;
   onVolume: (level: number) => void;
   onSpeechStart: () => void;
+  onSpeechEnd?: () => void;
   onInterim: (text: string) => void;
   onFinal: (turn: RitaEconomicTranscript) => void;
+  onFallback?: (turn: { audio: Blob; durationMs: number; reason: string }) => void;
   onError: (message: string) => void;
 };
 
@@ -18,6 +22,8 @@ export type RitaEconomicController = {
   stream: MediaStream;
   mute: (muted: boolean) => void;
   setOutputSpeaking: (speaking: boolean) => void;
+  beginPushToTalk: () => void;
+  endPushToTalk: () => void;
   stop: () => void;
 };
 
@@ -133,7 +139,7 @@ function listenUrl(language: string, keyterms: string[]) {
   url.searchParams.set("smart_format", "true");
   url.searchParams.set("vad_events", "true");
   url.searchParams.set("endpointing", "350");
-  url.searchParams.set("utterance_end_ms", "900");
+  url.searchParams.set("utterance_end_ms", "1000");
   for (const term of keyterms.slice(0, 25)) {
     const clean = term.trim().slice(0, 80);
     if (clean) url.searchParams.append("keyterm", clean);
@@ -141,14 +147,46 @@ function listenUrl(language: string, keyterms: string[]) {
   return url.toString();
 }
 
+function pcm16Wav(parts: Uint8Array[], sampleRate = 16_000) {
+  const byteLength = parts.reduce((sum, part) => sum + part.byteLength, 0);
+  const buffer = new ArrayBuffer(44 + byteLength);
+  const view = new DataView(buffer);
+  const write = (offset: number, value: string) => {
+    for (let index = 0; index < value.length; index += 1)
+      view.setUint8(offset + index, value.charCodeAt(index));
+  };
+  write(0, "RIFF");
+  view.setUint32(4, 36 + byteLength, true);
+  write(8, "WAVE");
+  write(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  write(36, "data");
+  view.setUint32(40, byteLength, true);
+  const output = new Uint8Array(buffer, 44);
+  let offset = 0;
+  for (const part of parts) {
+    output.set(part, offset);
+    offset += part.byteLength;
+  }
+  return new Blob([buffer], { type: "audio/wav" });
+}
+
 export async function startRitaEconomicListening(args: {
   token: string;
+  transcriptionMode?: "deepgram" | "openai";
   accent: string;
   browserLocale: string;
   keyterms?: string[];
   callbacks: RitaEconomicCallbacks;
 }): Promise<RitaEconomicController> {
   const { callbacks } = args;
+  const transcriptionMode = args.transcriptionMode ?? "deepgram";
   const languages = deepgramLanguages(args.accent, args.browserLocale);
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
@@ -190,20 +228,24 @@ export async function startRitaEconomicListening(args: {
   let muted = false;
   let outputSpeaking = false;
   let speaking = false;
+  let pushToTalk = false;
   let hotFrames = 0;
+  let quietMs = 0;
   let noiseFloor = 0.006;
   let turnStartedAt = 0;
+  let turnAudio: Uint8Array[] = [];
+  let suppressFinalUntil = 0;
   let preRoll: ArrayBuffer[] = [];
   let preRollBytes = 0;
   let selectedLanguage = languages.length === 1 ? languages[0] : "";
   let finalTimer = 0;
+  let semanticTimer = 0;
   const candidates = new Map<string, ProbeCandidate>();
   const connections: DeepgramConnection[] = [];
 
   const sendAudio = (buffer: ArrayBuffer) => {
     for (const connection of connections) {
-      if (connection.socket.readyState === WebSocket.OPEN)
-        connection.socket.send(buffer.slice(0));
+      if (connection.socket.readyState === WebSocket.OPEN) connection.socket.send(buffer.slice(0));
     }
   };
 
@@ -219,9 +261,29 @@ export async function startRitaEconomicListening(args: {
   };
 
   const flushPreRoll = () => {
-    for (const buffer of preRoll) sendAudio(buffer);
+    for (const buffer of preRoll) {
+      sendAudio(buffer);
+      turnAudio.push(new Uint8Array(buffer.slice(0)));
+    }
     preRoll = [];
     preRollBytes = 0;
+  };
+
+  const recoverTurn = (reason: string) => {
+    if (!speaking || !turnAudio.length) return;
+    const audio = pcm16Wav(turnAudio);
+    const durationMs = Math.round(
+      (turnAudio.reduce((sum, part) => sum + part.byteLength, 0) / 32_000) * 1000,
+    );
+    speaking = false;
+    pushToTalk = false;
+    hotFrames = 0;
+    quietMs = 0;
+    turnAudio = [];
+    suppressFinalUntil = performance.now() + 1_000;
+    callbacks.onInterim("");
+    callbacks.onSpeechEnd?.();
+    callbacks.onFallback?.({ audio, durationMs, reason });
   };
 
   const closeUnselected = (winner: DeepgramConnection) => {
@@ -245,9 +307,21 @@ export async function startRitaEconomicListening(args: {
     finalTimer = 0;
     closeUnselected(candidate.connection);
     speaking = false;
+    quietMs = 0;
     hotFrames = 0;
+    turnAudio = [];
     callbacks.onInterim("");
+    callbacks.onSpeechEnd?.();
     callbacks.onFinal(candidate);
+  };
+
+  const scheduleCandidate = (candidate: ProbeCandidate) => {
+    if (semanticTimer) window.clearTimeout(semanticTimer);
+    const extraDelay = Math.max(0, ritaEndOfTurnDelay(candidate.text) - 350);
+    semanticTimer = window.setTimeout(() => {
+      semanticTimer = 0;
+      emitCandidate(candidate);
+    }, extraDelay);
   };
 
   const selectProbe = () => {
@@ -265,7 +339,8 @@ export async function startRitaEconomicListening(args: {
     }
   }, 8_000);
 
-  for (const language of languages) {
+  if (transcriptionMode === "openai") callbacks.onReady("OpenAI transcription");
+  for (const language of transcriptionMode === "deepgram" ? languages : []) {
     const socket = new WebSocket(listenUrl(language, args.keyterms ?? ["RitaJet"]), [
       "bearer",
       args.token,
@@ -288,8 +363,15 @@ export async function startRitaEconomicListening(args: {
         callbacks.onError(`deepgram_stream: ${language} connection failed.`);
     };
     socket.onclose = (event) => {
-      if (!stopped && !connection.intentionallyClosing && event.code !== 1000)
+      if (!stopped && !connection.intentionallyClosing && event.code !== 1000) {
         callbacks.onError(`deepgram_stream: ${language} connection closed (${event.code}).`);
+        window.setTimeout(() => {
+          const usable = connections.some(
+            (item) => !item.intentionallyClosing && item.socket.readyState === WebSocket.OPEN,
+          );
+          if (!usable) recoverTurn("Deepgram connection ended before the transcript was final.");
+        }, 120);
+      }
     };
     socket.onmessage = (event) => {
       if (typeof event.data !== "string") return;
@@ -309,6 +391,10 @@ export async function startRitaEconomicListening(args: {
         return;
       }
       if (message.type !== "Results") return;
+      if (semanticTimer) {
+        window.clearTimeout(semanticTimer);
+        semanticTimer = 0;
+      }
       const alternative = message.channel?.alternatives?.[0];
       const text = String(alternative?.transcript ?? "").trim();
       if (!text) return;
@@ -326,8 +412,9 @@ export async function startRitaEconomicListening(args: {
         durationMs: turnStartedAt ? Math.round(performance.now() - turnStartedAt) : 0,
         connection,
       };
+      if (performance.now() < suppressFinalUntil) return;
       if (selectedLanguage) {
-        emitCandidate(candidate);
+        scheduleCandidate(candidate);
         return;
       }
       candidates.set(language, candidate);
@@ -345,16 +432,23 @@ export async function startRitaEconomicListening(args: {
     const normalized = Math.min(1, Math.max(0, (rms - noiseFloor) * 18));
     callbacks.onVolume(normalized);
     let startedThisFrame = false;
+    const frameMs = (frame.length / context.sampleRate) * 1000;
     if (!speaking) {
       noiseFloor = Math.min(0.018, noiseFloor * 0.98 + rms * 0.02);
       const threshold = Math.max(0.01, noiseFloor * (outputSpeaking ? 3.2 : 1.9));
-      hotFrames = rms > threshold ? hotFrames + 1 : 0;
-      if (hotFrames >= (outputSpeaking ? 10 : 5)) {
+      hotFrames = rms > threshold || pushToTalk ? hotFrames + 1 : 0;
+      if (hotFrames >= (pushToTalk ? 1 : outputSpeaking ? 10 : 5)) {
         speaking = true;
         startedThisFrame = true;
         turnStartedAt = performance.now();
+        turnAudio = [];
+        quietMs = 0;
+        suppressFinalUntil = 0;
         callbacks.onSpeechStart();
       }
+    } else if (!pushToTalk) {
+      const threshold = Math.max(0.008, noiseFloor * (outputSpeaking ? 3 : 1.55));
+      quietMs = rms < threshold ? quietMs + frameMs : 0;
     }
     const pcm = encoder.encode(frame);
     if (!pcm.byteLength) return;
@@ -369,7 +463,14 @@ export async function startRitaEconomicListening(args: {
       return;
     }
     if (startedThisFrame) flushPreRoll();
+    turnAudio.push(new Uint8Array(buffer.slice(0)));
     sendAudio(buffer);
+    if (!pushToTalk && quietMs >= (transcriptionMode === "openai" ? 450 : 1_500) && !semanticTimer)
+      recoverTurn(
+        transcriptionMode === "openai"
+          ? "Legacy transcription turn completed."
+          : "Deepgram did not finalize the turn in time.",
+      );
   };
 
   return {
@@ -383,11 +484,32 @@ export async function startRitaEconomicListening(args: {
     setOutputSpeaking(value) {
       outputSpeaking = value;
     },
+    beginPushToTalk() {
+      if (stopped || muted) return;
+      pushToTalk = true;
+      hotFrames = 1;
+    },
+    endPushToTalk() {
+      pushToTalk = false;
+      if (!speaking) return;
+      callbacks.onSpeechEnd?.();
+      for (const connection of connections) {
+        if (connection.socket.readyState === WebSocket.OPEN)
+          connection.socket.send(JSON.stringify({ type: "Finalize" }));
+      }
+      window.setTimeout(
+        () => {
+          if (speaking) recoverTurn("Push-to-talk ended before Deepgram finalized the turn.");
+        },
+        transcriptionMode === "openai" ? 50 : 1_200,
+      );
+    },
     stop() {
       if (stopped) return;
       stopped = true;
       window.clearInterval(keepAlive);
       if (finalTimer) window.clearTimeout(finalTimer);
+      if (semanticTimer) window.clearTimeout(semanticTimer);
       capture.port.onmessage = null;
       for (const connection of connections) {
         try {

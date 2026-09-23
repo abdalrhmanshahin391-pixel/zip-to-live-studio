@@ -137,6 +137,9 @@ function AiKeysPage() {
     dailyGuardMinutes: 120,
     defaultMonthlyMinutes: 1200,
     monthlyBudgetCents: 10000,
+    pipelineMode: "economic_v2" as "legacy" | "economic_v2",
+    rolloutPercent: 100,
+    adminOnlyPreview: false,
   });
   const [ritaMetrics, setRitaMetrics] = useState({
     sessions: 0,
@@ -145,6 +148,8 @@ function AiKeysPage() {
     activeMinutes: 0,
     estimatedCost: 0,
     turns: 0,
+    latencyP50: 0,
+    latencyP95: 0,
   });
 
   useEffect(() => {
@@ -303,6 +308,22 @@ function AiKeysPage() {
     }
   }
 
+  async function applyRitaPipeline(mode: "legacy" | "economic_v2") {
+    const next = { ...ritaSettings, pipelineMode: mode };
+    setBusy("rita-pipeline");
+    try {
+      await updateRitaAdmin({ data: next });
+      setRitaSettings(next);
+      toast.success(
+        mode === "legacy" ? "Rita Legacy is now selected" : "Rita Economic v2 is now selected",
+      );
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Could not switch Rita pipeline");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   if (loading || !user || !isAdmin) return <div className="min-h-screen bg-black" />;
 
   const connectedCount = geminiSlots.filter(Boolean).length;
@@ -340,25 +361,74 @@ function AiKeysPage() {
           aria-label="Rita Economic v2 status"
         >
           <p className="text-xs font-black uppercase tracking-[.2em] text-red-200">
-            🔴 RITA ECONOMIC V2 — ONLY ACTIVE PIPELINE
+            🔴 RITA PIPELINE SWITCH — APPLIES TO USERS
           </p>
           <h2 className="mt-2 text-2xl font-black text-white">
             Deepgram Nova-3 → GPT-4o mini → OpenAI Mini TTS
           </h2>
           <p className="mt-2 text-sm text-red-100/85">
-            هذا هو نظام ريتا الوحيد لجميع المستخدمين. إذا تعطلت أي مرحلة يظهر اسمها كخطأ واضح؛
-            لا يوجد رجوع تلقائي أو مخفي للصوت القديم.
+            اختر النظام بوضوح. لن يغيّر الموقع النظام تلقائيًا عند حدوث خطأ.
           </p>
-          <div className="mt-5 rounded-2xl border-2 border-white bg-white p-4 text-red-950">
-            <span className="block text-lg font-black">✓ Economic v2 مفعل للجميع</span>
-            <span className="mt-1 block text-xs font-bold opacity-80">
-              No Legacy fallback · No Realtime fallback · Stage errors stay visible
-            </span>
+          <div className="mt-5 grid gap-3 rounded-2xl border-2 border-white bg-white p-4 text-red-950 md:grid-cols-2">
+            <button
+              type="button"
+              disabled={busy === "rita-pipeline"}
+              onClick={() => void applyRitaPipeline("legacy")}
+              className={`rounded-xl border-2 p-4 text-left transition ${ritaSettings.pipelineMode === "legacy" ? "border-red-600 bg-red-100 shadow-md" : "border-red-200 hover:border-red-400"}`}
+            >
+              <span className="block text-lg font-black">Rita الحالية — Legacy</span>
+              <span className="mt-1 block text-xs font-bold opacity-75">
+                OpenAI transcription → same streaming GPT and PCM voice
+              </span>
+            </button>
+            <button
+              type="button"
+              disabled={busy === "rita-pipeline"}
+              onClick={() => void applyRitaPipeline("economic_v2")}
+              className={`rounded-xl border-2 p-4 text-left transition ${ritaSettings.pipelineMode === "economic_v2" ? "border-red-600 bg-red-100 shadow-md" : "border-red-200 hover:border-red-400"}`}
+            >
+              <span className="block text-lg font-black">Rita Economic v2</span>
+              <span className="mt-1 block text-xs font-bold opacity-75">
+                Deepgram Nova-3 → streaming GPT → streamed PCM voice
+              </span>
+            </button>
+            <label className="text-xs font-black">
+              Rollout percentage
+              <select
+                value={ritaSettings.rolloutPercent}
+                onChange={(event) =>
+                  setRitaSettings((current) => ({
+                    ...current,
+                    rolloutPercent: Number(event.target.value),
+                  }))
+                }
+                className="mt-1 block w-full rounded-lg border border-red-300 bg-white p-2"
+              >
+                {[5, 25, 100].map((value) => (
+                  <option key={value} value={value}>
+                    {value}%
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-xs font-black">
+              <input
+                type="checkbox"
+                checked={ritaSettings.adminOnlyPreview}
+                onChange={(event) =>
+                  setRitaSettings((current) => ({
+                    ...current,
+                    adminOnlyPreview: event.target.checked,
+                  }))
+                }
+              />
+              Test Economic v2 on admins only
+            </label>
           </div>
           <p className="mt-2 text-xs text-red-100/80">
             هذا الشهر، التكلفة المقدّرة من بيانات الردود:{" "}
-            <b>${ritaMetrics.estimatedCost.toFixed(2)}</b> لـ {ritaMetrics.turns} ردود.
-            الرقم تقديري؛ فواتير OpenAI هي المرجع النهائي، وقد لا تصل بيانات الرد إذا انقطع الاتصال.
+            <b>${ritaMetrics.estimatedCost.toFixed(2)}</b> لـ {ritaMetrics.turns} ردود. الرقم
+            تقديري؛ فواتير OpenAI هي المرجع النهائي، وقد لا تصل بيانات الرد إذا انقطع الاتصال.
           </p>
         </section>
 
@@ -497,13 +567,15 @@ function AiKeysPage() {
             </label>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-5">
+          <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-7">
             {[
               ["Sessions", ritaMetrics.sessions],
               ["Live now", ritaMetrics.activeSessions],
               ["Learners", ritaMetrics.uniqueLearners],
               ["Speech min", ritaMetrics.activeMinutes],
               ["Est. cost", `$${ritaMetrics.estimatedCost.toFixed(2)}`],
+              ["Latency p50", ritaMetrics.latencyP50 ? `${ritaMetrics.latencyP50}ms` : "—"],
+              ["Latency p95", ritaMetrics.latencyP95 ? `${ritaMetrics.latencyP95}ms` : "—"],
             ].map(([label, value]) => (
               <div
                 key={String(label)}

@@ -27,11 +27,11 @@ export const Route = createFileRoute("/api/rita/session")({
         ]);
         return Response.json(
           {
-            configured: Boolean(openAiKey && deepgramKey),
+            configured: Boolean(openAiKey && (pilotMode === "legacy" || deepgramKey)),
             providers: { openai: Boolean(openAiKey), deepgram: Boolean(deepgramKey) },
             enabled: settings.enabled,
-            voice: settings.voice,
             pilotMode,
+            voice: settings.voice,
             allowance,
           },
           { headers: { "Cache-Control": "no-store" } },
@@ -102,21 +102,27 @@ export const Route = createFileRoute("/api/rita/session")({
         } catch (error) {
           console.warn("Rita session logging is not ready", error);
         }
-        if (!openAiKey || !deepgramKey)
+        if (!openAiKey || (pilotMode === "economic_v2" && !deepgramKey))
           return Response.json(
             {
               ok: false,
-              code: "economic_v2_not_configured",
-              stage: !deepgramKey ? "deepgram_auth" : "openai_auth",
-              message: !deepgramKey
-                ? "Add a Deepgram key in Admin → AI keys. Economic v2 will not fall back to the old system."
-                : "Add an OpenAI key in Admin → AI keys.",
+              code: "rita_pipeline_not_configured",
+              stage: !openAiKey ? "openai_auth" : "deepgram_auth",
+              message: !openAiKey
+                ? "Add an OpenAI key in Admin → AI keys."
+                : !deepgramKey
+                  ? "Add a Deepgram key in Admin → AI keys for Economic v2."
+                  : "Add an OpenAI key in Admin → AI keys.",
             },
             { status: 503 },
           );
         if (!persisted)
           return Response.json(
-            { ok: false, code: "session_storage_failed", message: "Rita session storage is not ready." },
+            {
+              ok: false,
+              code: "session_storage_failed",
+              message: "Rita session storage is not ready.",
+            },
             { status: 503 },
           );
         return Response.json(
@@ -124,8 +130,9 @@ export const Route = createFileRoute("/api/rita/session")({
             ok: true,
             sessionId,
             configured: true,
-            providers: { openai: true, deepgram: true },
+            providers: { openai: true, deepgram: Boolean(deepgramKey) },
             pilotMode,
+            voice: settings.voice,
             allowance,
           },
           { headers: { "Cache-Control": "no-store" } },

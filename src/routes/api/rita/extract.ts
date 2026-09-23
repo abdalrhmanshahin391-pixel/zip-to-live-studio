@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireRitaUser, resolveRitaOpenAiKey } from "@/lib/rita-voice.server";
-import { hasRitaLanguageLearningIntent } from "@/lib/rita-learning-intent";
+import { classifyRitaLearningIntent } from "@/lib/rita-learning-intent";
 
 export const Route = createFileRoute("/api/rita/extract")({
   server: {
@@ -16,9 +16,8 @@ export const Route = createFileRoute("/api/rita/extract")({
           .trim()
           .slice(0, 900);
         if (!spoken || !reply) return Response.json({ learningItems: [], saveRequest: "none" });
-        const saveContext = data?.saveContext === "flashcards" || data?.saveContext === "german_lab";
-        if (!saveContext && !hasRitaLanguageLearningIntent(spoken))
-          return Response.json({ learningItems: [], saveRequest: "none" });
+        const intent = classifyRitaLearningIntent(spoken);
+        if (intent === "none") return Response.json({ learningItems: [], saveRequest: "none" });
         const key = await resolveRitaOpenAiKey();
         if (!key) return new Response("Rita key unavailable", { status: 503 });
         try {
@@ -28,12 +27,12 @@ export const Route = createFileRoute("/api/rita/extract")({
             body: JSON.stringify({
               model: "gpt-4o-mini",
               temperature: 0,
-              max_tokens: 260,
+              max_tokens: 1_200,
               response_format: { type: "json_object" },
               messages: [
                 {
                   role: "system",
-                  content: `Extract only language-learning material from the actual exchange. Valid: an explicit translation, word/sentence meaning, requested target-language vocabulary list, or explicit save to Flashcards/German Lab. Never extract general-knowledge concepts, people, wars, science explanations, or ordinary conversation. Return JSON with learningItems (up to 3 objects: term, meaning, language BCP-47, kind word|sentence, article der|die|das|null, plural string|null); saveRequest none|flashcards|german_lab; destinationName string only if user named it; rememberDestination boolean only when explicitly requested. If no valid language item was taught, learningItems is []. Never imply persistence.`,
+                  content: `The deterministic gate classified this exchange as ${intent}. Extract only genuine language-learning material from the actual exchange. Valid: an explicit translation, word/sentence meaning, requested target-language vocabulary list, or explicit save to Flashcards/German Lab. Never extract general-knowledge concepts, people, wars, science explanations, or ordinary conversation. Return JSON with learningItems (up to 20 objects: term, meaning, language BCP-47, kind word|sentence, article der|die|das|null, plural string|null); saveRequest none|flashcards|german_lab; destinationName string only if user named it; rememberDestination boolean only when explicitly requested. If no valid language item was taught, learningItems is []. Never imply persistence.`,
                 },
                 { role: "user", content: JSON.stringify({ spoken, reply }) },
               ],
@@ -44,7 +43,7 @@ export const Route = createFileRoute("/api/rita/extract")({
           const json = await provider.json();
           const parsed = JSON.parse(String(json?.choices?.[0]?.message?.content || "{}"));
           const learningItems = (Array.isArray(parsed.learningItems) ? parsed.learningItems : [])
-            .slice(0, 3)
+            .slice(0, 20)
             .flatMap((item: Record<string, unknown>) => {
               const term = String(item.term ?? "")
                 .trim()

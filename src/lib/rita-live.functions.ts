@@ -94,6 +94,9 @@ const SettingsSchema = z.object({
   dailyGuardMinutes: z.number().int().min(15).max(720),
   defaultMonthlyMinutes: z.number().int().min(30).max(10_000),
   monthlyBudgetCents: z.number().int().min(100).max(1_000_000),
+  pipelineMode: z.enum(["legacy", "economic_v2"]),
+  rolloutPercent: z.number().int().min(0).max(100),
+  adminOnlyPreview: z.boolean(),
 });
 
 export const getRitaVoiceAdmin = createServerFn({ method: "GET" })
@@ -102,10 +105,11 @@ export const getRitaVoiceAdmin = createServerFn({ method: "GET" })
     const { supabase } = await requireAdmin(context);
     const month = new Date();
     const start = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), 1)).toISOString();
-    const [{ data: settings }, { data: usage }, { data: sessions }] = await Promise.all([
+    const [{ data: settings }, { data: usage }, { data: sessions }, { data: timings }] =
+      await Promise.all([
         (supabase.from as any)("rita_voice_settings")
           .select(
-            "enabled,voice,response_words,daily_guard_minutes,default_monthly_minutes,monthly_budget_cents",
+            "enabled,voice,response_words,daily_guard_minutes,default_monthly_minutes,monthly_budget_cents,pipeline_mode,rollout_percent,admin_only_preview",
           )
           .eq("id", true)
           .maybeSingle(),
@@ -117,6 +121,10 @@ export const getRitaVoiceAdmin = createServerFn({ method: "GET" })
         (supabase.from as any)("rita_voice_sessions")
           .select("id,user_id,ended_at")
           .gte("started_at", start),
+        (supabase.from as any)("rita_turn_metrics")
+          .select("speech_end_to_first_audio_ms")
+          .gte("created_at", start)
+          .not("speech_end_to_first_audio_ms", "is", null),
       ]);
     const rows = (usage ?? []) as any[];
     const activeMs = rows.reduce(
@@ -124,6 +132,16 @@ export const getRitaVoiceAdmin = createServerFn({ method: "GET" })
       0,
     );
     const costMicros = rows.reduce((sum, row) => sum + Number(row.estimated_cost_micros || 0), 0);
+    const latencyValues = ((timings ?? []) as any[])
+      .map((row) => Number(row.speech_end_to_first_audio_ms))
+      .filter((value) => Number.isFinite(value) && value >= 0)
+      .sort((left, right) => left - right);
+    const percentile = (ratio: number) =>
+      latencyValues.length
+        ? latencyValues[
+            Math.min(latencyValues.length - 1, Math.ceil(latencyValues.length * ratio) - 1)
+          ]
+        : 0;
     return {
       settings: {
         enabled: settings?.enabled !== false,
@@ -132,6 +150,9 @@ export const getRitaVoiceAdmin = createServerFn({ method: "GET" })
         dailyGuardMinutes: Number(settings?.daily_guard_minutes || 120),
         defaultMonthlyMinutes: Number(settings?.default_monthly_minutes || 1200),
         monthlyBudgetCents: Number(settings?.monthly_budget_cents || 10_000),
+        pipelineMode: settings?.pipeline_mode === "legacy" ? "legacy" : "economic_v2",
+        rolloutPercent: Math.min(100, Math.max(0, Number(settings?.rollout_percent ?? 100))),
+        adminOnlyPreview: settings?.admin_only_preview === true,
       },
       metrics: {
         sessions: (sessions ?? []).length,
@@ -140,6 +161,8 @@ export const getRitaVoiceAdmin = createServerFn({ method: "GET" })
         activeMinutes: Math.round(activeMs / 60_000),
         estimatedCost: Number((costMicros / 1_000_000).toFixed(2)),
         turns: rows.length,
+        latencyP50: percentile(0.5),
+        latencyP95: percentile(0.95),
       },
     };
   });
@@ -157,6 +180,9 @@ export const saveRitaVoiceSettings = createServerFn({ method: "POST" })
       daily_guard_minutes: data.dailyGuardMinutes,
       default_monthly_minutes: data.defaultMonthlyMinutes,
       monthly_budget_cents: data.monthlyBudgetCents,
+      pipeline_mode: data.pipelineMode,
+      rollout_percent: data.rolloutPercent,
+      admin_only_preview: data.adminOnlyPreview,
       updated_at: new Date().toISOString(),
       updated_by: userId,
     });
