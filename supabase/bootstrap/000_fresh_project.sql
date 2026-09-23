@@ -9877,7 +9877,7 @@ ALTER TABLE public.admin_ai_keys ADD CONSTRAINT admin_ai_keys_purpose_check
 
 -- >>> 20260908143841_dc89e4b4-72f3-4f35-ae21-e6c5e5b0082f.sql
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
-ALTER FUNCTION public.__setup_exec(text) SET search_path = public, extensions;
+-- Lovable's temporary __setup_exec helper is intentionally absent.
 -- <<< 20260908143841_dc89e4b4-72f3-4f35-ae21-e6c5e5b0082f.sql
 
 
