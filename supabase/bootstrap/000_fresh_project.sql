@@ -1,5 +1,5 @@
 -- Fresh Supabase bootstrap generated from the canonical migration sequence.
--- Duplicate snapshot branches and Lovable-only sandbox_exec grants are intentionally excluded.
+-- Duplicate snapshots, Lovable-only sandbox grants, and an obsolete fixed-user admin seed are excluded.
 begin;
 
 -- >>> 20260807145528_73d7d61a-9ef0-48bf-bfdf-e4a94e29b57f.sql
@@ -4511,11 +4511,6 @@ REVOKE EXECUTE ON FUNCTION public.validate_coupon(text, uuid) FROM anon;
 
 DROP FUNCTION IF EXISTS public.__restore_exec(text);
 -- <<< 20260813043155_dc9898f8-13a7-44c1-8cd5-dec3b599ed4e.sql
-
-
--- >>> 20260813043932_ab78e7c8-b176-413e-a66c-8bc80b67a29c.sql
-INSERT INTO public.user_roles (user_id, role) VALUES ('942a6a2c-b0a3-408e-a7da-9740db4073e3', 'admin') ON CONFLICT (user_id, role) DO NOTHING;
--- <<< 20260813043932_ab78e7c8-b176-413e-a66c-8bc80b67a29c.sql
 
 
 -- >>> 20260813054750_0ce141c8-119b-47de-b56f-936b4c2b324b.sql
