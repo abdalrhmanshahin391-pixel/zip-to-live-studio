@@ -1,5 +1,5 @@
 -- Fresh Supabase bootstrap generated from the canonical migration sequence.
--- Duplicate snapshots, Lovable-only sandbox grants, and an obsolete fixed-user admin seed are excluded.
+-- Duplicate snapshots, Lovable-only grants, obsolete users, and expired remote imports are excluded.
 begin;
 
 -- >>> 20260807145528_73d7d61a-9ef0-48bf-bfdf-e4a94e29b57f.sql
@@ -6880,82 +6880,6 @@ GRANT EXECUTE ON FUNCTION public.join_space_by_code(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.space_members_view(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.my_spaces() TO authenticated;
 -- <<< 20260830224558_a57cbb14-b5d5-4f66-bdbe-3a05a374e37c.sql
-
-
--- >>> 20260831134808_4b6f5d09-f270-4090-ad80-352c20c85eea.sql
-CREATE EXTENSION IF NOT EXISTS http WITH SCHEMA extensions;
-DO $mig$
-DECLARE body text; st int;
-BEGIN
-  SELECT status, content INTO st, body FROM extensions.http_get('https://id-preview--05a7273e-65b6-403e-8cb6-c887d70948df.lovable.app/__l5e/assets-v1/dae6e495-e2a3-4f47-9773-ab7817106762/seg1.txt');
-  IF st <> 200 THEN RAISE EXCEPTION 'fetch failed %', st; END IF;
-  EXECUTE body;
-END
-$mig$;
--- <<< 20260831134808_4b6f5d09-f270-4090-ad80-352c20c85eea.sql
-
-
--- >>> 20260831135037_ffd6a9e5-6b12-4a9b-9456-04cd36cab49f.sql
-CREATE TABLE IF NOT EXISTS public._mig_log (id serial primary key, chunk text, err text, at timestamptz default now());
-REVOKE ALL ON public._mig_log FROM anon, authenticated;
-GRANT ALL ON public._mig_log TO service_role;
-DO $mig$
-DECLARE body text; st int; parts text[]; c text; hdr text;
-BEGIN
-  SELECT status, content INTO st, body FROM extensions.http_get('https://id-preview--05a7273e-65b6-403e-8cb6-c887d70948df.lovable.app/__l5e/assets-v1/4ca0f4d1-445f-41a9-ace1-54750daea5f8/segd2.txt');
-  IF st <> 200 THEN RAISE EXCEPTION 'fetch failed %', st; END IF;
-  parts := string_to_array(body, E'\n--@@SPLIT@@\n');
-  FOREACH c IN ARRAY parts LOOP
-    hdr := split_part(c, E'\n', 1);
-    BEGIN
-      EXECUTE c;
-    EXCEPTION WHEN OTHERS THEN
-      INSERT INTO public._mig_log(chunk, err) VALUES (hdr, SQLERRM);
-    END;
-  END LOOP;
-END
-$mig$;
--- <<< 20260831135037_ffd6a9e5-6b12-4a9b-9456-04cd36cab49f.sql
-
-
--- >>> 20260831135120_d9e51239-3cb8-44ee-aa3b-c644e41b2829.sql
-DO $mig$
-DECLARE body text; st int; parts text[]; c text; hdr text;
-BEGIN
-  SELECT status, content INTO st, body FROM extensions.http_get('https://id-preview--05a7273e-65b6-403e-8cb6-c887d70948df.lovable.app/__l5e/assets-v1/78443dad-504a-4767-9941-99a7f6171779/segd3.txt');
-  IF st <> 200 THEN RAISE EXCEPTION 'fetch failed %', st; END IF;
-  parts := string_to_array(body, E'\n--@@SPLIT@@\n');
-  FOREACH c IN ARRAY parts LOOP
-    hdr := split_part(c, E'\n', 1);
-    BEGIN
-      EXECUTE c;
-    EXCEPTION WHEN OTHERS THEN
-      INSERT INTO public._mig_log(chunk, err) VALUES (hdr, SQLERRM);
-    END;
-  END LOOP;
-END
-$mig$;
--- <<< 20260831135120_d9e51239-3cb8-44ee-aa3b-c644e41b2829.sql
-
-
--- >>> 20260831135151_dc33fd5b-2386-4842-a809-6fd38045e932.sql
-DO $mig$
-DECLARE body text; st int; parts text[]; c text; hdr text;
-BEGIN
-  SELECT status, content INTO st, body FROM extensions.http_get('https://id-preview--05a7273e-65b6-403e-8cb6-c887d70948df.lovable.app/__l5e/assets-v1/ce7269c8-62cd-42a6-883d-257462a6f723/segd4.txt');
-  IF st <> 200 THEN RAISE EXCEPTION 'fetch failed %', st; END IF;
-  parts := string_to_array(body, E'\n--@@SPLIT@@\n');
-  FOREACH c IN ARRAY parts LOOP
-    hdr := split_part(c, E'\n', 1);
-    BEGIN
-      EXECUTE c;
-    EXCEPTION WHEN OTHERS THEN
-      INSERT INTO public._mig_log(chunk, err) VALUES (hdr, SQLERRM);
-    END;
-  END LOOP;
-END
-$mig$;
--- <<< 20260831135151_dc33fd5b-2386-4842-a809-6fd38045e932.sql
 
 
 -- >>> 20260831173754_76a9d75e-5cde-48a6-86b0-22f4733c573d.sql
