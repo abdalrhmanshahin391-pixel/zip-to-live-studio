@@ -9331,10 +9331,7 @@ revoke execute on function public.can_manage_committee(uuid) from public, anon;
 revoke execute on function public.deck_in_my_space(uuid, uuid) from public, anon;
 revoke execute on function public.effective_plan(uuid) from public, anon;
 
--- Leftover migration-replay helpers: fixed search path
-alter function zz.replay() set search_path = public;
-alter function zz.replay(text, text) set search_path = public;
-alter function zz.replay_stmts() set search_path = public;
+-- Lovable's temporary zz replay helpers are intentionally absent on fresh Supabase.
 -- <<< 20260905221638_d37e5c79-678b-4b2d-a93c-d52e86111d39.sql
 
 
