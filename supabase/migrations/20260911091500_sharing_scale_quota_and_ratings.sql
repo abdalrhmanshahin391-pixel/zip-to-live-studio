@@ -4,7 +4,7 @@
 
 -- 1. Space Folder column on space_question_sets
 ALTER TABLE public.space_question_sets
-  ADD COLUMN IF NOT EXISTS folder_id uuid REFERENCES public.space_deck_folders(id) ON DELETE SET NULL;
+  ADD COLUMN IF NOT EXISTS folder_id uuid REFERENCES public.space_folders(id) ON DELETE SET NULL;
 
 -- 2. Rating columns on shared_question_sets
 ALTER TABLE public.shared_question_sets
