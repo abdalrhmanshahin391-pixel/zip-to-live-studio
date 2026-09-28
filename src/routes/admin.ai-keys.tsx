@@ -356,6 +356,9 @@ function AiKeysPage() {
           between them automatically when one is rate-limited.
         </p>
 
+        {/* Archived Rita v2 controls are intentionally not rendered. Rita v3 has one
+            dedicated control room at /admin/rita-voice. Keep this page for non-voice AI only. */}
+        {false && <>
         <section
           className="mb-6 rounded-3xl border-[3px] border-red-500 bg-red-950/70 p-5 shadow-[0_0_48px_-15px_rgba(239,68,68,.8)] md:p-7"
           aria-label="Rita Economic v2 status"
@@ -642,6 +645,16 @@ function AiKeysPage() {
             Save Rita controls
           </button>
         </section>
+
+        </>}
+
+        <Link
+          to="/admin/rita-voice"
+          className="mb-6 flex items-center justify-between rounded-3xl border-2 border-violet-400/60 bg-violet-500/10 p-5 text-violet-100 hover:bg-violet-500/15"
+        >
+          <span><strong className="block text-lg">Rita Realtime Voice v3</strong><span className="text-sm text-white/60">Soniox, Groq, Gemini TTS and Pipecat keys are managed in the new clean voice panel.</span></span>
+          <ExternalLink className="h-5 w-5" />
+        </Link>
 
         {/* ────── Gemini multi-key card ────── */}
         <div className="rounded-3xl border border-sky-500/30 bg-gradient-to-br from-sky-500/[0.05] to-indigo-500/[0.05] backdrop-blur p-6 md:p-7 mb-5">
